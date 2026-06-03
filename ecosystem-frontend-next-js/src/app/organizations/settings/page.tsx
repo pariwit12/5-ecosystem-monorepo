@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useOrganizationStore } from "@/store/useOrganizationStore";
+import { useOrganizationStore } from "@/store/use-organization-store";
 import { useAuth } from "@clerk/nextjs";
 import axios from "axios";
 import Link from "next/link";

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 // 🌟 นำเข้า Hook สำหรับสร้างองค์กรที่เราแยกไฟล์ไว้
-import { useCreateOrganization } from "../hooks/useCreateOrganization";
+import { useCreateOrganization } from "../hooks/use-create-organization";
 
 // 🌟 Import UI Components จาก shadcn (ปรับ Path ให้ตรงกับโปรเจกต์นะครับ)
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function CreateOrgModal() {
       {/* 🌟 1. ปุ่มทริกเกอร์ (แสดงเป็นรูปแบบการ์ดใน Grid) */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="p-6 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-all flex flex-col items-center justify-center text-gray-500 group min-h-[200px]"
+        className="p-6 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-all flex flex-col items-center justify-center text-gray-500 group min-h-50"
       >
         <div className="w-12 h-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
           <svg

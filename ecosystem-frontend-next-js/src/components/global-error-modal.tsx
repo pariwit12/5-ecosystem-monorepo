@@ -1,6 +1,6 @@
 "use client";
 
-import { useErrorStore } from "@/store/useErrorStore";
+import { useErrorStore } from "@/store/use-error-store";
 // หากใช้ไอคอน แนะนำให้ import จาก lucide-react หรือ heroicons ครับ
 // import { AlertTriangle } from 'lucide-react';
 

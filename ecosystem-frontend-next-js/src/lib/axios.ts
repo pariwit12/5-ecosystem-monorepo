@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useErrorStore } from "@/store/useErrorStore";
+import { useErrorStore } from "@/store/use-error-store";
 
 // 🌟 สอนให้ TypeScript รู้จัก Config พิเศษของเรา
 declare module "axios" {

@@ -7,11 +7,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // 🌟 นำเข้าระบบที่เราตั้งค่าไว้
 import apiClient from "@/lib/axios";
-import { useOrganizationStore } from "@/store/useOrganizationStore";
+import { useOrganizationStore } from "@/store/use-organization-store";
 
 import { useOrganizations } from "@/features/organizations/hooks/useGetOrganizations";
 
-import { CreateOrgModal } from "@/features/organizations/components/CreateOrgModal";
+import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
 
 // กำหนดหน้าตาข้อมูลองค์กร (ปรับให้ตรงกับ Prisma ของคุณ)
 interface Organization {
