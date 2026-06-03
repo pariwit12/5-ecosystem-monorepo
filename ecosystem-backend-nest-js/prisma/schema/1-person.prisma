@@ -1,0 +1,58 @@
+// ------------------------------------------------------
+// โมดูลเก็บข้อมูลส่วนกลาง (หลัง log-in)
+// ------------------------------------------------------
+
+model Organization {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  // ใช้ deleted_at เพื่อให้รู้เวลาที่ลบ (ถ้าเป็น null คือยังไม่ลบ)
+  deletedAt DateTime? @map("deleted_at")
+
+  name String
+
+  version Int @default(1)
+  // ใช้สำหรับ
+  // 1. เปลี่ยนแปลงข้อมูล Organization
+  // 2. สร้าง + เปลี่ยนแปลงข้อมูล OrganizationDentalClinic
+
+  personOrganizationAffiliations PersonOrganizationAffiliation[]
+
+  organizationDentalClinic OrganizationDentalClinic?
+
+  @@map("organization")
+}
+
+model Person {
+  id      String  @id @default(uuid(7)) @db.Uuid
+  clerkId String? @unique @map("clerk_id")
+
+  // firstName String @map("first_name")
+  // lastName  String @map("last_name")
+  // email      String? @unique
+  // phone      String?
+
+  version Int @default(1)
+  // ใช้สำหรับ
+  // 1. เปลี่ยนแปลงข้อมูล Person
+  // 2. สร้าง + เปลี่ยนแปลงข้อมูล Organization (หน้าจัดการองค์กร)
+
+  personOrganizationAffiliations PersonOrganizationAffiliation[]
+
+  personDentist       PersonDentist?
+  personDentalPatient PersonDentalPatient?
+
+  @@map("person")
+}
+
+model PersonOrganizationAffiliation {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  personId String @map("person_id") @db.Uuid
+  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // ป้องกันไม่ให้แอดคนเดิมซ้ำในองค์กรเดิม
+  @@unique([personId, organizationId])
+  @@map("person_organization_affiliation")
+}

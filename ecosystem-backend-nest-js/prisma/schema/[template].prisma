@@ -1,0 +1,91 @@
+enum TemplateEnumInSchemaPrisma {
+  A // Prisma จะแปลงให้เป็น A = 'A' อัตโนมัติ (ในไฟล์ ts อื่น ต้องเขียนแบบ A = 'A' เอง เพื่อไม่ให้มันใส่ค่าเอง ไม่งั้นจะเป็น 0, 1, 2)
+  B
+  C
+}
+
+model Template {
+  // เรียงตามลำดับความสำคัญต่อคุณภาพข้อมูล
+
+  id String @id @default(uuid(7)) @db.Uuid
+
+  // หากมี parent ได้ 0-1 อันเท่านั้น (ไม่แนะนำวิธีนี้ ถ้าเป็นไปได้ แยกไปทำตาราง Affiliation จะ Flexible กว่ามาก และ Consistency กว่า + อ่านโค้ดง่ายกว่า)
+  parentId String? @unique @map("parent_id") @db.Uuid // ถ้าไม่ safe จริงๆ ไม่ควรใช้
+
+  version Int @default(1)
+  // ใช้สำหรับ
+  // 1. เปลี่ยนแปลงข้อมูล [Template] (ตัวเอง)
+  // 2. สร้าง + เปลี่ยนแปลงข้อมูล Child1 (ถ้ามี)
+  // 3. สร้าง + เปลี่ยนแปลงข้อมูล Child2 (ถ้ามี)
+  // 4. ...
+
+  // 📝 ข้อมูลประเภทข้อความ (String)
+  title       String  @db.VarChar(255) // บังคับความยาวเพื่อประหยัดพื้นที่ Database
+  description String? @db.Text // ใส่ ? เพื่ออนุญาตให้เป็น null ได้ (ข้อความยาวๆ)
+  slug        String  @unique // ห้ามซ้ำกันเด็ดขาด (มักใช้ทำ URL)
+
+  // 🔢 ข้อมูลประเภทตัวเลข (Number)
+  viewCount Int @default(0) @map("view_count")
+
+  // 💰 ข้อมูลการเงิน
+  // บันทึกเป็น Integer (หน่วยสตางค์/Cents) เพื่อป้องกันบั๊กการปัดเศษทศนิยม (Floating-point error)
+  priceCents Int @default(0) @map("price_cents")
+
+  // ⚖️ ตัวเลขทศนิยม (สำหรับตัวเลขที่ไม่ใช่เงิน เช่น น้ำหนัก, ส่วนสูง, เรตติ้ง)
+  rating Float? @db.Real
+
+  // 🔘 ข้อมูลประเภทตรรกะ (Boolean)
+  isActive Boolean @default(true) @map("is_active")
+
+  // 📅 ข้อมูลประเภทวันที่และเวลา (DateTime)
+  // แบบ 1: เก็บเฉพาะวันที่ (ไม่มีเวลา) เหมาะสำหรับรับค่า YYYY-MM-DD แบบเป๊ะๆ
+  targetDate DateTime? @map("target_date") @db.Date
+  // แบบ 2: เก็บ Timestamp อัตโนมัติ (มีประโยชน์มากเวลาทำ Audit)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // 📦 ข้อมูลประเภท JSON (เหมาะกับข้อมูลที่โครงสร้างยืดหยุ่น เช่น Setting ของแต่ละ User)
+  metadata Json?
+
+  // 📑 ข้อมูลประเภท Enum (ที่ประกาศไว้ด้านบน)
+  status TemplateEnumInSchemaPrisma @default(A)
+
+  // 🔗 ข้อมูลประเภท Array (เก็บข้อมูลหลายๆ ค่าในคอลัมน์เดียว)
+  tags String[]
+
+  // ----------------------
+  // ส่วนที่โดนอ้างอิงจากตารางอื่น
+  // ----------------------
+
+  templateOneTemplateTwoAffiliation TemplateOneTemplateTwoAffiliation? // หากต้นทางใส่ @unique
+  //   templateOneTemplateTwoAffiliations TemplateOneTemplateTwoAffiliation[] // หากต้นทางไม่ใส่ @unique
+
+  //   templateTwo       TemplateTwo? // หากต้นทางใส่ @unique
+  templateTwos TemplateTwo[] // หากต้นทางไม่ใส่ @unique
+
+  @@map("template")
+}
+
+model TemplateOneTemplateTwoAffiliation {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  templateOneId String   @unique @map("template_one_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
+  template      Template @relation(fields: [templateOneId], references: [id], onDelete: Restrict)
+
+  templateTwoId String      @map("template_two_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
+  templateTwo   TemplateTwo @relation(fields: [templateTwoId], references: [id], onDelete: Restrict)
+
+  @@unique([templateOneId, templateTwoId]) // ต้องมี สำหรับทุกตาราง Affiliation
+  @@map("template_one_template_two_affiliation")
+}
+
+model TemplateTwo {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  templateOneId String   @unique @map("template_one_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
+  template      Template @relation(fields: [templateOneId], references: [id], onDelete: Restrict)
+
+  templateOneTemplateTwoAffiliations TemplateOneTemplateTwoAffiliation[] // หากต้นทางไม่ใส่ @unique
+
+  @@map("template_two")
+}

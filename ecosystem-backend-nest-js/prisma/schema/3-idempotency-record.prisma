@@ -1,0 +1,9 @@
+// // สำหรับ request ที่จะเกิดผลเสีย หากทำซ้ำโดยระบบรวน (Create, Update, Delete)
+// model IdempotencyRecord {
+//   key          String   @id @db.Uuid // 🔑 กุญแจ UUID ที่ส่งมาจากหน้าบ้าน
+//   responseBody Json     @map("response_body") // 🌟 เก็บก้อนผลลัพธ์ความสำเร็จของรอบแรกเอาไว้ ส่งกลับไปเวลามี request ที่ 2, 3, 4... จะได้ไปใช้ redirect ต่อได้
+//   createdAt    DateTime @default(now()) @map("created_at") // 🌟 เก็บเวลาที่สร้าง record นี้ขึ้นมา เพื่อให้ Cron Job ค้นหาและลบขยะได้
+
+//   @@index([createdAt]) // ⚡ ใส่ Index ไว้ที่เวลา เพื่อให้ Cron Job ค้นหาและลบขยะได้เร็วขึ้น
+//   @@map("idempotency_record")
+// }
