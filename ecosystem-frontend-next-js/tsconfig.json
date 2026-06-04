@@ -29,9 +29,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    // 🌟 บอกให้หน้าบ้านรวมไฟล์หลังบ้านเข้าไปเช็คด้วย
-    "../ecosystem-backend-nest-js/src/**/*.ts"
+    "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "../ecosystem-backend-nest-js/src/**/*.ts"]
 }
