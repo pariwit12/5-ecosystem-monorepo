@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, Show, SignInButton, UserButton } from "@clerk/nextjs"; // 👈 1. นำเข้า Clerk
-import Sidebar from "@/components/sidebar"; // 👈 นำเข้า Sidebar
+import Sidebar from "@/components/side-bar"; // 👈 นำเข้า Sidebar
 import "./globals.css";
 import TanStackProvider from "@/provider/tan-stack-provider";
 import GlobalErrorModal from "@/components/global-error-modal";
