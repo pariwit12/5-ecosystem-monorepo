@@ -1,85 +1,51 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+// import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// 🌟 นำเข้า State Manager และ Hooks ที่เราสร้างไว้
+import { useOrganizationStore } from "@/store/use-organization-store";
+import { useGetOrganizations } from "@/features/organizations/hooks/use-get-organizations";
 
 // 🌟 นำเข้าระบบที่เราตั้งค่าไว้
-import apiClient from "@/lib/axios";
-import { useOrganizationStore } from "@/store/use-organization-store";
+// // import apiClient from "@/lib/axios";
+// import { useOrganizationStore } from "@/store/use-organization-store";
 
-import { useOrganizations } from "@/features/organizations/hooks/useGetOrganizations";
+// import { useOrganizations } from "@/features/organizations/hooks/useGetOrganizations";
 
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
 
 // กำหนดหน้าตาข้อมูลองค์กร (ปรับให้ตรงกับ Prisma ของคุณ)
-interface Organization {
-  id: string;
-  name: string;
-}
+// interface Organization {
+//   id: string;
+//   name: string;
+// }
 
 export default function OrganizationsPage() {
-  const { getToken } = useAuth();
+  // const { getToken } = useAuth();
 
   // 🌟 เรียกใช้ Router
   const router = useRouter();
-  const queryClient = useQueryClient(); // 🌟 ผู้จัดการ Cache
+  // const queryClient = useQueryClient(); // 🌟 ผู้จัดการ Cache
+
+  // Zustand (Local Store)
   const { activeOrgId, setActiveOrg } = useOrganizationStore(); // ดึงฟังก์ชัน/ตัวแปรจาก Store
 
   const [isSelectingOrg, setIsSelectingOrg] = useState(false); // สถานะกำลังกดเลือกองค์กร
 
   // ==========================================
-  // [GET] ฟังก์ชันสำหรับดึงข้อมูลองค์กรทั้งหมด ด้วย useQuery (แทน useEffect)
+  // 🚀 1. ดึงข้อมูลจาก Hook (บรรทัดเดียวจบ!)
   // ==========================================
-  const {
-    data: organizations = [],
-    isLoading,
-    // isError,
-  } = useQuery({
-    queryKey: ["organizations"],
-    queryFn: async () => {
-      const token = await getToken();
-      const response = await apiClient.get<{ organizations: Organization[] }>(
-        "/api/organizations",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      return response.data.organizations || []; // ป้องกันกรณี response ไม่มี organizations มาเลย
-    },
-  });
+  const { data, isLoading } = useGetOrganizations();
 
-  // หลังย้าย hooks ไปที่ไฟล์แยกแล้ว ก็แค่เรียกใช้ useOrganizations() แทนการเขียน useQuery ซ้ำๆ ในแต่ละหน้า
-  const { data: organizations = [], isLoading } = useOrganizations();
+  // แกะเอา array organizations ออกมาจาก Response (ใส่ fallback เป็น [] กันแครช)
+  const organizations = data?.organizations || [];
 
   // ==========================================
-  // [POST] ฟังก์ชันสำหรับสร้างองค์กรใหม่
+  // 🎯 2. ฟังก์ชันจัดการเมื่อกดปุ่มตั้งค่าองค์กร
   // ==========================================
-  const createMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const token = await getToken();
-      const response = await apiClient.post(
-        "/api/organizations",
-        { name },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      // 🌟 ท่าไม้ตาย! สั่งให้ตารางรีเฟรชข้อมูลใหม่ทันที
-      queryClient.invalidateQueries({ queryKey: ["organizations"] });
-
-      // ปิด Modal และล้างฟอร์ม
-      setIsModalOpen(false);
-      setNewOrgName("");
-    },
-    // 💡 สังเกตว่าเราไม่ต้องเขียน onError เพื่อโชว์ข้อความแดงๆ แล้ว เพราะ Global Modal รับจบให้!
-  });
-
-  // 🌟 (อัปเดต 3) ฟังก์ชันจัดการเมื่อกดปุ่มองค์กร
   const handleSelectOrganization = (orgId: string) => {
     setIsSelectingOrg(true);
 
@@ -101,8 +67,7 @@ export default function OrganizationsPage() {
         </p>
       </div>
 
-      {/* 🎯 2. แสดงสถานะ Loading, Error หรือ โชว์ข้อมูล */}
-      {/* Error โดนตัดทิ้งเพราะมี Global Modal แล้ว */}
+      {/* ⏳ แสดงสถานะ Loading หรือ โชว์ข้อมูล */}
       {isLoading ? (
         <div className="flex items-center justify-center p-12 text-gray-400">
           กำลังโหลดข้อมูล...
@@ -127,7 +92,7 @@ export default function OrganizationsPage() {
                 </span>
               </p>
 
-              {/* 🌟 (อัปเดต 4) ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
+              {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
               <button
                 onClick={() => handleSelectOrganization(org.id)}
                 className={`mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors ${
@@ -143,7 +108,7 @@ export default function OrganizationsPage() {
             </div>
           ))}
 
-          {/* 🌟 ใช้งาน Modal ตรงนี้ จบปิ๊ง! (ลอจิกการเปิด/ปิด ซ่อนอยู่ข้างใน) */}
+          {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
           <CreateOrgModal />
         </div>
       )}

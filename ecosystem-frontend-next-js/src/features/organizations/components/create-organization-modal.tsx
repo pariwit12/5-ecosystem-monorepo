@@ -5,24 +5,23 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-// 🌟 นำเข้า Hook สำหรับสร้างองค์กรที่เราแยกไฟล์ไว้
 import { useCreateOrganization } from "../hooks/use-create-organization";
 
-// 🌟 Import UI Components จาก shadcn (ปรับ Path ให้ตรงกับโปรเจกต์นะครับ)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // ==========================================
-// 1. กำหนด Zod Schema (จำลอง) ค่อยปรับให้ดึงมาจาก validations.ts)
+// 1. กำหนด Zod Schema (ควรสร้างใหม่ ไม่ควรไปดึงมาจากใน API)
 // ==========================================
 const createOrgSchema = z.object({
-  name: z.string().min(1, "กรุณากรอกชื่อองค์กรให้ครบถ้วน"),
+  // ความเจ๋งของ Zod คือ "ลำดับการวางคำสั่งมีผลโดยตรง" (ทำงานจากซ้ายไปขวา)
+  name: z.string().trim().min(1, "กรุณากรอกชื่อองค์กร"),
 });
+// ดึง Type ออกมาจาก Schema ได้เลย (จะได้ Type เป็น { name: string })
 type CreateOrgInput = z.infer<typeof createOrgSchema>;
 
 export function CreateOrgModal() {
-  // 🎯 State ทั้งหมดถูกขังไว้ในนี้ จะไม่กระทบหน้าจอหลักแล้ว
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const createMutation = useCreateOrganization();
@@ -41,8 +40,7 @@ export function CreateOrgModal() {
   // 3. ฟังก์ชัน Submit ที่ผ่านการกรองจาก Zod แล้ว
   // ==========================================
   const onSubmit = (values: CreateOrgInput) => {
-    // 💡 values.name ตรงนี้จะรับประกันว่าเป็น string แน่นอน ไม่ต้อง .trim() เองแล้ว
-    createMutation.mutate(values.name, {
+    createMutation.mutate(values, {
       onSuccess: () => {
         setIsModalOpen(false);
         form.reset(); // ล้างค่าในฟอร์มเมื่อสำเร็จ
