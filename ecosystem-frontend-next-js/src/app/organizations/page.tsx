@@ -1,39 +1,11 @@
 "use client";
 
-// import { useAuth } from "@clerk/nextjs";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-// 🌟 นำเข้า State Manager และ Hooks ที่เราสร้างไว้
-import { useOrganizationStore } from "@/store/use-organization-store";
 import { useGetOrganizations } from "@/features/organizations/hooks/use-get-organizations";
-
-// 🌟 นำเข้าระบบที่เราตั้งค่าไว้
-// // import apiClient from "@/lib/axios";
-// import { useOrganizationStore } from "@/store/use-organization-store";
-
-// import { useOrganizations } from "@/features/organizations/hooks/useGetOrganizations";
-
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
 
-// กำหนดหน้าตาข้อมูลองค์กร (ปรับให้ตรงกับ Prisma ของคุณ)
-// interface Organization {
-//   id: string;
-//   name: string;
-// }
-
 export default function OrganizationsPage() {
-  // const { getToken } = useAuth();
-
-  // 🌟 เรียกใช้ Router
   const router = useRouter();
-  // const queryClient = useQueryClient(); // 🌟 ผู้จัดการ Cache
-
-  // Zustand (Local Store)
-  const { activeOrgId, setActiveOrg } = useOrganizationStore(); // ดึงฟังก์ชัน/ตัวแปรจาก Store
-
-  const [isSelectingOrg, setIsSelectingOrg] = useState(false); // สถานะกำลังกดเลือกองค์กร
 
   // ==========================================
   // 🚀 1. ดึงข้อมูลจาก Hook (บรรทัดเดียวจบ!)
@@ -47,14 +19,7 @@ export default function OrganizationsPage() {
   // 🎯 2. ฟังก์ชันจัดการเมื่อกดปุ่มตั้งค่าองค์กร
   // ==========================================
   const handleSelectOrganization = (orgId: string) => {
-    setIsSelectingOrg(true);
-
-    // 1. สั่งเซฟลง Zustand และ Cookie
-    setActiveOrg(orgId);
-
-    // 2. Redirect ไปหน้าตั้งค่าขององค์กรนั้น (แก้ URL ปลายทางได้ตามต้องการ)
-    router.push(`/organizations/settings`);
-    setIsSelectingOrg(false);
+    router.push(`/organizations/${orgId}/settings`);
   };
 
   return (
@@ -95,15 +60,9 @@ export default function OrganizationsPage() {
               {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
               <button
                 onClick={() => handleSelectOrganization(org.id)}
-                className={`mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors ${
-                  activeOrgId === org.id && isSelectingOrg
-                    ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
               >
-                {activeOrgId === org.id && isSelectingOrg
-                  ? "กำลังจัดการองค์กรนี้"
-                  : "ตั้งค่าองค์กร"}
+                ตั้งค่าองค์กร
               </button>
             </div>
           ))}

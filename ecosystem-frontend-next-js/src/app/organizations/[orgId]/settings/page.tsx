@@ -1,76 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { useOrganizationStore } from "@/store/use-organization-store";
-import { useAuth } from "@clerk/nextjs";
-import axios from "axios";
 import Link from "next/link";
 
-interface OrgDetails {
-  id: string;
-  name: string;
-  organization_dental_clinic: {
-    payment_status: string;
-    subscription_end_date: string | null;
-  } | null;
-}
+import { useGetOrganizationById } from "@/features/organizations/hooks/use-get-organization-by-id";
 
-export default function OrganizationSettingsPage() {
+export default function OrganizationSettingsPage({
+  params,
+}: {
+  params: Promise<{ orgId: string }>;
+}) {
   const router = useRouter();
-  const { getToken } = useAuth();
 
-  // 1. ดึงกุญแจ (ID) จาก Zustand Store
-  const activeOrgId = useOrganizationStore(
-    (updateStore) => updateStore.activeOrgId,
-  );
+  // 🌟 3. แกะกล่อง Promise ด้วย use() เพื่อดึง orgId ออกมา
+  const resolvedParams = use(params);
+  const orgId = resolvedParams.orgId;
 
-  const [orgDetails, setOrgDetails] = useState<OrgDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: orgDetails, isLoading } = useGetOrganizationById(orgId);
 
   useEffect(() => {
-    // 🛡️ Guard: ถ้าไม่มี ID (ยังไม่ได้เลือกคลินิก) ให้เด้งกลับไปหน้าเลือกองค์กร
-    if (!activeOrgId) {
+    if (!orgId) {
       router.push("/organizations");
       return;
     }
-
-    // 2. ยิง API ไปขอข้อมูลรายละเอียดขององค์กรนี้
-    const fetchOrgDetails = async () => {
-      try {
-        const token = await getToken();
-
-        const response = await axios.get(
-          `https://four-ecosystem-backend-nest-js.onrender.com/api/organizations/${activeOrgId}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        setOrgDetails(response.data);
-      } catch (error) {
-        console.error("❌ Error fetching organization details:", error);
-
-        // เช็คว่าเป็น Error ที่มาจากการยิง API (Axios) หรือไม่
-        if (axios.isAxiosError(error)) {
-          const statusCode = error.response?.status;
-
-          if (statusCode === 404) {
-            alert("ไม่พบข้อมูลองค์กรนี้ หรือองค์กรอาจถูกลบไปแล้ว");
-            router.push("/organizations"); // เตะกลับไปหน้าเลือกองค์กร
-          } else if (statusCode === 401 || statusCode === 403) {
-            alert("เซสชันหมดอายุ หรือคุณไม่มีสิทธิ์เข้าถึงองค์กรนี้");
-            router.push("/organizations");
-          } else {
-            alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-          }
-        } else {
-          alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrgDetails();
-  }, [activeOrgId, router, getToken]);
+  }, [orgId, router]);
 
   if (isLoading) {
     return (
@@ -141,7 +95,7 @@ export default function OrganizationSettingsPage() {
               จัดการประวัติคนไข้ ตารางนัดหมาย ทันตแพทย์ และระบบคลังสต๊อกวัสดุ
             </p>
             <div className="flex items-center justify-between border-t pt-4">
-              {orgDetails?.organization_dental_clinic ? (
+              {orgDetails?.organizationDentalClinic ? (
                 <>
                   <span className="text-sm font-medium text-gray-500">
                     สถานะ:{" "}
