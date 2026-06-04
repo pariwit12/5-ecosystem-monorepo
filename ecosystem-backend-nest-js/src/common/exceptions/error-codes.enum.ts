@@ -1,0 +1,17 @@
+export enum ErrorCode {
+  DEFAULT_ERROR = 'DEFAULT_ERROR',
+
+  // ค่อยเขียนเพิ่มเติมในภายหลัง เพื่อระบุให้ละเอียดขึ้น ตอนนี้เราควรเอาเวลาไปโฟกัสที่ business logic มากกว่า
+
+  //   // หมวด Auth
+  //   SESSION_EXPIRED = 'SESSION_EXPIRED',
+  //   UNAUTHORIZED_ACCESS = 'UNAUTHORIZED_ACCESS',
+
+  //   // หมวด Organization
+  //   ORG_NOT_FOUND = 'ORG_NOT_FOUND',
+  //   SUBSCRIPTION_EXPIRED = 'SUBSCRIPTION_EXPIRED',
+
+  //   // หมวด General
+  //   VALIDATION_FAILED = 'VALIDATION_FAILED',
+  //   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+}

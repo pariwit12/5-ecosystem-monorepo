@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Request, Response } from 'express';
+import { AppException } from './app.exception';
+import { ErrorCode } from './error-codes.enum';
 
 // @Catch() แบบไม่ใส่อะไรเลย หมายถึง "ดักจับ Error ทุกชนิดบนโลก" ที่เกิดขึ้นในแอปนี้
 @Catch()
@@ -39,17 +41,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
 
     // 1. ตั้งค่า Default: สมมติว่าพังร้ายแรงที่สุดไว้ก่อน (500 Internal Server Error)
-    // 1. ตั้งค่า Default: มองว่าพังร้ายแรง (500) ไว้ก่อน
-    let httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-    let errorMessage: unknown =
-      'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง';
-    let errorType = 'INTERNAL_SERVER_ERROR';
+    let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: unknown = 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง';
+    let errorCode: string = ErrorCode.DEFAULT_ERROR;
+
+    // 🎯 กรณีที่ 1: เป็น Error ที่เราตั้งใจพ่นเอง (throw AppException)
+    if (exception instanceof AppException) {
+      statusCode = exception.getStatus();
+      message = exception.message;
+      errorCode = exception.errorCode;
+    }
 
     // 2. เช็คว่าเป็น Error มาตรฐานของ NestJS ไหม (เช่น 400 Bad Request, 404 Not Found)
     // การที่โค้ดวิ่งเข้าเงื่อนไขที่ 2 (HttpException) แปลว่ามันคือ Error ที่ "ตั้งใจโยน" (เช่น เราเขียน throw เอง)
     // หรือ "ระบบของ NestJS โยนให้" (เช่น class-validator ตรวจเจอข้อมูลผิด)
-    if (exception instanceof HttpException) {
-      httpStatus = exception.getStatus();
+    else if (exception instanceof HttpException) {
+      statusCode = exception.getStatus();
+      errorCode = 'SYSTEM_HTTP_EXCEPTION';
       const exceptionResponse = exception.getResponse();
 
       // ดึงข้อความ Error ออกมา (NestJS มักจะส่งเป็น Object ที่มี property message)
@@ -81,15 +89,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         //   "error": "Bad Request"
         // }
         if (Array.isArray(responseObj.message)) {
-          errorMessage = responseObj.message[0];
+          message = responseObj.message[0];
         } else {
-          errorMessage = responseObj.message ?? exceptionResponse;
+          message = responseObj.message ?? exceptionResponse;
         }
-        errorType = (responseObj.error as string) ?? 'HTTP_EXCEPTION';
       } else {
-        // อันนี้คือกรณี ที่มาจาก:
-        // throw new BadRequestException('ชื่อคลินิกนี้มีคนใช้แล้วครับ');
-        errorMessage = exceptionResponse;
+        message = exceptionResponse;
       }
     }
 
@@ -112,9 +117,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     ) {
       const prismaError = exception as Record<string, unknown>;
       if (prismaError.code === 'P2002') {
-        httpStatus = HttpStatus.CONFLICT;
-        errorMessage = 'ข้อมูลนี้มีอยู่ในระบบแล้ว (ข้อมูลซ้ำ)';
-        errorType = 'PRISMA_UNIQUE_CONSTRAINT_FAILED';
+        statusCode = HttpStatus.CONFLICT;
+        message = 'ข้อมูลนี้มีอยู่ในระบบแล้ว (ข้อมูลซ้ำ)';
+        errorCode = 'PRISMA_UNIQUE_CONSTRAINT_FAILED';
         // } else if (prismaError.code === 'P2003') {
         //   // 🌟 ตั้งสถานะเป็น 400 Bad Request (หรือ 422 Unprocessable Entity ก็ได้ครับ)
         //   httpStatus = HttpStatus.BAD_REQUEST;
@@ -132,13 +137,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
         //   errorMessage = `ข้อมูล ${fieldName} ที่ระบุไม่มีอยู่ในระบบ กรุณาตรวจสอบอีกครั้ง`;
       } else if (prismaError.code === 'P2025') {
-        httpStatus = HttpStatus.NOT_FOUND;
-        errorMessage = 'ไม่พบข้อมูลที่ต้องการดำเนินการ';
-        errorType = 'PRISMA_RECORD_NOT_FOUND';
+        statusCode = HttpStatus.NOT_FOUND;
+        message = 'ไม่พบข้อมูลที่ต้องการดำเนินการ';
+        errorCode = 'PRISMA_RECORD_NOT_FOUND';
       } else {
         // Error อื่นๆ ของ Prisma ให้ปิดบังไว้ เพื่อความปลอดภัย
-        errorMessage = 'เกิดข้อผิดพลาดในการจัดการฐานข้อมูล';
-        errorType = `PRISMA_ERROR_${String(prismaError.code)}`;
+        message = 'เกิดข้อผิดพลาดในการจัดการฐานข้อมูล';
+        errorCode = `PRISMA_ERROR_${String(prismaError.code)}`;
       }
     }
     // กรณี Error ประหลาดอื่นๆ ที่เราไม่รู้จัก (เช่น โค้ดพัง, ตัวแปรเป็น undefined)
@@ -153,9 +158,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     const responseBody = {
-      statusCode: httpStatus,
-      message: errorMessage,
-      errorType: errorType,
+      statusCode: statusCode,
+      message: message,
+      errorCode: errorCode,
       timestamp: new Date().toISOString(),
       //   path: httpAdapter.getRequestUrl(request), // 🌟 เปลี่ยนมาใช้ตัวแปรที่ระบุ Type แล้ว
       // 🌟 ใช้ request.url ตรงๆ แทน httpAdapter เพื่อบังคับให้เป็น String แท้ๆ
@@ -163,6 +168,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     // ส่งกลับไปหาผู้ใช้ด้วยโครงสร้างที่เรากำหนดไว้
-    httpAdapter.reply(response, responseBody, httpStatus); // 🌟 เปลี่ยนมาใช้ตัวแปรที่ระบุ Type แล้ว
+    httpAdapter.reply(response, responseBody, statusCode); // 🌟 เปลี่ยนมาใช้ตัวแปรที่ระบุ Type แล้ว
   }
 }

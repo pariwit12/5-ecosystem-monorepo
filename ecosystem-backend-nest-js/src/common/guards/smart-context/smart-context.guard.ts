@@ -126,6 +126,7 @@ export class SmartContextGuard implements CanActivate {
 
         // ถ้าไม่มี Person ปา Error พร้อมรหัสโค้ดให้ Frontend เอาไปเล่นต่อ
         if (!person) {
+          // รอเปลี่ยนในอนาคต ถ้า Business Logic เปลี่ยน
           throw new ForbiddenException({
             errorCode: 'PERSON_NOT_FOUND',
             message:
