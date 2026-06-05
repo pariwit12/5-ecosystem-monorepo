@@ -43,11 +43,21 @@ const paymentStatusValues = Object.keys(paymentStatusMap) as [
 
 // ถ้าผ่านมาถึงด่านนี้แปลว่า axios กรอง error ออกไปแล้วครับ
 const getOrganizationByIdResponseSchema = z.object({
-  id: z.string().regex(uuidV7Regex, "ต้องเป็นรูปแบบ UUIDv7 เท่านั้น"),
+  id: z
+    .string()
+    .regex(
+      uuidV7Regex,
+      "ต้องเป็นรูปแบบ UUIDv7 เท่านั้น (zod check data from backend)",
+    ),
   name: z.string(),
 
   organizationDentalClinic: z.object({
-    id: z.string().regex(uuidV7Regex, "ต้องเป็นรูปแบบ UUIDv7 เท่านั้น"),
+    id: z
+      .string()
+      .regex(
+        uuidV7Regex,
+        "ต้องเป็นรูปแบบ UUIDv7 เท่านั้น (zod check data from backend)",
+      ),
 
     paymentStatus: z.enum(paymentStatusValues),
 
@@ -59,7 +69,10 @@ const getOrganizationByIdResponseSchema = z.object({
     // แบบที่ 2: เป๊ะขั้นสุด (บังคับรับแค่ YYYY-MM-DD แบบไม่มีเวลาติดมาด้วย ค่อยแปลงร่าง)
     subscriptionEndDate: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "ต้องเป็นรูปแบบ YYYY-MM-DD เท่านั้น")
+      .regex(
+        /^\d{4}-\d{2}-\d{2}$/,
+        "ต้องเป็นรูปแบบ YYYY-MM-DD เท่านั้น  (zod check data from backend)",
+      )
       .transform((str) => new Date(str))
       .nullable(),
   }),

@@ -6,6 +6,7 @@ import "./globals.css";
 import TanStackProvider from "@/provider/tan-stack-provider";
 import GlobalErrorModal from "@/components/global-error-modal";
 import { ClerkPersonSyncProvider } from "@/provider/clerk-person-sync-provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,6 +88,10 @@ export default function RootLayout({
               {/* 🌟 4. วาง Global Modal ไว้ล่างสุดของ DOM */}
               {/* เพื่อให้มันสามารถลอยทับ Header และ Sidebar ได้อย่างสมบูรณ์แบบ */}
               <GlobalErrorModal />
+
+              {/* 🌟 ย้าย Toaster มาไว้ตรงนี้ครับ! จะได้ลอยทับหน้าเว็บได้อย่างสมบูรณ์แบบ */}
+              {/* richColors คือการสั่งให้มีสีสวยๆ อัตโนมัติ (เช่น แดง=Error, เขียว=Success) */}
+              <Toaster position="top-right" richColors />
             </ClerkPersonSyncProvider>
             {/* ขยับ TanStack ไว้ตรงนี้ เพื่อให้ทุกส่วนสามารถใช้ API ได้ */}
           </TanStackProvider>

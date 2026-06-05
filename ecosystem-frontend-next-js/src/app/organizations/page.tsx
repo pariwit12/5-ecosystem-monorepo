@@ -1,8 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { toast } from "sonner";
 import { useGetOrganizations } from "@/features/organizations/hooks/use-get-organizations";
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
+
+function ToastNotifier() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("error") === "invalid_id") {
+      toast.error("รหัสองค์กรไม่ถูกต้อง");
+
+      // 💡 ทริคเสริม: ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า
+      window.history.replaceState(null, "", "/organizations");
+    }
+  }, [searchParams]);
+
+  return null; // ไม่ต้องแสดงผล UI อะไรออกมา
+}
 
 export default function OrganizationsPage() {
   const router = useRouter();
@@ -24,6 +41,14 @@ export default function OrganizationsPage() {
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8 relative">
+      {/* ใส่ fallback={null} เพื่อบอกว่าระหว่างรอโหลด ไม่ต้องโชว์อะไร */}
+      <Suspense fallback={null}>
+        <ToastNotifier />
+      </Suspense>
+      {/* 💡 เกร็ดความรู้เพิ่มเติม: การที่เราเอา <Suspense> มาครอบไว้แบบนี้ เป็นการบอก Next.js
+      ว่า "ตรงส่วนนี้มีการใช้งานข้อมูลที่ต้องรอดึงจากเบราว์เซอร์ (URL) นะ ยูสามารถข้ามไปประมวลผล (Build) หน้าจอส่วนอื่นๆ ก่อนได้เลย ไม่ต้องรอ!"
+      ซึ่งจะช่วยให้ระบบ Static Rendering ของ Next.js ทำงานได้เต็มประสิทธิภาพ และผ่านฉลุยตอนสั่ง pnpm run build ครับ */}
+
       {/* ส่วนหัวข้อ */}
       <div className="w-full">
         <h2 className="text-3xl font-bold text-gray-800">องค์กรของคุณ</h2>
