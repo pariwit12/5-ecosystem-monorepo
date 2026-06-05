@@ -1,7 +1,7 @@
 import { z } from "zod";
 import apiClient from "@/lib/axios";
 
-import type { GetOrganizationByIdResponse } from "@backend/modules/organizations/queries/get-organization-by-id.query";
+import { type GetOrganizationByIdResponse } from "@backend/modules/organizations/queries/get-organization-by-id.query";
 
 // 🌟 1. สร้าง Type Helper (แนะนำให้ก๊อปอันนี้ไปสร้างไฟล์ src/types/zod.type.ts ไว้ใช้ยาวๆ เลยครับ)
 export type StrictZodShape<T> = {

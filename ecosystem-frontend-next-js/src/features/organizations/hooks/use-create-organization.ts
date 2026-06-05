@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 
 import { createOrganization } from "../api/create-organization.api";
-import type { CreateOrganizationDtoBody } from "@backend/modules/organizations/commands/create-organization.command";
+import { type CreateOrganizationDtoBody } from "@backend/modules/organizations/commands/create-organization.command";
 import { organizationKeys } from "./keys";
 
 export const useCreateOrganization = () => {
