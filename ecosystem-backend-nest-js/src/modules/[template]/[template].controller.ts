@@ -7,10 +7,10 @@ import {
   UseGuards,
   Get,
   Post,
-  // Request,
+  Param,
+  Query,
   Body,
-  // Param,
-  // ParseUUIDPipe,
+  // Request,
 } from '@nestjs/common';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 
@@ -22,38 +22,24 @@ import {
   type RequestFromClerkAuthGuard,
 } from '../../common/guards/clerk-auth.guard';
 import {
-  // eslint-disable-next-line
   ClerkUser,
-  // eslint-disable-next-line
   type ClerkUserData,
 } from '../../common/guards/clerk-user.decorator';
 
-import { RequireContext } from '../../common/guards/smart-context/require-context.decorator'; // รับ level ไปใช้ใน SmartContextGuard
-import {
-  SmartContextGuard,
-  // eslint-disable-next-line
-  type RequestFromSmartContextGuardPERSON,
-  // eslint-disable-next-line
-  type RequestFromSmartContextGuardORGANIZATION,
-} from '../../common/guards/smart-context/smart-context.guard';
-import {
-  SmartContextPERSON,
-  type SmartContextDataPERSON,
-  SmartContextORGANIZATION,
-  type SmartContextDataORGANIZATION,
-} from '../../common/guards/smart-context/smart-context.decorator';
-
-import {
-  GetTemplateQuery,
-  GetTemplateResponse,
-} from './queries/get-[template].query';
 import {
   MethodTemplateCommand,
   MethodTemplateResponse,
-  MethodTemplateDtoBody,
+  MethodTemplateDtoParam, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
+  MethodTemplateDtoBody, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
 } from './commands/method-[template].command';
+import {
+  GetTemplateQuery,
+  GetTemplateResponse,
+  GetTemplateDtoParam, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
+  GetTemplateDtoQuery, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
+} from './queries/get-[template].query';
 
-@Controller('api/template-with-template_id-data_2-data_3')
+@Controller('api/template(Business Logic)')
 export class TemplateController {
   constructor(
     private readonly queryBus: QueryBus,
@@ -66,48 +52,21 @@ export class TemplateController {
 
   @Post(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
   // ปรับให้ตรงตามที่ใช้จริง
-  @RequireContext('PERSON') // กำหนดระดับความปลอดภัยสำหรับใช้ใน SmartContextGuard
-  @UseGuards(ClerkAuthGuard, SmartContextGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
+  @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
   async methodTemplate(
+    // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
+    @Param() param: MethodTemplateDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @Body() body: MethodTemplateDtoBody, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+
     // หมวด Request จาก Guards และ Decorators ที่เราสร้างขึ้นมาเอง เพื่อดึงข้อมูลที่ Guard ตรวจสอบและฝังไว้ให้มาใช้ได้เลย
     // @Request() req: RequestBeforeClerkAuthGuard, // กรณีอยากใช้ Request แบบดิบๆ ยังไม่ผ่าน ClerkAuthGuard
     // @Request() req: RequestFromClerkAuthGuard,
-    // @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
-    // @Request() req: RequestFromSmartContextGuardPERSON,
-    // @Request() req: RequestFromSmartContextGuardORGANIZATION,
-    @SmartContextPERSON() smartContext: SmartContextDataPERSON, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูลจาก SmartContextGuard มาใช้ได้เลย
-    // @SmartContextORGANIZATION() smartContext: SmartContextDataORGANIZATION, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูลจาก SmartContextGuard มาใช้ได้เลย
-
-    // ----------------------------------------------------------------------------------------------------------
-    // โปรเจกต์ของเราจะไม่ใช้ @Param แล้ว เนื่องจากจะให้ Guard เป็นคนดึงข้อมูลและตรวจสอบประเภทข้อมูลก่อนส่งมาให้ใช้ต่อใน Payload เลย
-    // ----------------------------------------------------------------------------------------------------------
-    // สำหรับ Param เราจะตรวจประเภทข้อมูลใน Guard อยู่แล้ว จึงไม่ต้องตรวจที่นี่แล้ว
-    // @Param('id') id: string,
-    // สำหรับ Param เราจะตรวจประเภทข้อมูลที่นี่เลย ไม่ต้องไปสร้าง DTO + class-validator แยก
-    // @Param(
-    //   'id',
-    //   new ParseUUIDPipe({
-    //     version: '7',
-    //     exceptionFactory: () =>
-    //       new BadRequestException('รูปแบบรหัสคลินิก (clinic_id) ไม่ถูกต้อง'),
-    //   }),
-    // )
-    // id: string,
-
-    @Body() dto: MethodTemplateDtoBody, // 🌟 ใช้ DTO ที่เราสร้างไว้ในไฟล์ Command
+    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
   ) {
-    // const clerkId = req.user.sub; // กรณีอยากดึง clerkId จาก Request ที่ผ่าน ClerkAuthGuard แล้ว
-
     return this.commandBus.execute<
       MethodTemplateCommand,
       MethodTemplateResponse
-    >(
-      new MethodTemplateCommand(
-        dto,
-        smartContext.clerkId,
-        smartContext.personId,
-      ),
-    );
+    >(new MethodTemplateCommand(clerkUser.sub, param, body));
   }
 
   // ==========================================
@@ -118,45 +77,21 @@ export class TemplateController {
   // มันจะเก็บข้อมูลเข้ากระเป๋าไปจัดลำดับการทำงาน (Lifecycle) ของมันเองอยู่ดีครับ
   @Get(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
   // ปรับให้ตรงตามที่ใช้จริง
-  @RequireContext('ORGANIZATION') // กำหนดระดับความปลอดภัยสำหรับใช้ใน SmartContextGuard
-  @UseGuards(ClerkAuthGuard, SmartContextGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
+  @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
   async getTemplate(
+    // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
+    @Param() param: GetTemplateDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @Query() queryFromUrl: GetTemplateDtoQuery, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+
     // หมวด Request จาก Guards และ Decorators ที่เราสร้างขึ้นมาเอง เพื่อดึงข้อมูลที่ Guard ตรวจสอบและฝังไว้ให้มาใช้ได้เลย
     // @Request() req: RequestBeforeClerkAuthGuard, // กรณีอยากใช้ Request แบบดิบๆ ยังไม่ผ่าน ClerkAuthGuard
     // @Request() req: RequestFromClerkAuthGuard,
-    // @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
-    // @Request() req: RequestFromSmartContextGuardPERSON,
-    // @Request() req: RequestFromSmartContextGuardORGANIZATION,
-    // @SmartContextPERSON() smartContext: SmartContextDataPERSON, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูลจาก SmartContextGuard มาใช้ได้เลย
-    @SmartContextORGANIZATION() smartContext: SmartContextDataORGANIZATION, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูลจาก SmartContextGuard มาใช้ได้เลย
-
-    // ----------------------------------------------------------------------------------------------------------
-    // โปรเจกต์ของเราจะไม่ใช้ @Param แล้ว เนื่องจากจะให้ Guard เป็นคนดึงข้อมูลและตรวจสอบประเภทข้อมูลก่อนส่งมาให้ใช้ต่อใน Payload เลย
-    // ----------------------------------------------------------------------------------------------------------
-    // สำหรับ Param เราจะตรวจประเภทข้อมูลใน Guard อยู่แล้ว จึงไม่ต้องตรวจที่นี่แล้ว
-    // @Param('id') id: string,
-    // สำหรับ Param เราจะตรวจประเภทข้อมูลที่นี่เลย ไม่ต้องไปสร้าง DTO + class-validator แยก
-    // @Param(
-    //   'id',
-    //   new ParseUUIDPipe({
-    //     version: '7',
-    //     exceptionFactory: () =>
-    //       new BadRequestException('รูปแบบรหัสคลินิก (clinic_id) ไม่ถูกต้อง'),
-    //   }),
-    // )
-    // id: string,
+    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
   ) {
-    // const clerkId = req.user.sub; // กรณีอยากดึง clerkId จาก Request ที่ผ่าน ClerkAuthGuard แล้ว
-
-    // 🌟 สร้างใบสั่งงานแล้วโยนเข้า Bus เลย
-    // execute< [ตัวที่ 1: ขาเข้า], [ตัวที่ 2: ขาออก] >( ข้อมูลที่ใส่เข้าไปจริงๆ )
     return this.queryBus.execute<GetTemplateQuery, GetTemplateResponse>(
-      new GetTemplateQuery(
-        smartContext.clerkId,
-        smartContext.personId,
-        smartContext.personOrganizationAffiliationId,
-        smartContext.organizationId,
-      ),
+      new GetTemplateQuery(clerkUser.sub, param, queryFromUrl),
     );
   }
 }
+
+// อย่าลืมไปลงทะเบียน ใน [template].module.ts

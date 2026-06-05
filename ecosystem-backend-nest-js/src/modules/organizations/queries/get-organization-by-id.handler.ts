@@ -1,33 +1,37 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { NotFoundException } from '@nestjs/common';
 import {
   GetOrganizationByIdQuery,
   GetOrganizationByIdResponse,
 } from './get-organization-by-id.query';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { AccessControlService } from '../../../common/access-control/access-control.service';
 
-// 🌟 ระบุว่า Handler ตัวนี้รับผิดชอบออเดอร์ GetOrganizationByIdQuery นะ
+import { NotFoundException } from '@nestjs/common';
+
 @QueryHandler(GetOrganizationByIdQuery)
 export class GetOrganizationByIdHandler implements IQueryHandler<
   GetOrganizationByIdQuery,
   GetOrganizationByIdResponse
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControlService: AccessControlService,
+  ) {}
 
   async execute(
     query: GetOrganizationByIdQuery,
   ): Promise<GetOrganizationByIdResponse> {
-    const {
-      // clerkId,
-      // personId,
-      // personOrganizationAffiliationId,
-      organizationId,
-    } = query;
+    const { clerkId, param } = query;
+
+    await this.accessControlService.verifyOrganizationAccess(
+      clerkId,
+      param.organization_id,
+    );
 
     const organization = await this.prisma.organization.findFirst({
       where: {
-        id: organizationId,
-        deletedAt: null,
+        id: param.organization_id,
+        deletedAt: null, // ความจริงอาจไม่ต้องตรวจสอบแล้ว เนื่องจากควรตรวจมาจาก accessControlService เรียบร้อยแล้ว
       },
       select: {
         id: true,
@@ -43,6 +47,7 @@ export class GetOrganizationByIdHandler implements IQueryHandler<
     });
 
     if (!organization) {
+      // ต้องตรวจ เพราะ TS จะบ่น แต่ตามตรรกะเราตรวจแล้ว
       throw new NotFoundException('ไม่พบข้อมูลองค์กร กรุณาลองใหม่อีกครั้ง');
     }
 

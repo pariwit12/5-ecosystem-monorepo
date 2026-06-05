@@ -1,22 +1,10 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
-
-import { RequireContext } from '../../common/guards/smart-context/require-context.decorator'; // รับ level ไปใช้ใน SmartContextGuard
-import { SmartContextGuard } from '../../common/guards/smart-context/smart-context.guard';
 import {
-  SmartContextPERSON,
-  type SmartContextDataPERSON,
-  SmartContextORGANIZATION,
-  type SmartContextDataORGANIZATION,
-} from '../../common/guards/smart-context/smart-context.decorator';
+  ClerkUser,
+  type ClerkUserData,
+} from '../../common/guards/clerk-user.decorator';
 
 import {
   GetOrganizationsQuery,
@@ -25,6 +13,7 @@ import {
 import {
   GetOrganizationByIdQuery,
   GetOrganizationByIdResponse,
+  GetOrganizationByIdDtoParam,
 } from './queries/get-organization-by-id.query';
 import {
   CreateOrganizationCommand,
@@ -44,15 +33,12 @@ export class OrganizationsController {
   // ==========================================
 
   @Get()
-  @RequireContext('PERSON')
-  @UseGuards(ClerkAuthGuard, SmartContextGuard)
-  async getOrganizations(
-    @SmartContextPERSON() smartContext: SmartContextDataPERSON,
-  ) {
+  @UseGuards(ClerkAuthGuard)
+  async getOrganizations(@ClerkUser() clerkUser: ClerkUserData) {
     return this.queryBus.execute<
       GetOrganizationsQuery,
       GetOrganizationsResponse
-    >(new GetOrganizationsQuery(smartContext.clerkId, smartContext.personId));
+    >(new GetOrganizationsQuery(clerkUser.sub));
   }
 
   // ==========================================
@@ -60,23 +46,16 @@ export class OrganizationsController {
   // ==========================================
 
   @Post()
-  @RequireContext('PERSON')
-  @UseGuards(ClerkAuthGuard, SmartContextGuard)
+  @UseGuards(ClerkAuthGuard)
   async createOrganization(
-    @SmartContextPERSON() smartContext: SmartContextDataPERSON,
-    @Body() dto: CreateOrganizationDtoBody, // 🌟 ใช้ DTO ที่เราสร้างไว้ในไฟล์ Command
+    // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
+    @Body() body: CreateOrganizationDtoBody, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @ClerkUser() clerkUser: ClerkUserData,
   ) {
-    // แพ็กของใส่ Command แล้วโยนลง Bus
     return this.commandBus.execute<
       CreateOrganizationCommand,
       CreateOrganizationResponse
-    >(
-      new CreateOrganizationCommand(
-        dto,
-        smartContext.clerkId,
-        smartContext.personId,
-      ),
-    );
+    >(new CreateOrganizationCommand(clerkUser.sub, body));
   }
 
   // ==========================================
@@ -84,21 +63,15 @@ export class OrganizationsController {
   // ==========================================
 
   @Get(':organization_id')
-  @RequireContext('ORGANIZATION')
-  @UseGuards(ClerkAuthGuard, SmartContextGuard)
+  @UseGuards(ClerkAuthGuard)
   async getOrganizationById(
-    @SmartContextORGANIZATION() smartContext: SmartContextDataORGANIZATION,
+    // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
+    @Param() param: GetOrganizationByIdDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @ClerkUser() clerkUser: ClerkUserData,
   ) {
     return this.queryBus.execute<
       GetOrganizationByIdQuery,
       GetOrganizationByIdResponse
-    >(
-      new GetOrganizationByIdQuery(
-        smartContext.clerkId,
-        smartContext.personId,
-        smartContext.personOrganizationAffiliationId,
-        smartContext.organizationId,
-      ),
-    );
+    >(new GetOrganizationByIdQuery(clerkUser.sub, param));
   }
 }

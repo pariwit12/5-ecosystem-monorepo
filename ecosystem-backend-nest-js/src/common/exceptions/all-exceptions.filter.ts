@@ -6,7 +6,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { ZodValidationException } from 'nestjs-zod'; // 🌟 นำเข้าตัว Error จาก zod
+import { ZodError } from 'zod'; // 🌟 เพิ่ม Type เพื่อนำไปเขียน as ZodError ให้ TypeScript ไม่บ่น
 import { AppException } from './app.exception';
 import { ErrorCode } from './error-codes.enum';
 
@@ -52,9 +54,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       errorCode = exception.errorCode;
     }
 
+    // 🎯 กรณีที่ 2: เพิ่มการดักจับสแกนข้อมูลพังจากคลัง Zod (New Era)
+    else if (exception instanceof ZodValidationException) {
+      statusCode = HttpStatus.BAD_REQUEST;
+      errorCode = 'VALIDATION_ERROR'; // 🌟 กำหนดรหัสสากลสำหรับการกรอกฟอร์มผิดพลาด
+
+      const zodError = exception.getZodError() as ZodError;
+
+      // สามารถปรับเป็น ให้โชว์ ทุก field ได้ หากต้องการนำไปเขียนระบบจัดการอัตโนมัติในอนาคต
+      message =
+        zodError.issues[0]?.message ?? 'ข้อมูลที่ส่งมาไม่ถูกต้องตามรูปแบบ';
+    }
+
     // 2. เช็คว่าเป็น Error มาตรฐานของ NestJS ไหม (เช่น 400 Bad Request, 404 Not Found)
     // การที่โค้ดวิ่งเข้าเงื่อนไขที่ 2 (HttpException) แปลว่ามันคือ Error ที่ "ตั้งใจโยน" (เช่น เราเขียน throw เอง)
-    // หรือ "ระบบของ NestJS โยนให้" (เช่น class-validator ตรวจเจอข้อมูลผิด)
+    // หรือ "ระบบของ NestJS โยนให้" (เช่น zod ตรวจเจอข้อมูลผิด)
     else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       errorCode = 'SYSTEM_HTTP_EXCEPTION';
@@ -73,26 +87,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // throw new BadRequestException({ message: 'ผิดพลาด', code: 123 });
 
         const responseObj = exceptionResponse as Record<string, unknown>;
-
-        // ในกรณีที่เป็น Error จาก class-validator (เมื่อคนกรอกฟอร์มผิด หรือ ข้อมูลเข้ามาแล้วไม่ถูกต้องตาม DTO)
-        // ตัว NestJS มักจะส่ง responseObj.message กลับมาเป็น Array ของข้อความ (เพราะบางทีกรอกผิดพร้อมกัน 3 ช่อง มันก็จะส่งมาพร้อมกัน)
-        // 🌟 [สิ่งที่เพิ่มมา] เช็คว่าถ้า class-validator ส่งมาเป็น Array ให้เอาข้อความแรกสุดมาโชว์พอเพื่อป้องกันการแสดงผลเพี้ยนที่ frontend
-        // โดยในแง่ประสิทธิภาพ เราจะไปเขียนให้ตรวจสอบ input ให้ดีตั้งแต่ frontend
-
-        // หน้าตาข้อมูลที่ซ่อนอยู่ใน exception (จุดสังเกตคือ message เป็น Array!):
-        // {
-        //   "statusCode": 400,
-        //   "message": [
-        //     "fieldEmail ต้องเป็นรูปแบบอีเมลเท่านั้น",
-        //     "fieldStringNotEmpty ต้องมีความยาวอย่างน้อย 3 ตัวอักษร"
-        //   ],
-        //   "error": "Bad Request"
-        // }
-        if (Array.isArray(responseObj.message)) {
-          message = responseObj.message[0];
-        } else {
-          message = responseObj.message ?? exceptionResponse;
-        }
+        message = responseObj.message ?? exceptionResponse;
       } else {
         message = exceptionResponse;
       }

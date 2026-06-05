@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ClerkAuthGuard } from './common/guards/clerk-auth.guard'; // นำเข้า Guard ที่เราเพิ่งสร้างไปใช้ใน Controller นี้
-import { Request as ExpressRequest } from 'express';
+import type { Request as ExpressRequest } from 'express';
 
 // สร้างโครงสร้าง (Interface) บอก ESLint ว่าจะมี user.sub แนบมาด้วยนะ
 interface RequestWithAuth extends ExpressRequest {

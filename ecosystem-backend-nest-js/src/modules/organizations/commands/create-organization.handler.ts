@@ -4,23 +4,29 @@ import {
   CreateOrganizationResponse,
 } from './create-organization.command';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { AccessControlService } from '../../../common/access-control/access-control.service';
 
 @CommandHandler(CreateOrganizationCommand)
 export class CreateOrganizationHandler implements ICommandHandler<
   CreateOrganizationCommand,
   CreateOrganizationResponse
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControlService: AccessControlService,
+  ) {}
 
   async execute(
     command: CreateOrganizationCommand,
   ): Promise<CreateOrganizationResponse> {
-    const { dto, clerkId, personId } = command;
+    const { clerkId, body } = command;
+
+    const { personId } = await this.accessControlService.verifyPerson(clerkId);
 
     // สร้างองค์กร และผูกสิทธิ์เข้าด้วยกันใน Transaction เดียว!
     await this.prisma.organization.create({
       data: {
-        name: dto.name,
+        name: body.name,
         // สร้างความสัมพันธ์ (ตั้งให้คนที่กดสร้างเป็นสมาชิกทันที)
         personOrganizationAffiliations: {
           create: { personId: personId },
@@ -28,7 +34,7 @@ export class CreateOrganizationHandler implements ICommandHandler<
       },
     });
 
-    console.log(`✅ สร้างองค์กร ${dto.name} สำเร็จ โดย: ${clerkId}`);
+    console.log(`✅ สร้างองค์กร ${body.name} สำเร็จ โดย: ${clerkId}`);
 
     return {
       success: true,

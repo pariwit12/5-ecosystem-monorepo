@@ -4,22 +4,32 @@ import {
   MethodTemplateResponse,
 } from './method-[template].command';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { AccessControlService } from '../../../common/access-control/access-control.service';
 
 @CommandHandler(MethodTemplateHandler)
 export class MethodTemplateHandler implements ICommandHandler<
   MethodTemplateCommand,
   MethodTemplateResponse
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControlService: AccessControlService,
+  ) {}
 
   async execute(
     command: MethodTemplateCommand,
   ): Promise<MethodTemplateResponse> {
-    // eslint-disable-next-line
-    const { dto, clerkId, personId } = command;
+    const {
+      clerkId,
+      // param,
+      // body,
+    } = command;
 
-    // โค้ด prisma ตาม logic ของ API
-    //
+    // ตรวจสอบ AccessControl (ปรับตามจริง)
+    // eslint-disable-next-line
+    const { personId } = await this.accessControlService.verifyPerson(clerkId);
+
+    // โค้ด prisma ตาม logic ของ API (ปรับตามจริง)
 
     // eslint-disable-next-line
     const newPerson = await this.prisma.person.create({
@@ -37,10 +47,11 @@ export class MethodTemplateHandler implements ICommandHandler<
       },
     });
 
-    // Console log หลัง action สำเร็จ หากต้องการ
+    // ปรับตามจริง (ไว้ debug)
     // console.log(`✅ สร้างองค์กร ${dto.name} สำเร็จ โดย: ${clerkId}`);
 
     return {
+      // ปรับตามจริง
       success: true,
       message: 'method-[template] สำเร็จ!',
 
@@ -50,3 +61,5 @@ export class MethodTemplateHandler implements ICommandHandler<
     };
   }
 }
+
+// อย่าลืมไปลงทะเบียน ใน [template].module.ts

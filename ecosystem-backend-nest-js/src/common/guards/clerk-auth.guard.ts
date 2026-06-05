@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
-import { Request } from 'express'; // 👈 นำเข้า Request type จาก express
+import type { Request } from 'express'; // 👈 นำเข้า Request type จาก express
 
 // ----------------------------------------
 // 🌟 สร้าง Interface อธิบายหน้าตาของ Request

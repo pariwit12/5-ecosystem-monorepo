@@ -1,6 +1,6 @@
 import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { AllExceptionsFilter } from './common/exceptions/all-exceptions.filter';
 
 async function bootstrap() {
@@ -8,13 +8,7 @@ async function bootstrap() {
     rawBody: true,
   });
 
-  // 🌟 บรรทัดนี้คือการเปิดสวิตช์ให้ NestJS อ่าน Decorator ใน DTO ทุกตัวในแอป!
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // กรองฟิลด์ขยะที่ไม่ได้อยู่ใน DTO ทิ้งไป
-      forbidNonWhitelisted: true, // ถ้าส่งฟิลด์แปลกๆ มา ให้ด่ากลับเป็น Error ทันที
-    }),
-  );
+  app.useGlobalPipes(new ZodValidationPipe()); // 🌟 ต้องมีบรรทัดนี้ เพื่อให้ Zod ทำงานครับ
 
   // 🟢 แก้ไขการตั้งค่า CORS ตรงนี้ครับ
   app.enableCors({

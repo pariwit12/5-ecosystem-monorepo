@@ -1,12 +1,9 @@
-// 📥 ขาเข้า: ต้องการแค่ clerkId
+// 📥 ขาเข้า
 export class GetOrganizationsQuery {
-  constructor(
-    public readonly clerkId: string,
-    public readonly personId: string,
-  ) {}
+  constructor(public readonly clerkId: string) {}
 }
 
-// 📤 ขาออก: ส่ง success status และ array ขององค์กรกลับไป
+// 📤 ขาออก
 export interface GetOrganizationsResponse {
   success: boolean;
   organizations: {

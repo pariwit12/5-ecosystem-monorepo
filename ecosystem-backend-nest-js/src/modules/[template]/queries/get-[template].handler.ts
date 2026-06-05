@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetTemplateQuery, GetTemplateResponse } from './get-[template].query';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { AccessControlService } from '../../../common/access-control/access-control.service';
 
 // import Exception ที่ต้องการใช้ (ถ้ามี)
 import { NotFoundException } from '@nestjs/common';
@@ -10,28 +11,32 @@ export class GetTemplateHandler implements IQueryHandler<
   GetTemplateQuery,
   GetTemplateResponse
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControlService: AccessControlService,
+  ) {}
 
   async execute(query: GetTemplateQuery): Promise<GetTemplateResponse> {
-    const {
-      // eslint-disable-next-line
-      clerkId,
-      // eslint-disable-next-line
-      personId,
-      // eslint-disable-next-line
-      personOrganizationAffiliationId,
-      organizationId,
-    } = query;
+    // eslint-disable-next-line
+    const { clerkId, param, queryFromUrl } = query;
 
-    // โค้ด prisma ตาม logic ของ API
-    //
+    // ตรวจสอบ AccessControl (ปรับตามจริง)
+    // eslint-disable-next-line
+    const { personId, personOrganizationAffiliationId } =
+      await this.accessControlService.verifyOrganizationAccess(
+        clerkId,
+        param.organization_id,
+      );
 
-    // 🌟 ดึงข้อมูลและ Join ตารางให้จบในคราวเดียว
+    // โค้ด prisma ตาม logic ของ API (ปรับตามจริง)
     const organization = await this.prisma.organization.findFirst({
       where: {
-        id: organizationId,
+        id: param.organization_id,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        deletedAt: true,
         organizationDentalClinic: true,
       },
     });
@@ -50,7 +55,6 @@ export class GetTemplateHandler implements IQueryHandler<
       name: organization.name,
       organizationDentalClinic: organization.organizationDentalClinic
         ? {
-            paymentStatus: organization.organizationDentalClinic.paymentStatus,
             subscriptionEndDate:
               organization.organizationDentalClinic.subscriptionEndDate,
           }
@@ -58,3 +62,5 @@ export class GetTemplateHandler implements IQueryHandler<
     };
   }
 }
+
+// อย่าลืมไปลงทะเบียน ใน [template].module.ts

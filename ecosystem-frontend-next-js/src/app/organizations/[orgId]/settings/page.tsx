@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import OrganizationSettingsClient from "./client-page";
 
 // 🌟 สร้าง Regex ตรวจสอบ UUID (วางไว้นอก Component เพื่อไม่ให้ถูกสร้างใหม่ทุกรอบ)
-// ฟอร์แมตนี้ครอบคลุมทั้ง UUIDv4 และ UUIDv7 ครับ
-const uuidRegex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// ฟอร์แมตนี้เฉพาะ UUIDv7 เท่านั้น (ปลอดภัยและรัดกุมขั้นสุด)
+const uuidV7Regex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function OrganizationSettingsPage({
   params,
@@ -17,7 +17,7 @@ export default async function OrganizationSettingsPage({
   const orgId = resolvedParams.orgId;
 
   // 🌟 ด่านที่ 1 (Server): เช็ค URL ตั้งแต่ก่อนเรนเดอร์หน้าเว็บ
-  if (!uuidRegex.test(orgId)) {
+  if (!uuidV7Regex.test(orgId)) {
     // 🌟 แนบ Parameter ?error=invalid_id กลับไปด้วย
     redirect("/organizations?error=invalid_id"); // เตะกลับทันทีที่ฝั่งเซิร์ฟเวอร์ (ไร้รอยต่อ)
     // ฝั่ง Server ใช้ redirect() (จาก next/navigation)
