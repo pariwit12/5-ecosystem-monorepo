@@ -20,7 +20,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://5-ecosystem-monorepo.vercel.app', // 👈 ใส่ URL หน้าเว็บ Vercel
+      'https://pariwit-ecosystem.vercel.app', // 👈 ใส่ URL หน้าเว็บ Vercel
     ], // อนุญาตให้หน้าบ้านพอร์ตนี้เข้ามาได้
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // จำเป็นมากสำหรับการส่ง Token หรือ Cookie
