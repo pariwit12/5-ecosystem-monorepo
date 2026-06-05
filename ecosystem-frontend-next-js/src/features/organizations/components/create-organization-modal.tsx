@@ -6,20 +6,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useCreateOrganization } from "../hooks/use-create-organization";
+import { CreateOrganizationDtoBody } from "../api/create-organization.api";
+import { CreateOrganizationDtoBodySchema } from "@backend/modules/organizations/commands/create-organization.command";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// ==========================================
-// 1. กำหนด Zod Schema (ควรสร้างใหม่ ไม่ควรไปดึงมาจากใน API)
-// ==========================================
-const createOrgSchema = z.object({
-  // ความเจ๋งของ Zod คือ "ลำดับการวางคำสั่งมีผลโดยตรง" (ทำงานจากซ้ายไปขวา)
-  name: z.string().trim().min(1, "กรุณากรอกชื่อองค์กร"),
+// 🌟 1. ดึงมาเฉพาะฟิลด์ที่ให้ User พิมพ์ในฟอร์ม
+const createOrganizationModalFormSchema = CreateOrganizationDtoBodySchema.pick({
+  name: true,
+  // ถ้ามีฟิลด์อื่นก็ใส่ true เพิ่มตรงนี้ได้เลย
 });
-// ดึง Type ออกมาจาก Schema ได้เลย (จะได้ Type เป็น { name: string })
-type CreateOrgInput = z.infer<typeof createOrgSchema>;
+
+// 2. เสก Type ให้ฟอร์ม
+type CreateOrganizationModalForm = z.infer<
+  typeof createOrganizationModalFormSchema
+>;
 
 export function CreateOrgModal() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,18 +32,24 @@ export function CreateOrgModal() {
   // ==========================================
   // 2. ตั้งค่า React Hook Form ควบรวมกับ Zod
   // ==========================================
-  const form = useForm<CreateOrgInput>({
-    resolver: zodResolver(createOrgSchema),
+  const form = useForm<CreateOrganizationModalForm>({
+    resolver: zodResolver(createOrganizationModalFormSchema),
     defaultValues: {
       name: "",
     },
   });
 
   // ==========================================
-  // 3. ฟังก์ชัน Submit ที่ผ่านการกรองจาก Zod แล้ว
+  // 3. ฟังก์ชัน Submit ที่ผ่านการกรองจาก Zod แล้ว + เป็นจุดประกอบร่าง (Transformation Point)
   // ==========================================
-  const onSubmit = (values: CreateOrgInput) => {
-    createMutation.mutate(values, {
+  const onSubmit = (values: CreateOrganizationModalForm) => {
+    // 💡 จุดประกอบร่างข้อมูล ของ useMutation
+    const finalPayload: CreateOrganizationDtoBody = {
+      name: values.name, // จากฟอร์ม
+      // source: "WEB_APPLICATION", // แอบแนบไปเอง (หรือจะดึงจาก Zustand ก็ได้)
+    };
+
+    createMutation.mutate(finalPayload, {
       onSuccess: () => {
         setIsModalOpen(false);
         form.reset(); // ล้างค่าในฟอร์มเมื่อสำเร็จ

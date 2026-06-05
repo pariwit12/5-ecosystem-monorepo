@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import { getOrganizationById } from "../api/get-organization-by-id.api";
 import { organizationKeys } from "./keys";
 
-// 🌟 รับ orgId เข้ามาเป็น Parameter (อนุญาตให้เป็น null/undefined ได้ เผื่อกรณีจังหวะแรกที่ยังโหลด Zustand ไม่ทัน)
+// 🌟 รับ orgId เข้ามาเป็น Parameter (อนุญาตให้เป็น null/undefined ได้ เผื่อกรณีจังหวะแรกที่ยังโหลด Zustand หรือดึงค่าจาก URL ไม่ทัน)
 export const useGetOrganizationById = (orgId?: string | null) => {
   const { getToken, userId } = useAuth();
 

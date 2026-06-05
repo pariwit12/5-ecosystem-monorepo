@@ -1,62 +1,50 @@
 import { z } from "zod";
 import apiClient from "@/lib/axios";
+import { useErrorStore } from "@/store/use-error-store";
 
+// 🌟 import Type สำหรับรับ response และ Schema สำหรับตรวจก่อนส่ง payload
 import {
-  type CreateOrganizationDtoBody,
-  type CreateOrganizationResponse,
+  CreateOrganizationResponse,
+  CreateOrganizationDtoBodySchema,
 } from "@backend/modules/organizations/commands/create-organization.command";
 
-// 🌟 1. สร้าง Type Helper (แนะนำให้ก๊อปอันนี้ไปสร้างไฟล์ src/types/zod.type.ts ไว้ใช้ยาวๆ เลยครับ)
-export type StrictZodShape<T> = {
-  [K in keyof T]: z.ZodType<T[K]>;
-};
+// 🌟 แปลง Schema เป็น type (เพื่อให้ TS ช่วยตรวจได้)
+export type CreateOrganizationDtoBody = z.infer<
+  typeof CreateOrganizationDtoBodySchema
+>;
 
 // ==========================================
-// 🚀 1. ด่านขาออก Payload/Request (+/- Transformation)
-// ==========================================
-const createOrganizationPayloadBodySchema = z.object({
-  name: z.string(),
-  // กรณีต้องการเติมข้อมูลหรือแปลงข้อมูลก่อนส่ง
-  // .transform((data) => ({
-  //   ...data,
-  //   type: "DENTAL_CLINIC", // 🌟 แปลงร่าง/เติมข้อมูลให้สอดคล้องกับระบบ Toothcraft โดยที่หน้า UI ไม่ต้องเหนื่อย
-  //   clientTimestamp: new Date().toISOString(),
-  // }));
-} satisfies StrictZodShape<CreateOrganizationDtoBody>);
-
-// ==========================================
-// 🛡️ 2. ด่านขาเข้า (Response Validation)
-// ==========================================
-// ถ้าผ่านมาถึงด่านนี้แปลว่า axios กรอง error ออกไปแล้วครับ
-const createOrganizationResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-} satisfies StrictZodShape<CreateOrganizationResponse>);
-
-// ==========================================
-// 📦 3. ฟังก์ชันหลัก (Export ไปให้ Hook ใช้)
+// 📦 ฟังก์ชันหลัก (Export ไปให้ Hook ใช้)
 // ==========================================
 export const createOrganization = async (
-  payloadBody: CreateOrganizationDtoBody,
+  body: CreateOrganizationDtoBody,
   token: string,
 ): Promise<CreateOrganizationResponse> => {
-  // 🌟 Step 1: แปลงร่างข้อมูลก่อนส่ง (ถ้าผิดกฎ โยน Error ตั้งแต่ยังไม่ยิง API)
-  const validatedPayloadBody =
-    createOrganizationPayloadBodySchema.parse(payloadBody);
+  // ==========================================
+  // 🛡️ ด่าน payload (ก่อนยิง API)
+  // ==========================================
+  // 🌟 Zod ตรวจสอบความถูกต้อง
+  const parsedBody = CreateOrganizationDtoBodySchema.safeParse(body);
+
+  if (!parsedBody.success) {
+    // 🌟 ดึงข้อความภาษาไทยจาก Backend (โชว์อันแรก)
+    const errorMessage =
+      parsedBody.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง";
+
+    // 🌟 สั่งเปิด Global Modal ของเราเองเลย! (ไม่ต้องรอ Axios)
+    useErrorStore.getState().showError("ข้อมูลไม่ถูกต้อง", errorMessage, 400);
+
+    // โยน Error เพื่อหยุดการทำงานของฟังก์ชันนี้ทันที
+    throw new Error(errorMessage);
+  }
 
   const response = await apiClient.post<CreateOrganizationResponse>(
     "/api/organizations",
-    validatedPayloadBody,
+    parsedBody.data,
     {
       headers: { Authorization: `Bearer ${token}` },
     },
   );
 
-  // 🌟 Step 3: ตรวจสอบของที่ตอบกลับมา
-  const validatedResponse = createOrganizationResponseSchema.parse(
-    response.data,
-  );
-
-  // ส่งข้อมูลที่สะอาด บริสุทธิ์ และมี Type 100% กลับไปให้ TanStack Query ใช้งานต่อ
-  return validatedResponse;
+  return response.data;
 };
