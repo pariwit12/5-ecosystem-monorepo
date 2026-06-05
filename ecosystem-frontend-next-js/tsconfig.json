@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true, // 🌟 เพิ่มบรรทัดนี้: อนุญาตให้อ่าน Decorator ได้ (สำหรับ monorepo)
+    "emitDecoratorMetadata": true, // 🌟 เพิ่มบรรทัดนี้: ช่วยให้อ่าน Type ของ Decorator ได้สมบูรณ์ (สำหรับ monorepo)
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
