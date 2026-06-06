@@ -8,16 +8,31 @@ import { CreateOrgModal } from "@/features/organizations/components/create-organ
 import OrganizationsLoading from "./loading";
 import { useAuth } from "@clerk/nextjs";
 
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+
 function ToastNotifier() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("error") === "invalid_id") {
-      toast.error("รหัสองค์กรไม่ถูกต้อง");
+    const errorCode = searchParams.get("error");
+    if (!errorCode) return; // ถ้าไม่มี error ใน URL ก็ไม่ต้องทำอะไรเลย
 
-      // 💡 ทริคเสริม: ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า
-      window.history.replaceState(null, "", "/organizations");
+    if (errorCode === "invalid_id") {
+      toast.error("รหัสองค์กรไม่ถูกต้อง");
+    } else if (
+      errorCode === ErrorCode.ORGANIZATION_NOT_FOUND ||
+      errorCode === ErrorCode.ORGANIZATION_DELETED ||
+      errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
+    ) {
+      const errorMessage = USER_ERROR_MESSAGES[errorCode];
+      toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
+        description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
+      });
     }
+
+    // ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า
+    window.history.replaceState(null, "", "/organizations");
   }, [searchParams]);
 
   return null; // ไม่ต้องแสดงผล UI อะไรออกมา
@@ -65,45 +80,36 @@ export default function OrganizationsPage() {
         </p>
       </div>
 
-      {/* ⏳ แสดงสถานะ Loading หรือ โชว์ข้อมูล */}
-      {isLoading ? (
-        <div className="flex items-center justify-center p-12 text-gray-400">
-          กำลังโหลดข้อมูล...
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* ลูปแสดงการ์ดองค์กรทั้งหมดที่มี */}
-          {organizations.map((org) => (
-            <div
-              key={org.id}
-              className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start"
-            >
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
-                {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
-                {org.name.charAt(0).toUpperCase()}
-              </div>
-              <h3 className="text-lg font-bold text-gray-800">{org.name}</h3>
-              <p className="text-sm text-gray-500 mt-1 mb-6">
-                ID:{" "}
-                <span className="font-mono text-xs">
-                  {org.id.slice(0, 8)}...
-                </span>
-              </p>
-
-              {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
-              <button
-                onClick={() => handleSelectOrganization(org.id)}
-                className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                ตั้งค่าองค์กร
-              </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ลูปแสดงการ์ดองค์กรทั้งหมดที่มี */}
+        {organizations.map((org) => (
+          <div
+            key={org.id}
+            className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start"
+          >
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
+              {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
+              {org.name.charAt(0).toUpperCase()}
             </div>
-          ))}
+            <h3 className="text-lg font-bold text-gray-800">{org.name}</h3>
+            <p className="text-sm text-gray-500 mt-1 mb-6">
+              ID:{" "}
+              <span className="font-mono text-xs">{org.id.slice(0, 8)}...</span>
+            </p>
 
-          {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
-          <CreateOrgModal />
-        </div>
-      )}
+            {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
+            <button
+              onClick={() => handleSelectOrganization(org.id)}
+              className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ตั้งค่าองค์กร
+            </button>
+          </div>
+        ))}
+
+        {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
+        <CreateOrgModal />
+      </div>
     </div>
   );
 }

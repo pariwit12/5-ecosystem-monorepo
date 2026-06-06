@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useGetOrganizationById } from "@/features/organizations/hooks/use-get-organization-by-id";
 
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+
+import { useEffect } from "react"; // 🌟 1. นำเข้า useEffect
+import { useRouter } from "next/navigation"; // 🌟 1. นำเข้า useRouter
+import { isAxiosError } from "axios"; // 🌟 1. นำเข้า isAxiosError เพื่อความปลอดภัยของ TypeScript
+
 // 🌟 รับ orgId ที่ผ่านการสแกนแล้วมาจาก Server Component
 export default function OrganizationSettingsClient({
   orgId,
@@ -10,12 +16,51 @@ export default function OrganizationSettingsClient({
   orgId: string;
 }) {
   // 🌟 ด่านที่ 2 (Client): Hook ทำงานได้อย่างปลอดภัย เพราะ Server ตรวจ orgId ให้แล้ว
-  const { data: orgDetails, isLoading } = useGetOrganizationById(orgId);
+  const {
+    data: orgDetails,
+    isLoading,
+    error,
+  } = useGetOrganizationById(orgId, [
+    ErrorCode.ORGANIZATION_NOT_FOUND,
+    ErrorCode.ORGANIZATION_DELETED,
+    ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+  ]);
+
+  const router = useRouter();
+
+  // 🌟 3. ด่านดักจับ Error แล้ว Redirect
+  useEffect(() => {
+    // เช็คว่ามี Error และเป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
+    if (error && isAxiosError(error)) {
+      const errorCode = error.response?.data?.errorCode;
+
+      // สร้างลิสต์ของ Error ที่เราต้องการเตะออก (ใช้ Enum ที่ import มาได้เลย)
+      const accessDeniedErrors = [
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        ErrorCode.ORGANIZATION_DELETED,
+        ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+      ];
+
+      if (accessDeniedErrors.includes(errorCode)) {
+        router.push(`/organizations?error=${errorCode}`);
+      }
+    }
+  }, [error, router]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
         กำลังโหลดข้อมูลองค์กร...
+      </div>
+    );
+  }
+
+  // 🌟 4. ป้องกันหน้าจอกระพริบ (UI Flash):
+  // ถ้ามี Error แปลว่า useEffect กำลังเตรียมเตะออก เราจะโชว์หน้าว่างๆ รอไว้เลย
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        กำลังพากลับไปยังหน้ารายชื่อองค์กร...
       </div>
     );
   }

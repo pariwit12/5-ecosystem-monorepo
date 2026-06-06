@@ -5,7 +5,8 @@ import { useErrorStore } from "@/store/use-error-store";
 // import { AlertTriangle } from 'lucide-react';
 
 export default function GlobalErrorModal() {
-  const { isOpen, title, message, statusCode, clearError } = useErrorStore();
+  const { isOpen, title, message, statusCode, errorCode, clearError } =
+    useErrorStore();
 
   // ถ้าไม่มี Error ก็ไม่ต้องเรนเดอร์อะไรเลย
   if (!isOpen) return null;
@@ -19,10 +20,16 @@ export default function GlobalErrorModal() {
             {/* <AlertTriangle className="w-8 h-8 text-red-600" /> */}
             <span className="text-3xl">⚠️</span>
           </div>
-          <h2 className="text-xl font-bold text-red-900">{title}</h2>
-          {statusCode && (
+          {statusCode ? (
+            <h2 className="text-xl font-bold text-red-900">
+              {title} ({statusCode})
+            </h2>
+          ) : (
+            <h2 className="text-xl font-bold text-red-900">{title}</h2>
+          )}
+          {errorCode && (
             <span className="mt-2 inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-              Error {statusCode}
+              Error: {errorCode}
             </span>
           )}
         </div>

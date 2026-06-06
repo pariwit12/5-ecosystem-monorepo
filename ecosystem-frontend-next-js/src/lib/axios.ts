@@ -6,7 +6,7 @@ import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 // 🌟 สอนให้ TypeScript รู้จัก Config พิเศษของเรา
 declare module "axios" {
   export interface AxiosRequestConfig {
-    skipGlobalErrorModal?: number[];
+    skipErrorCodes?: string[];
     retryCount?: number; // เอาไว้นับจำนวนครั้งที่ Retry
   }
 }
@@ -54,39 +54,47 @@ apiClient.interceptors.response.use(
     }
 
     // ==========================================
-    // 🛡️ โซนที่ 2: เช็คสิทธิ์การข้าม Global Modal
-    // ==========================================
-    const status = error.response?.status;
-    // 🌟 เช็คว่า API เส้นนี้ขอ "สละสิทธิ์ (Skip)" การใช้ Global Modal สำหรับ Status นี้หรือไม่?
-    const skippedStatuses = config?.skipGlobalErrorModal || [];
-    if (status && skippedStatuses.includes(status)) {
-      return Promise.reject(error); // ปล่อยทะลุไปให้ catch ของหน้านั้นจัดการเอง ไม่ต้องเปิด Modal
-    }
-
-    // ==========================================
     // 🚦 โซนที่ 3: แยกแยะ "3 กรณี" ตามหลักสถาปัตยกรรม
     // ==========================================
     // เตรียมฟังก์ชันเปิด Modal
     const { showError } = useErrorStore.getState();
 
-    if (error.response) {
+    const status = error.response?.status; // วางไว้ข้างนอก เผื่อว่า error.response มาไม่เรียบร้อย แต่มี status มา
+
+    if (error.response && error.response.data) {
       // 🎯 กรณีที่ 3: ยิงถึง Backend แล้ว แต่ Backend ตอบ Error กลับมา (มี JSON Uniform)
       const backendData = error.response.data;
-      const errorCode = backendData?.errorCode;
+
       const backendMessage = backendData?.message;
+      const errorCode = backendData?.errorCode;
+
+      // ==========================================
+      // 🛡️ โซนเช็คสิทธิ์การข้าม Global Error Modal
+      // ==========================================
 
       // 🛑 กฎเหล็ก: ปล่อย VALIDATION_ERROR ทะลุไปให้ React Hook Form จัดการ
       if (errorCode === "VALIDATION_ERROR") {
         return Promise.reject(error);
       }
 
-      const title = `เกิดข้อผิดพลาด (${status})`;
+      // 🛡️ เช็คว่า API เส้นนี้ขอสละสิทธิ์การใช้ Modal สำหรับ errorCode จาก backend หรือไม่?
+      const skippedCodes = error.config?.skipErrorCodes || [];
+      if (errorCode && skippedCodes.includes(errorCode)) {
+        // ถ้าตรงกัน ปล่อยทะลุไปให้ React Query (หน้า Client) จัดการ Redirect เองเงียบๆ
+        return Promise.reject(error);
+      }
+
+      // ==========================================
+      // 🛡️ สิ้นสุดโซนเช็คสิทธิ์การข้าม
+      // ==========================================
+
+      const title = `เกิดข้อผิดพลาด`;
       const displayMessage =
         USER_ERROR_MESSAGES[errorCode] || // 1. หาคำแปลสวยๆ จากหน้าบ้านก่อน
         backendMessage || // 2. ถ้าไม่มี เอาข้อความจาก NestJS
         "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุจากเซิร์ฟเวอร์"; // 3. กันเหนียว
 
-      showError(title, displayMessage, errorCode);
+      showError(title, displayMessage, status, errorCode);
     } else if (error.request) {
       // 🎯 กรณีที่ 2: ยิงออกไปแล้ว แต่ Backend ไม่ตอบ (เน็ตหลุด, เซิร์ฟเวอร์ล่ม, หรือ Retry แล้วก็ยัง Timeout)
       let title = "ปัญหาการเชื่อมต่อ";

@@ -19,6 +19,7 @@ type GetOrganizationByIdDtoParam = z.infer<
 export const getOrganizationById = async (
   orgId: string,
   token: string,
+  skipErrorCodes?: string[],
 ): Promise<GetOrganizationByIdResponse> => {
   // ==========================================
   // 🛡️ ด่าน payload (ก่อนยิง API)
@@ -47,6 +48,7 @@ export const getOrganizationById = async (
     `/api/organizations/${parsedParam.data.organization_id}`,
     {
       headers: { Authorization: `Bearer ${token}` },
+      skipErrorCodes: skipErrorCodes,
     },
   );
 
