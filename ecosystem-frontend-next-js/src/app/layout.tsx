@@ -7,6 +7,7 @@ import TanStackProvider from "@/provider/tan-stack-provider";
 import GlobalErrorModal from "@/components/global-error-modal";
 import { ClerkPersonSyncProvider } from "@/provider/clerk-person-sync-provider";
 import { Toaster } from "sonner";
+import { OfflineBanner } from "@/components/offline-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,8 @@ export default function RootLayout({
             {/* 🌟 2. เอา ClerkPersonSyncProvider มาครอบทับเนื้อหาทั้งหมดไว้ตรงนี้ */}
             {/* กล่องดำนี้จะทำงานเงียบๆ คอยเช็คและสร้าง Person ทันทีที่ล็อกอิน */}
             <ClerkPersonSyncProvider>
+              <OfflineBanner />
+              {/* 🌟 OfflineBanner วางไว้บนสุด มันจะคอยเฝ้ามองแอปเราตลอดเวลา */}
               {/* --- Header --- */}
               <header className="bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-10">
                 <div className="text-xl font-bold text-blue-700">
@@ -71,7 +74,6 @@ export default function RootLayout({
                   </Show>
                 </div>
               </header>
-
               {/* 🌟 พื้นที่ด้านล่าง (แบ่งซ้าย-ขวา) 🌟 */}
               <div className="flex flex-1 overflow-hidden">
                 {/* ซ้าย: Sidebar (โชว์เฉพาะตอนล็อกอินแล้ว) */}
@@ -88,7 +90,6 @@ export default function RootLayout({
               {/* 🌟 4. วาง Global Modal ไว้ล่างสุดของ DOM */}
               {/* เพื่อให้มันสามารถลอยทับ Header และ Sidebar ได้อย่างสมบูรณ์แบบ */}
               <GlobalErrorModal />
-
               {/* 🌟 ย้าย Toaster มาไว้ตรงนี้ครับ! จะได้ลอยทับหน้าเว็บได้อย่างสมบูรณ์แบบ */}
               {/* richColors คือการสั่งให้มีสีสวยๆ อัตโนมัติ (เช่น แดง=Error, เขียว=Success) */}
               <Toaster position="top-right" richColors />

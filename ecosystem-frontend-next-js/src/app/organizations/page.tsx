@@ -5,6 +5,8 @@ import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
 import { useGetOrganizations } from "@/features/organizations/hooks/use-get-organizations";
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
+import OrganizationsLoading from "./loading";
+import { useAuth } from "@clerk/nextjs";
 
 function ToastNotifier() {
   const searchParams = useSearchParams();
@@ -28,6 +30,12 @@ export default function OrganizationsPage() {
   // 🚀 1. ดึงข้อมูลจาก Hook (บรรทัดเดียวจบ!)
   // ==========================================
   const { data, isLoading } = useGetOrganizations();
+  const { isLoaded } = useAuth();
+
+  // 🌟 3. ถ้ากำลังโหลดอยู่ ก็โยนหน้า Skeleton กะพริบๆ ไปให้ User ดูเลย โค้ดสั้นและสวยมาก!
+  if (!isLoaded || isLoading) {
+    return <OrganizationsLoading />;
+  }
 
   // แกะเอา array organizations ออกมาจาก Response (ใส่ fallback เป็น [] กันแครช)
   const organizations = data?.organizations || [];

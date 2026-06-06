@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 
 import { useCreateOrganization } from "../hooks/use-create-organization";
 import { CreateOrganizationDtoBody } from "../api/create-organization.api";
@@ -49,10 +50,19 @@ export function CreateOrgModal() {
       // source: "WEB_APPLICATION", // แอบแนบไปเอง (หรือจะดึงจาก Zustand ก็ได้)
     };
 
-    createMutation.mutate(finalPayload, {
-      onSuccess: () => {
+    toast.promise(createMutation.mutateAsync(finalPayload), {
+      // ⏳ 1. สถานะจังหวะแรกที่กดปุ่มยิง API
+      loading: "กำลังสร้างอค์กรของคุณ...",
+      success: () => {
         setIsModalOpen(false);
         form.reset(); // ล้างค่าในฟอร์มเมื่อสำเร็จ
+        return "สร้างองค์กรเรียบร้อย"; // ข้อความที่จะโชว์บนกล่อง Toast สีเขียว
+      },
+      // 🚨 3. สถานะเมื่อ API พัง หรือมี Error หลุดออกมา
+      error: (error) => {
+        // เนื่องจากเรามี Global Error Modal ในสถาปัตยกรรมหลักคอยดักดึงข้อมูลให้อยู่แล้ว
+        // ตรงนี้เราส่งข้อความสั้นๆ ให้ตัว Toast ขึ้นกล่องสีแดงเตือนผู้ใช้ก็พอครับ
+        return error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
       },
     });
   };
