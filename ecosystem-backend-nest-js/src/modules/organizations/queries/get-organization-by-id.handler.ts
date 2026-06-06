@@ -6,7 +6,9 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 
-import { NotFoundException } from '@nestjs/common';
+import { AppException } from '../../../common/exceptions/app.exception';
+import { ErrorCode } from '../../../common/exceptions/error-codes.enum';
+import { HttpStatus } from '@nestjs/common';
 
 @QueryHandler(GetOrganizationByIdQuery)
 export class GetOrganizationByIdHandler implements IQueryHandler<
@@ -31,7 +33,6 @@ export class GetOrganizationByIdHandler implements IQueryHandler<
     const organization = await this.prisma.organization.findFirst({
       where: {
         id: param.organization_id,
-        deletedAt: null, // ความจริงอาจไม่ต้องตรวจสอบแล้ว เนื่องจากควรตรวจมาจาก accessControlService เรียบร้อยแล้ว
       },
       select: {
         id: true,
@@ -46,9 +47,13 @@ export class GetOrganizationByIdHandler implements IQueryHandler<
       },
     });
 
+    // ต้องตรวจ เพราะ TS จะบ่น (เพราะเป็น Error ที่ทำให้โปรแกรมพัง) แต่ตามตรรกะเราตรวจแล้ว
     if (!organization) {
-      // ต้องตรวจ เพราะ TS จะบ่น แต่ตามตรรกะเราตรวจแล้ว
-      throw new NotFoundException('ไม่พบข้อมูลองค์กร กรุณาลองใหม่อีกครั้ง');
+      throw new AppException(
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        'OrganizationId นี้ไม่มีในตาราง Organization',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return {

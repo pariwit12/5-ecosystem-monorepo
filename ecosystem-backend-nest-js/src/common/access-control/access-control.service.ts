@@ -1,5 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+
+import { AppException } from '../exceptions/app.exception';
+import { ErrorCode } from '../exceptions/error-codes.enum';
 
 @Injectable()
 export class AccessControlService {
@@ -17,11 +20,11 @@ export class AccessControlService {
     });
 
     if (!person) {
-      throw new ForbiddenException({
-        errorCode: 'PERSON_NOT_FOUND',
-        message:
-          'ไม่พบข้อมูลโปรไฟล์ผู้ใช้งานในระบบ กรุณาลงทะเบียนโปรไฟล์ก่อนเข้าใช้งาน',
-      });
+      throw new AppException(
+        ErrorCode.PERSON_NOT_FOUND,
+        'ClerkId นี้ไม่มีในตาราง Person',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return { personId: person.id };
@@ -31,8 +34,31 @@ export class AccessControlService {
   // 🏢 ด่านตรวจสอบระดับ ORGANIZATION
   // ==========================================
   async verifyOrganizationAccess(clerkId: string, organizationId: string) {
-    // *** Note ***
-    // อนาคตถ้าอยากได้ error ที่ละเอียดขึ้น อาจต้องตรวจ organizationId ก่อน ซึ่งตอนนั้นเดี๋ยวใช้ Redis เข้ามาช่วย แล้วค่อยแยก query
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        deletedAt: true,
+      },
+    });
+
+    // 1. เช็คตัวตน
+    if (!organization) {
+      throw new AppException(
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        'OrganizationId นี้ไม่มีในตาราง Organization',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2. เช็คว่าองค์กรโดนลบไปหรือยัง
+    if (organization.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.ORGANIZATION_DELETED,
+        'OrganizationId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
 
     const person = await this.prisma.person.findUnique({
       where: { clerkId: clerkId },
@@ -42,12 +68,12 @@ export class AccessControlService {
           where: { organizationId: organizationId },
           select: {
             id: true,
-            organization: {
-              select: {
-                id: true,
-                deletedAt: true,
-              },
-            },
+            // organization: {
+            //   select: {
+            //     id: true,
+            //     deletedAt: true,
+            //   },
+            // },
           },
         },
       },
@@ -55,10 +81,11 @@ export class AccessControlService {
 
     // 1. เช็คตัวตน
     if (!person) {
-      throw new ForbiddenException({
-        errorCode: 'PERSON_NOT_FOUND',
-        message: 'ไม่พบข้อมูลโปรไฟล์ กรุณาลงทะเบียนโปรไฟล์ก่อนเข้าใช้งาน',
-      });
+      throw new AppException(
+        ErrorCode.PERSON_NOT_FOUND,
+        'ClerkId นี้ไม่มีในตาราง Person',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // 2. เช็คความสัมพันธ์กับองค์กร
@@ -66,20 +93,11 @@ export class AccessControlService {
       !person.personOrganizationAffiliations ||
       person.personOrganizationAffiliations.length === 0
     ) {
-      throw new ForbiddenException({
-        errorCode: 'NOT_ORGANIZATION_MEMBER or ORGANIZATION_NOT_FOUND',
-        message: 'คุณไม่มีสิทธิ์เข้าถึง หรือไม่พบองค์กรนี้',
-      });
-    }
-
-    // 3. เช็คว่าองค์กรโดนลบไปหรือยัง
-    if (
-      person.personOrganizationAffiliations[0].organization.deletedAt !== null
-    ) {
-      throw new ForbiddenException({
-        errorCode: 'ORGANIZATION_DELETED',
-        message: 'องค์กรนี้ถูกลบออกจากระบบแล้ว',
-      });
+      throw new AppException(
+        ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+        'PersonId นี้ไม่มี PersonOrganizationAffiliations ที่เชื่อมกับ OrganizationId นี้',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     return {

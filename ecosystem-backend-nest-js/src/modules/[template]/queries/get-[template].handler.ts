@@ -3,8 +3,9 @@ import { GetTemplateQuery, GetTemplateResponse } from './get-[template].query';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 
-// import Exception ที่ต้องการใช้ (ถ้ามี)
-import { NotFoundException } from '@nestjs/common';
+import { AppException } from '../../../common/exceptions/app.exception';
+import { ErrorCode } from '../../../common/exceptions/error-codes.enum';
+import { HttpStatus } from '@nestjs/common';
 
 @QueryHandler(GetTemplateQuery)
 export class GetTemplateHandler implements IQueryHandler<
@@ -41,13 +42,13 @@ export class GetTemplateHandler implements IQueryHandler<
       },
     });
 
-    // ดักจับ Error ที่ทำให้โปรแกรมพัง (ถึงเราจะตรวจสอบและเตรียมข้อมูลใน guard ไว้บ้างแล้ว)
+    // ต้องตรวจ เพราะ TS จะบ่น (เพราะเป็น Error ที่ทำให้โปรแกรมพัง) แต่ตามตรรกะเราตรวจแล้ว
     if (!organization) {
-      throw new NotFoundException('ไม่พบองค์กร');
-    }
-
-    if (organization.deletedAt !== null) {
-      throw new NotFoundException('องค์กรนี้ถูกลบไปแล้ว');
+      throw new AppException(
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        'OrganizationId นี้ไม่มีในตาราง Organization',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return {

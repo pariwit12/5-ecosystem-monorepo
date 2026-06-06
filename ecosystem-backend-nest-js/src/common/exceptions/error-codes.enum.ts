@@ -1,6 +1,11 @@
 export enum ErrorCode {
   DEFAULT_ERROR = 'DEFAULT_ERROR',
 
+  PERSON_NOT_FOUND = 'PERSON_NOT_FOUND',
+  ORGANIZATION_NOT_FOUND = 'ORGANIZATION_NOT_FOUND',
+  ORGANIZATION_DELETED = 'ORGANIZATION_DELETED',
+  NOT_A_MEMBER_OF_ORGANIZATION = 'NOT_A_MEMBER_OF_ORGANIZATION',
+
   // ค่อยเขียนเพิ่มเติมในภายหลัง เพื่อระบุให้ละเอียดขึ้น ตอนนี้เราควรเอาเวลาไปโฟกัสที่ business logic มากกว่า
 
   //   // หมวด Auth
