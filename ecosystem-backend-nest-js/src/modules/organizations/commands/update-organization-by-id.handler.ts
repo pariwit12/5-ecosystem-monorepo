@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 
-@CommandHandler(UpdateOrganizationByIdHandler)
+@CommandHandler(UpdateOrganizationByIdCommand)
 export class UpdateOrganizationByIdHandler implements ICommandHandler<
   UpdateOrganizationByIdCommand,
   UpdateOrganizationByIdResponse
