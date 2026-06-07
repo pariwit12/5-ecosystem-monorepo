@@ -51,6 +51,21 @@ export class GetTemplateHandler implements IQueryHandler<
       );
     }
 
+    const organizations = await this.prisma.organization.findMany({
+      where: {
+        deletedAt: null,
+        personOrganizationAffiliations: {
+          some: {
+            personId: personId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
     return {
       id: organization.id,
       name: organization.name,
@@ -60,6 +75,11 @@ export class GetTemplateHandler implements IQueryHandler<
               organization.organizationDentalClinic.subscriptionEndDate,
           }
         : null,
+      // ตัวอย่างการ map ข้อมูลจาก findMany
+      organizations: organizations.map((org) => ({
+        id: org.id,
+        name: org.name,
+      })),
     };
   }
 }

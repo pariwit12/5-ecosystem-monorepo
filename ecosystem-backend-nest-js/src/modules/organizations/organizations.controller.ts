@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import {
@@ -20,6 +28,12 @@ import {
   CreateOrganizationResponse,
   CreateOrganizationDtoBody,
 } from './commands/create-organization.command';
+import {
+  UpdateOrganizationByIdCommand,
+  UpdateOrganizationByIdResponse,
+  UpdateOrganizationByIdDtoParam,
+  UpdateOrganizationByIdDtoBody,
+} from './commands/update-organization-by-id.command';
 
 @Controller('api/organizations')
 export class OrganizationsController {
@@ -73,5 +87,23 @@ export class OrganizationsController {
       GetOrganizationByIdQuery,
       GetOrganizationByIdResponse
     >(new GetOrganizationByIdQuery(clerkUser.sub, param));
+  }
+
+  // ==========================================
+  // [PATCH]
+  // ==========================================
+
+  @Patch(':organization_id')
+  @UseGuards(ClerkAuthGuard)
+  async updateOrganizationById(
+    // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
+    @Param() param: UpdateOrganizationByIdDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @Body() body: UpdateOrganizationByIdDtoBody, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.commandBus.execute<
+      UpdateOrganizationByIdCommand,
+      UpdateOrganizationByIdResponse
+    >(new UpdateOrganizationByIdCommand(clerkUser.sub, param, body));
   }
 }

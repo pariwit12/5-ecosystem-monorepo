@@ -3,11 +3,15 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { OrganizationsController } from './organizations.controller';
 
 import { CreateOrganizationHandler } from './commands/create-organization.handler';
+import { UpdateOrganizationByIdHandler } from './commands/update-organization-by-id.handler';
 import { GetOrganizationsHandler } from './queries/get-organizations.handler';
 import { GetOrganizationByIdHandler } from './queries/get-organization-by-id.handler';
 
 // มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
-const CommandHandlers = [CreateOrganizationHandler];
+const CommandHandlers = [
+  CreateOrganizationHandler,
+  UpdateOrganizationByIdHandler,
+];
 const QueryHandlers = [GetOrganizationsHandler, GetOrganizationByIdHandler];
 
 // 🌟 ไม่ต้องใส่ PrismaModule หรือ PrismaService แล้ว เพราะมันเป็น Global (ตั้งไว้ใน prisma.module.ts)

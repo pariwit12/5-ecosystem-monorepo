@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useGetOrganizationById } from "@/features/organizations/hooks/use-get-organization-by-id";
+
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/nextjs";
+import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
 
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
@@ -15,16 +18,18 @@ export default function OrganizationSettingsClient({
 }: {
   orgId: string;
 }) {
-  // 🌟 ด่านที่ 2 (Client): Hook ทำงานได้อย่างปลอดภัย เพราะ Server ตรวจ orgId ให้แล้ว
+  const { getToken, userId, isLoaded } = useAuth();
   const {
     data: orgDetails,
     isLoading,
     error,
-  } = useGetOrganizationById(orgId, [
-    ErrorCode.ORGANIZATION_NOT_FOUND,
-    ErrorCode.ORGANIZATION_DELETED,
-    ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-  ]);
+  } = useQuery(
+    organizationsQueries.detail(userId, orgId, getToken, [
+      ErrorCode.ORGANIZATION_NOT_FOUND,
+      ErrorCode.ORGANIZATION_DELETED,
+      ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+    ]),
+  );
 
   const router = useRouter();
 
@@ -47,7 +52,8 @@ export default function OrganizationSettingsClient({
     }
   }, [error, router]);
 
-  if (isLoading) {
+  // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
+  if (!isLoaded || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
         กำลังโหลดข้อมูลองค์กร...
@@ -56,14 +62,23 @@ export default function OrganizationSettingsClient({
   }
 
   // 🌟 4. ป้องกันหน้าจอกระพริบ (UI Flash):
-  // ถ้ามี Error แปลว่า useEffect กำลังเตรียมเตะออก เราจะโชว์หน้าว่างๆ รอไว้เลย
-  if (error) {
+  if (
+    error &&
+    isAxiosError(error) &&
+    [
+      ErrorCode.ORGANIZATION_NOT_FOUND,
+      ErrorCode.ORGANIZATION_DELETED,
+      ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+    ].includes(error.response?.data?.errorCode)
+  ) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
-        กำลังพากลับไปยังหน้ารายชื่อองค์กร...
+        เกิดข้อผิดพลาด กำลังพากลับไปยังหน้ารายชื่อองค์กร...
       </div>
     );
   }
+
+  // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
@@ -88,13 +103,24 @@ export default function OrganizationSettingsClient({
             />
           </svg>
         </Link>
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800">
-            ตั้งค่าองค์กร: {orgDetails?.name}
-          </h2>
-          <p className="text-gray-500 mt-1 font-mono text-sm">
-            Organization ID: {orgDetails?.id}
-          </p>
+
+        <div className="flex-1 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-800">
+              ตั้งค่าองค์กร: {orgDetails?.name}
+            </h2>
+            <p className="text-gray-500 mt-1 font-mono text-sm">
+              Organization ID: {orgDetails?.id}
+            </p>
+          </div>
+
+          {/* 🌟 ปุ่มลิงก์ไปหน้า General Settings */}
+          <Link
+            href={`/organizations/${orgId}/settings/general`}
+            className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-sm"
+          >
+            แก้ไขข้อมูลทั่วไป
+          </Link>
         </div>
       </div>
 

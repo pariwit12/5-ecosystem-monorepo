@@ -19,11 +19,7 @@ export class MethodTemplateHandler implements ICommandHandler<
   async execute(
     command: MethodTemplateCommand,
   ): Promise<MethodTemplateResponse> {
-    const {
-      clerkId,
-      // param,
-      // body,
-    } = command;
+    const { clerkId, param, body } = command;
 
     // ตรวจสอบ AccessControl (ปรับตามจริง)
     // eslint-disable-next-line
@@ -47,13 +43,23 @@ export class MethodTemplateHandler implements ICommandHandler<
       },
     });
 
+    // eslint-disable-next-line
+    const updatedOrg = await this.prisma.organization.update({
+      where: { id: param.organization_id },
+      data: { name: body.name },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
     // ปรับตามจริง (ไว้ debug)
     // console.log(`✅ สร้างองค์กร ${dto.name} สำเร็จ โดย: ${clerkId}`);
 
     return {
       // ปรับตามจริง
-      success: true,
-      message: 'method-[template] สำเร็จ!',
+      id: newPerson.id,
+      // name: updatedOrg.name,
 
       // กรณีอยากส่งข้อมูลกลับไป
       // organizationId: newOrg.id,

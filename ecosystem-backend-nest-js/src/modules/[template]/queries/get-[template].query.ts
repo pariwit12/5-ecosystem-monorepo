@@ -61,6 +61,10 @@ export interface GetTemplateResponse {
     // paymentStatus: TemplateEnumInSchemaPrisma; // 👈 ใช้ Enum ของ Prisma ตรงๆ ได้เลย!
     subscriptionEndDate: Date | null;
   } | null;
+  organizations: {
+    id: string;
+    name: string;
+  }[];
 }
 
 // อย่าลืมไปลงทะเบียน ใน [template].controller.ts

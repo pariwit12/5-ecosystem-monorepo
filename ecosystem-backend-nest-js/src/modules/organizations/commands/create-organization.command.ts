@@ -25,8 +25,6 @@ export class CreateOrganizationCommand {
 
 // 📤 ขาออก
 export interface CreateOrganizationResponse {
-  success: boolean;
-  message: string;
-  // organizationId: string;
-  // organization: any; // อนาคตค่อยมาระบุ Type ที่ชัดเจนแทน any ได้ครับ
+  id: string;
+  // name: string;
 }

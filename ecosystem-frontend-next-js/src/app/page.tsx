@@ -1,47 +1,8 @@
 "use client";
 
-import { Show, useAuth } from "@clerk/nextjs";
-import { useQuery } from "@tanstack/react-query"; // 🌟 นำเข้า TanStack
-
-// 🌟 นำเข้า apiClient ที่เราตั้งค่าไว้ (ปรับ Path ให้ตรงกับโปรเจกต์)
-import apiClient from "@/lib/axios";
-
-// สร้าง Interface เพื่อกำหนดรูปร่างหน้าตาของข้อมูลที่จะได้จาก NestJS
-interface SecretDataResponse {
-  message: string;
-  userId: string;
-}
+import { Show } from "@clerk/nextjs";
 
 export default function Home() {
-  const { getToken } = useAuth();
-
-  // 🌟 ใช้ useQuery จัดการ State แทน useState และ try...catch
-  const {
-    data: secretData,
-    isFetching, // ใช้เช็คสถานะตอนกำลังโหลด
-    // isError, // เช็คว่ามี Error ไหม (แต่เราจะไม่ใช้ในหน้านี้ เพราะเรามี Global Error Modal คอยจัดการอยู่แล้ว และ ไม่ได้ Skip Global Error ด้วย)
-    refetch, // ฟังก์ชันสำหรับกดปุ่มเพื่อเริ่มดึงข้อมูล
-  } = useQuery({
-    queryKey: ["secretData"],
-    queryFn: async () => {
-      const token = await getToken();
-
-      // ใช้ apiClient ของเรา (ไม่ต้องใส่ URL เต็มถ้า baseURL ใน axios.ts ตั้งไว้ถูกแล้ว)
-      const response = await apiClient.get<SecretDataResponse>(
-        "/api/protected",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      return response.data;
-    },
-    // 🌟 พระเอกของงานนี้: ปิดไม่ให้ทำงานออโต้ตอนเปิดหน้าเว็บ ให้รอคนกดปุ่มเท่านั้น!
-    enabled: false,
-  });
-
   return (
     <div className="p-8 w-full max-w-6xl mx-auto flex flex-col items-center gap-10">
       {/* 🔴 โซนที่ 1: สถานะยังไม่ได้ล็อกอิน */}
@@ -168,47 +129,6 @@ export default function Home() {
             <button className="mt-auto px-4 py-2 bg-purple-50 text-purple-600 font-medium rounded-lg w-full group-hover:bg-purple-600 group-hover:text-white transition-colors">
               เปิดใช้งาน
             </button>
-          </div>
-        </div>
-
-        {/* 🛠️ โซนเครื่องมือนักพัฒนา (แยกออกมาให้เป็นระเบียบ) */}
-        <div className="w-full max-w-5xl mt-8 pt-8 border-t border-gray-200">
-          <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center">
-            <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">
-              Developer Tools
-            </h3>
-
-            <button
-              onClick={() => refetch()} // 🌟 กดปุ่มแล้วสั่ง TanStack ไปทำงาน
-              disabled={isFetching}
-              className="px-6 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors shadow-sm mb-6 disabled:opacity-50"
-            >
-              {isFetching
-                ? "กำลังดึงข้อมูล..."
-                : "ทดสอบการเชื่อมต่อ API ห้องลับ"}
-            </button>
-
-            {/* ส่วนแสดงผลลัพธ์จาก Backend */}
-            <div className="w-full max-w-md">
-              {secretData && (
-                <div className="p-4 bg-green-50 text-green-900 rounded-xl border border-green-200 shadow-sm text-sm">
-                  <p className="mb-2">
-                    <strong>สถานะ:</strong> ✅ เชื่อมต่อสำเร็จ
-                  </p>
-                  <p className="mb-1">
-                    <strong>ข้อความ:</strong> {secretData.message}
-                  </p>
-                  <p>
-                    <strong>Clerk ID:</strong>{" "}
-                    <span className="font-mono bg-green-100 px-2 py-0.5 rounded text-xs break-all">
-                      {secretData.userId}
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {/* 🌟 สังเกตว่าเราไม่ต้องดัก Error มาโชว์เองแล้ว เพราะเรามี Global Error Modal คอยเด้งเตือนให้อยู่แล้วครับ */}
-            </div>
           </div>
         </div>
       </Show>

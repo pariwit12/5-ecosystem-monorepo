@@ -3,10 +3,13 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
-import { useGetOrganizations } from "@/features/organizations/hooks/use-get-organizations";
+
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/nextjs";
+import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
+
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
 import OrganizationsLoading from "./loading";
-import { useAuth } from "@clerk/nextjs";
 
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
@@ -44,10 +47,12 @@ export default function OrganizationsPage() {
   // ==========================================
   // 🚀 1. ดึงข้อมูลจาก Hook (บรรทัดเดียวจบ!)
   // ==========================================
-  const { data, isLoading } = useGetOrganizations();
-  const { isLoaded } = useAuth();
+  const { getToken, userId, isLoaded } = useAuth();
+  const { data, isLoading } = useQuery(
+    organizationsQueries.lists(userId, getToken),
+  );
 
-  // 🌟 3. ถ้ากำลังโหลดอยู่ ก็โยนหน้า Skeleton กะพริบๆ ไปให้ User ดูเลย โค้ดสั้นและสวยมาก!
+  // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
   if (!isLoaded || isLoading) {
     return <OrganizationsLoading />;
   }

@@ -7,6 +7,7 @@ import {
   UseGuards,
   Get,
   Post,
+  Patch,
   Param,
   Query,
   Body,
@@ -50,7 +51,12 @@ export class TemplateController {
   // [POST] Business Logic
   // ==========================================
 
+  // ==========================================
+  // [PATCH] Business Logic
+  // ==========================================
+
   @Post(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
+  @Patch(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
   // ปรับให้ตรงตามที่ใช้จริง
   @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
   async methodTemplate(

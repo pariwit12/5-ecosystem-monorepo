@@ -5,7 +5,6 @@ export class GetOrganizationsQuery {
 
 // 📤 ขาออก
 export interface GetOrganizationsResponse {
-  success: boolean;
   organizations: {
     id: string;
     name: string;

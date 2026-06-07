@@ -32,12 +32,17 @@ export class GetOrganizationsHandler implements IQueryHandler<
           },
         },
       },
-      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+      },
     });
 
     return {
-      success: true,
-      organizations: organizations,
+      organizations: organizations.map((org) => ({
+        id: org.id,
+        name: org.name,
+      })),
     };
   }
 }

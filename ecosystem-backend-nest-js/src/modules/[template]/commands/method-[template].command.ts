@@ -54,8 +54,8 @@ export class MethodTemplateCommand {
 
 // 🌟 นี่คือ "หน้าตาข้อมูล" ขาออก
 export interface MethodTemplateResponse {
-  success: boolean;
-  message: string;
+  id: string;
+  // name: string;
   // organizationId: string;
   // organization: any; // อนาคตค่อยมาระบุ Type ที่ชัดเจนแทน any ได้ครับ
   // organizationDentalClinic: {
