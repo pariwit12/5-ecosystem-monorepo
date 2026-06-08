@@ -10,7 +10,7 @@ model OrganizationDentalClinic {
   // 1. บอกสถานะ
   paymentStatus PaymentStatus @default(DONE) @map("payment_status")
 
-  // 2. บอกวันหมดอายุ (ถ้าเป็น null อาจแปลว่าใช้ฟรีตลอดชีพ หรือยังไม่เคยสมัคร)
+  // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
   subscriptionEndDate DateTime? @map("subscription_end_date")
 
   // version    Int @default(1)
@@ -20,8 +20,9 @@ model OrganizationDentalClinic {
   organizationId String       @unique @map("organization_id") @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
-  personDentistAffiliations       PersonDentistAffiliation[]
-  personDentalPatientAffiliations PersonDentalPatientAffiliation[]
+  personDentistAffiliations               PersonDentistAffiliation[]
+  personDentalPatientAffiliations         PersonDentalPatientAffiliation[]
+  ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
   @@map("organization_dental_clinic")
 }

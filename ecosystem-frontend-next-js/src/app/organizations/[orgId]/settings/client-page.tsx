@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
@@ -11,6 +9,8 @@ import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { useEffect } from "react"; // 🌟 1. นำเข้า useEffect
 import { useRouter } from "next/navigation"; // 🌟 1. นำเข้า useRouter
 import { isAxiosError } from "axios"; // 🌟 1. นำเข้า isAxiosError เพื่อความปลอดภัยของ TypeScript
+
+import Link from "next/link";
 
 // 🌟 รับ orgId ที่ผ่านการสแกนแล้วมาจาก Server Component
 export default function OrganizationSettingsClient({
@@ -170,9 +170,14 @@ export default function OrganizationSettingsClient({
                     สถานะ:{" "}
                     <span className="text-red-500">ยังไม่เปิดใช้งาน</span>
                   </span>
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                    สมัครใช้งานโมดูลนี้
-                  </button>
+                  <Link
+                    href={`/organizations/${orgId}/dental-clinic/new`}
+                    // className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+                  >
+                    {/* สมัครใช้งานโมดูลนี้ */}
+                    ทดลองใช้งานฟรี 30 วัน
+                  </Link>
                 </>
               )}
             </div>
