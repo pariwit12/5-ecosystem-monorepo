@@ -74,18 +74,11 @@ export default function OrganizationGeneralClient({
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isDirty },
   } = useForm<OrganizationsSettingsGeneralForm>({
     resolver: zodResolver(organizationsSettingsGeneralFormSchema),
-    defaultValues: { name: "" }, // ค่าเริ่มต้นว่างๆ ไปก่อน
+    values: { name: orgDetails?.name || "" }, // ค่าเริ่มต้นว่างๆ ไปก่อน
   });
-
-  // 🌟 4. เมื่อโหลดข้อมูลองค์กรเสร็จ ให้เอาชื่อเดิมมาหยอดใส่ฟอร์ม
-  useEffect(() => {
-    if (orgDetails) {
-      reset({ name: orgDetails.name });
-    }
-  }, [orgDetails, reset]);
 
   const updateMutation = useUpdateOrganizationById(orgId);
 
@@ -97,13 +90,17 @@ export default function OrganizationGeneralClient({
       // source: "WEB_APPLICATION", // แอบแนบไปเอง (หรือจะดึงจาก Zustand ก็ได้)
     };
 
-    toast.promise(updateMutation.mutateAsync(finalPayload), {
+    return toast.promise(updateMutation.mutateAsync(finalPayload), {
       // ⏳ 1. สถานะจังหวะแรกที่กดปุ่มยิง API
       loading: "กำลังบันทึกข้อมูล...",
       success: () => {
         // ล้างค่าในฟอร์มเมื่อสำเร็จ
         // 🌟 ใช้ reset(values) เพื่อเอาชื่อใหม่ไปตั้งเป็นค่าตั้งต้น ทำให้ปุ่ม Save กลับไปกดไม่ได้ (isDirty = false)
         reset(values);
+
+        // 🌟 2. สั่งเตะกลับไปหน้า Settings รวม
+        // (ผู้ใช้จะเห็นหน้าใหม่ พร้อมๆ กับกล่อง Toast สีเขียวลอยขึ้นมาพอดีครับ!)
+        router.push(`/organizations/${orgId}/settings`);
 
         return "อัปเดตข้อมูลองค์กรเรียบร้อย"; // ข้อความที่จะโชว์บนกล่อง Toast สีเขียว
       },
@@ -201,10 +198,15 @@ export default function OrganizationGeneralClient({
           <div className="flex justify-end border-t pt-6 mt-2">
             <button
               type="submit"
-              disabled={!isDirty || isSubmitting} // ปุ่มจะกดไม่ได้ถ้ายังไม่พิมพ์แก้ชื่อ หรือกำลังโหลดอยู่
+              // 🌟 ใช้ updateMutation.isPending แข็งแกร่งและตรงเป๊ะที่สุดครับ!
+              disabled={
+                !isDirty || updateMutation.isPending || updateMutation.isSuccess
+              } // ปุ่มจะกดไม่ได้ถ้ายังไม่พิมพ์แก้ชื่อ (!isDirty) หรือกำลังสั่ง API อยู่ (isPending) และสำเร็จแล้วรอเปลี่ยนหน้า (isSuccess)
               className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+              {updateMutation.isPending || updateMutation.isSuccess
+                ? "กำลังบันทึก..."
+                : "บันทึกการเปลี่ยนแปลง"}
             </button>
           </div>
         </form>
