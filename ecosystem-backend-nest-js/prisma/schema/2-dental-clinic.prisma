@@ -34,72 +34,28 @@ model OrganizationDentalClinic {
   @@map("organization_dental_clinic")
 }
 
-model PersonDentist {
-  id            String @id @default(uuid(7)) @db.Uuid
-  licenseNumber String @unique @map("license_number")
-
-  personId String @unique @map("person_id") @db.Uuid
-  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
-
-  personDentistAffiliations PersonDentistAffiliation[]
-
-  @@map("person_dentist")
-}
-
 model PersonDentistAffiliation {
-  id String @id @default(uuid(7)) @db.Uuid
-
-  personDentistId String        @map("person_dentist_id") @db.Uuid
-  personDentist   PersonDentist @relation(fields: [personDentistId], references: [id], onDelete: Restrict)
-
+  personDentistId            String                   @map("person_dentist_id") @db.Uuid
+  personDentist              PersonDentist            @relation(fields: [personDentistId], references: [personId], onDelete: Restrict)
   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
 
-  // ป้องกันไม่ให้แอดคนเดิมซ้ำในคลินิกเดิม
-  @@unique([personDentistId, organizationDentalClinicId])
+  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+  @@id([personDentistId, organizationDentalClinicId])
   @@map("person_dentist_affiliation")
 }
 
-enum BloodType {
-  A_PLUS
-  A_MINUS
-  B_PLUS
-  B_MINUS
-  O_PLUS
-  O_MINUS
-  AB_PLUS
-  AB_MINUS
-  UNKNOWN // เผื่อคนไข้ยังไม่เคยตรวจ หรือจำไม่ได้
-}
-
-model PersonDentalPatient {
-  id               String    @id @default(uuid(7)) @db.Uuid
-  medicalCondition String?   @map("medical_condition") // ประวัติทางการแพทย์
-  allergy          String? // ประวัติแพ้ยา
-  bloodType        BloodType @default(UNKNOWN) @map("blood_type")
-
-  personId String @unique @map("person_id") @db.Uuid
-  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
-
-  personDentalPatientAffiliations PersonDentalPatientAffiliation[]
-
-  @@map("person_dental_patient")
-}
-
 model PersonDentalPatientAffiliation {
-  id               String    @id @default(uuid(7)) @db.Uuid
-  medicalCondition String?   @map("medical_condition") // ประวัติทางการแพทย์
-  allergy          String? // ประวัติแพ้ยา
-  bloodType        BloodType @default(UNKNOWN) @map("blood_type")
-
-  personDentalPatientId String              @map("person_dental_patient_id") @db.Uuid
-  personDentalPatient   PersonDentalPatient @relation(fields: [personDentalPatientId], references: [id], onDelete: Restrict)
-
+  personDentalPatientId      String                   @map("person_dental_patient_id") @db.Uuid
+  personDentalPatient        PersonDentalPatient      @relation(fields: [personDentalPatientId], references: [personId], onDelete: Restrict)
   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  medicalCondition           String?                  @map("medical_condition") // ประวัติทางการแพทย์
+  allergy                    String? // ประวัติแพ้ยา
+  bloodType                  BloodType                @default(UNKNOWN) @map("blood_type")
 
-  // ป้องกันไม่ให้แอดคนเดิมซ้ำในคลินิกเดิม
-  @@unique([personDentalPatientId, organizationDentalClinicId])
+  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+  @@id([personDentalPatientId, organizationDentalClinicId])
   @@map("person_dental_patient_affiliation")
 }
 

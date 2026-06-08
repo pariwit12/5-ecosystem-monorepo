@@ -44,15 +44,46 @@ model Person {
 }
 
 model PersonOrganizationAffiliation {
-  id String @id @default(uuid(7)) @db.Uuid
-
-  personId String @map("person_id") @db.Uuid
-  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
-
+  personId       String       @map("person_id") @db.Uuid
+  person         Person       @relation(fields: [personId], references: [id], onDelete: Restrict)
   organizationId String       @map("organization_id") @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
-  // ป้องกันไม่ให้แอดคนเดิมซ้ำในองค์กรเดิม
-  @@unique([personId, organizationId])
+  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+  @@id([personId, organizationId])
   @@map("person_organization_affiliation")
+}
+
+enum BloodType {
+  A_PLUS
+  A_MINUS
+  B_PLUS
+  B_MINUS
+  O_PLUS
+  O_MINUS
+  AB_PLUS
+  AB_MINUS
+  UNKNOWN // เผื่อคนไข้ยังไม่เคยตรวจ หรือจำไม่ได้
+}
+
+model PersonDentalPatient {
+  personId         String    @id @map("person_id") @db.Uuid
+  person           Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
+  medicalCondition String?   @map("medical_condition") // ประวัติทางการแพทย์
+  allergy          String? // ประวัติแพ้ยา
+  bloodType        BloodType @default(UNKNOWN) @map("blood_type")
+
+  personDentalPatientAffiliations PersonDentalPatientAffiliation[]
+
+  @@map("person_dental_patient")
+}
+
+model PersonDentist {
+  personId      String @id @map("person_id") @db.Uuid
+  person        Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+  licenseNumber String @unique @map("license_number")
+
+  personDentistAffiliations PersonDentistAffiliation[]
+
+  @@map("person_dentist")
 }
