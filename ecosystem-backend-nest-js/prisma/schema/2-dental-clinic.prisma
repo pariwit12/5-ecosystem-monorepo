@@ -5,20 +5,27 @@ enum PaymentStatus {
 }
 
 model OrganizationDentalClinic {
-  id String @id @default(uuid(7)) @db.Uuid
+  id                  String       @id @default(uuid(7)) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  // ใช้ deleted_at เพื่อให้รู้เวลาที่ลบ (ถ้าเป็น null คือยังไม่ลบ)
+  deletedAt           DateTime?    @map("deleted_at")
+  // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
+  subscriptionEndDate DateTime?    @map("subscription_end_date")
+
+  name                String
+  address             String?
+  province            String // รอสร้าง Enum ของชื่อจังหวัด
+  dentalClinicLicense String? @map("dental_clinic_license")
+  taxId               String? @map("tax_id") // สำหรับเอาไปใช้ออกใบเสร็จ
+  phone               String?
 
   // 1. บอกสถานะ
   paymentStatus PaymentStatus @default(DONE) @map("payment_status")
 
-  // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
-  subscriptionEndDate DateTime? @map("subscription_end_date")
-
   // version    Int @default(1)
   // // ใช้สำหรับ
   // // 1. 
-
-  organizationId String       @unique @map("organization_id") @db.Uuid
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   personDentistAffiliations               PersonDentistAffiliation[]
   personDentalPatientAffiliations         PersonDentalPatientAffiliation[]

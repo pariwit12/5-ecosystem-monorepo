@@ -16,7 +16,7 @@ model Organization {
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
 
-  organizationDentalClinic OrganizationDentalClinic?
+  organizationDentalClinics OrganizationDentalClinic[]
 
   @@map("organization")
 }

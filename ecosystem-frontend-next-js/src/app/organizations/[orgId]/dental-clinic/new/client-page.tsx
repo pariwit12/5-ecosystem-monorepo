@@ -102,7 +102,7 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
             </Link>
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                เปิดใช้งาน Toothcraft Dental Clinic
+                เปิดใช้งาน Dental Clinic Information System
               </h2>
               <p className="text-blue-600 mt-1 text-sm font-medium">
                 สิทธิ์ทดลองใช้งานฟรี 30 วัน (Free Trial)
