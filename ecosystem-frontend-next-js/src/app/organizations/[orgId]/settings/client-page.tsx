@@ -152,34 +152,16 @@ export default function OrganizationSettingsClient({
               จัดการประวัติคนไข้ ตารางนัดหมาย ทันตแพทย์ และระบบคลังสต๊อกวัสดุ
             </p>
             <div className="flex items-center justify-between border-t pt-4">
-              {orgDetails?.organizationDentalClinic ? (
-                <>
-                  <span className="text-sm font-medium text-gray-500">
-                    สถานะ:{" "}
-                    <span className="text-green-600 font-bold">
-                      เปิดใช้งานแล้ว
-                    </span>
-                  </span>
-                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
-                    จัดการโมดูล
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-500">
-                    สถานะ:{" "}
-                    <span className="text-red-500">ยังไม่เปิดใช้งาน</span>
-                  </span>
-                  <Link
-                    href={`/organizations/${orgId}/dental-clinic/new`}
-                    // className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                    className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
-                  >
-                    {/* สมัครใช้งานโมดูลนี้ */}
-                    ทดลองใช้งานฟรี 30 วัน
-                  </Link>
-                </>
-              )}
+              <span className="text-sm font-medium text-gray-500">
+                สถานะ:{" "}
+                <span className="text-blue-600 font-bold">พร้อมใช้งาน</span>
+              </span>
+              <Link
+                href={`/organizations/${orgId}/dental-clinic`}
+                className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+              >
+                เข้าสู่ระบบจัดการคลินิก
+              </Link>
             </div>
           </div>
 

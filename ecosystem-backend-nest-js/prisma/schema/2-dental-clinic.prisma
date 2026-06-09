@@ -1,59 +1,59 @@
 model OrganizationDentalClinic {
-  id                  String       @id @default(uuid(7)) @db.Uuid
-  organizationId      String       @map("organization_id") @db.Uuid
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  id             String       @id @default(uuid(7)) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   // ใช้ deleted_at เพื่อให้รู้เวลาที่ลบ (ถ้าเป็น null คือยังไม่ลบ)
-  deletedAt           DateTime?    @map("deleted_at")
-  // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
-  subscriptionEndDate DateTime?    @map("subscription_end_date")
+  deletedAt      DateTime?    @map("deleted_at")
+  // // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
+  // subscriptionEndDate DateTime?    @map("subscription_end_date")
 
-  name                String
-  address             String?
-  province            String // รอสร้าง Enum ของชื่อจังหวัด
-  dentalClinicLicense String? @map("dental_clinic_license")
-  taxId               String? @map("tax_id") // สำหรับเอาไปใช้ออกใบเสร็จ
-  phone               String?
+  // name                String
+  // address             String?
+  // province            String // รอสร้าง Enum ของชื่อจังหวัด
+  // dentalClinicLicense String? @map("dental_clinic_license")
+  // taxId               String? @map("tax_id") // สำหรับเอาไปใช้ออกใบเสร็จ
+  // phone               String?
 
   // version    Int @default(1)
   // // ใช้สำหรับ
   // // 1. 
 
-  personDentistAffiliations               PersonDentistAffiliation[]
-  personDentalPatientAffiliations         PersonDentalPatientAffiliation[]
-  ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
+  // personDentistAffiliations               PersonDentistAffiliation[]
+  // personDentalPatientAffiliations         PersonDentalPatientAffiliation[]
+  // ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
   // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
   @@index([organizationId])
   @@map("organization_dental_clinic")
 }
 
-model PersonDentistAffiliation {
-  personDentistId            String                   @map("person_dentist_id") @db.Uuid
-  personDentist              PersonDentist            @relation(fields: [personDentistId], references: [personId], onDelete: Restrict)
-  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
-  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+// model PersonDentistAffiliation {
+//   personDentistId            String                   @map("person_dentist_id") @db.Uuid
+//   personDentist              PersonDentist            @relation(fields: [personDentistId], references: [personId], onDelete: Restrict)
+//   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+//   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
 
-  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
-  @@id([personDentistId, organizationDentalClinicId])
-  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
-  @@index([organizationDentalClinicId])
-  @@map("person_dentist_affiliation")
-}
+//   // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+//   @@id([personDentistId, organizationDentalClinicId])
+//   // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+//   @@index([organizationDentalClinicId])
+//   @@map("person_dentist_affiliation")
+// }
 
-model PersonDentalPatientAffiliation {
-  personDentalPatientId      String                   @map("person_dental_patient_id") @db.Uuid
-  personDentalPatient        PersonDentalPatient      @relation(fields: [personDentalPatientId], references: [personId], onDelete: Restrict)
-  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
-  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
-  medicalCondition           String?                  @map("medical_condition") // ประวัติทางการแพทย์
-  allergy                    String? // ประวัติแพ้ยา
-  bloodType                  BloodType                @default(UNKNOWN) @map("blood_type")
+// model PersonDentalPatientAffiliation {
+//   personDentalPatientId      String                   @map("person_dental_patient_id") @db.Uuid
+//   personDentalPatient        PersonDentalPatient      @relation(fields: [personDentalPatientId], references: [personId], onDelete: Restrict)
+//   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+//   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+//   medicalCondition           String?                  @map("medical_condition") // ประวัติทางการแพทย์
+//   allergy                    String? // ประวัติแพ้ยา
+//   bloodType                  BloodType                @default(UNKNOWN) @map("blood_type")
 
-  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
-  @@id([personDentalPatientId, organizationDentalClinicId])
-  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
-  @@index([organizationDentalClinicId])
-  @@map("person_dental_patient_affiliation")
-}
+//   // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+//   @@id([personDentalPatientId, organizationDentalClinicId])
+//   // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+//   @@index([organizationDentalClinicId])
+//   @@map("person_dental_patient_affiliation")
+// }
 
 // อนาคต อาจเปลี่ยนการเก็บข้อมูล medicalCondition และ allergy ให้เก็บเป็นรายการ แทน String

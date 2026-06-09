@@ -37,8 +37,8 @@ model Person {
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
 
-  personDentist       PersonDentist?
-  personDentalPatient PersonDentalPatient?
+  // personDentist       PersonDentist?
+  // personDentalPatient PersonDentalPatient?
 
   @@map("person")
 }
@@ -56,36 +56,36 @@ model PersonOrganizationAffiliation {
   @@map("person_organization_affiliation")
 }
 
-enum BloodType {
-  A_PLUS
-  A_MINUS
-  B_PLUS
-  B_MINUS
-  O_PLUS
-  O_MINUS
-  AB_PLUS
-  AB_MINUS
-  UNKNOWN // เผื่อคนไข้ยังไม่เคยตรวจ หรือจำไม่ได้
-}
+// enum BloodType {
+//   A_PLUS
+//   A_MINUS
+//   B_PLUS
+//   B_MINUS
+//   O_PLUS
+//   O_MINUS
+//   AB_PLUS
+//   AB_MINUS
+//   UNKNOWN // เผื่อคนไข้ยังไม่เคยตรวจ หรือจำไม่ได้
+// }
 
-model PersonDentalPatient {
-  personId         String    @id @map("person_id") @db.Uuid
-  person           Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
-  medicalCondition String?   @map("medical_condition") // ประวัติทางการแพทย์
-  allergy          String? // ประวัติแพ้ยา
-  bloodType        BloodType @default(UNKNOWN) @map("blood_type")
+// model PersonDentalPatient {
+//   personId         String    @id @map("person_id") @db.Uuid
+//   person           Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
+//   medicalCondition String?   @map("medical_condition") // ประวัติทางการแพทย์
+//   allergy          String? // ประวัติแพ้ยา
+//   bloodType        BloodType @default(UNKNOWN) @map("blood_type")
 
-  personDentalPatientAffiliations PersonDentalPatientAffiliation[]
+//   personDentalPatientAffiliations PersonDentalPatientAffiliation[]
 
-  @@map("person_dental_patient")
-}
+//   @@map("person_dental_patient")
+// }
 
-model PersonDentist {
-  personId      String @id @map("person_id") @db.Uuid
-  person        Person @relation(fields: [personId], references: [id], onDelete: Restrict)
-  licenseNumber String @unique @map("license_number")
+// model PersonDentist {
+//   personId      String @id @map("person_id") @db.Uuid
+//   person        Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+//   licenseNumber String @unique @map("license_number")
 
-  personDentistAffiliations PersonDentistAffiliation[]
+//   personDentistAffiliations PersonDentistAffiliation[]
 
-  @@map("person_dentist")
-}
+//   @@map("person_dentist")
+// }

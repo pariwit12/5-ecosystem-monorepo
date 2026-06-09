@@ -1,22 +1,22 @@
-model ActivationCodeOrganizationDentalClinic {
-  // code เราพิมพ์สร้างเองแล้วกดส่งมาให้ DB บันทึก = ง่ายสุด
-  code                             String                    @id // รหัสที่จะส่งให้ User กรอก เช่น TOOTHCRAFT-PRO-XXXX
-  planType                         String                    @map("plan_type") // ระดับแพ็กเกจ รอทำเป็น Enum
-  duration                         Int // จำนวนวัน (30 = 1 เดือน, 90 = 3 เดือน, 180 = 6 เดือน, 365 = 1 ปี) อาจทำเป็น Enum
-  price                            Int // อาจทำเป็น Enum
-  customerNickname                 String?                   @map("customer_nickname")
-  createdAt                        DateTime                  @default(now()) @map("created_at")
-  // ให้หมดอายุใน 7 วัน ป้องกันการไม่ยอมใช้และมีปัญหาภายหลัง (ต้องการให้ User ใช้เลย ในระหว่างที่ยังติดต่อกับ Sale อยู่)
-  expiresAt                        DateTime                  @map("expires_at") // วันหมดอายุของตัวรหัส (ถ้าไม่กรอกในเวลาที่กำหนดจะใช้ไม่ได้)
-  usedAt                           DateTime?                 @map("used_at")
-  usedByOrganizationDentalClinicId String?                   @map("used_by_organization_dental_clinic_id") @db.Uuid // ผูกไว้ว่าองค์กรไหนเป็นคนใช้รหัสนี้ไป
-  usedByOrganizationDentalClinic   OrganizationDentalClinic? @relation(fields: [usedByOrganizationDentalClinicId], references: [id], onDelete: Restrict)
+// model ActivationCodeOrganizationDentalClinic {
+//   // code เราพิมพ์สร้างเองแล้วกดส่งมาให้ DB บันทึก = ง่ายสุด
+//   code                             String                    @id // รหัสที่จะส่งให้ User กรอก เช่น TOOTHCRAFT-PRO-XXXX
+//   planType                         String                    @map("plan_type") // ระดับแพ็กเกจ รอทำเป็น Enum
+//   duration                         Int // จำนวนวัน (30 = 1 เดือน, 90 = 3 เดือน, 180 = 6 เดือน, 365 = 1 ปี) อาจทำเป็น Enum
+//   price                            Int // อาจทำเป็น Enum
+//   customerNickname                 String?                   @map("customer_nickname")
+//   createdAt                        DateTime                  @default(now()) @map("created_at")
+//   // ให้หมดอายุใน 7 วัน ป้องกันการไม่ยอมใช้และมีปัญหาภายหลัง (ต้องการให้ User ใช้เลย ในระหว่างที่ยังติดต่อกับ Sale อยู่)
+//   expiresAt                        DateTime                  @map("expires_at") // วันหมดอายุของตัวรหัส (ถ้าไม่กรอกในเวลาที่กำหนดจะใช้ไม่ได้)
+//   usedAt                           DateTime?                 @map("used_at")
+//   usedByOrganizationDentalClinicId String?                   @map("used_by_organization_dental_clinic_id") @db.Uuid // ผูกไว้ว่าองค์กรไหนเป็นคนใช้รหัสนี้ไป
+//   usedByOrganizationDentalClinic   OrganizationDentalClinic? @relation(fields: [usedByOrganizationDentalClinicId], references: [id], onDelete: Restrict)
 
-  // version    Int @default(1)
-  // // ใช้สำหรับ
-  // // 1. 
+//   // version    Int @default(1)
+//   // // ใช้สำหรับ
+//   // // 1. 
 
-  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
-  @@index([usedByOrganizationDentalClinicId])
-  @@map("activation_code_organization_dental_clinic")
-}
+//   // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+//   @@index([usedByOrganizationDentalClinicId])
+//   @@map("activation_code_organization_dental_clinic")
+// }
