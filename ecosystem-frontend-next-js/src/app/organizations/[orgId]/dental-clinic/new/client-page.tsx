@@ -95,7 +95,7 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
         {currentStep < 3 && (
           <div className="flex items-center gap-4 border-b border-gray-200 pb-6">
             <Link
-              href={`/organizations/${orgId}/settings`}
+              href={`/organizations/${orgId}/dental-clinic`}
               className="p-2 bg-white border text-gray-600 rounded-full hover:bg-gray-100 transition shadow-sm"
             >
               <ChevronRight className="w-6 h-6 rotate-180" />
