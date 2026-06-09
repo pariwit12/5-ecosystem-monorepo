@@ -23,7 +23,7 @@ model Organization {
 
 model Person {
   id      String  @id @default(uuid(7)) @db.Uuid
-  clerkId String? @unique @map("clerk_id")
+  clerkId String? @unique @map("clerk_id") // unique เป็น index ในตัวอยู่แล้ว ไม่ต้องใส่ @@index เพิ่ม
 
   // firstName String @map("first_name")
   // lastName  String @map("last_name")
@@ -49,8 +49,10 @@ model PersonOrganizationAffiliation {
   organizationId String       @map("organization_id") @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
-  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
-  @@id([personId, organizationId])
+  // 🔥 ใช้ id เป็น Composite PK (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+  @@id([personId, organizationId]) // = เร็วตัวแรก และ 2 ตัว (ตัวที่ไม่อยู่ตามลำดับจากด้านซ้ายจะช้า ต้องไปทำ index เพิ่มถ้าต้องใช้ในการค้นหา)
+  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+  @@index([organizationId])
   @@map("person_organization_affiliation")
 }
 

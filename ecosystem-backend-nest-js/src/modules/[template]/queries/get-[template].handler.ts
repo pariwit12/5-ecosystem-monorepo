@@ -22,8 +22,7 @@ export class GetTemplateHandler implements IQueryHandler<
     const { clerkId, param, queryFromUrl } = query;
 
     // ตรวจสอบ AccessControl (ปรับตามจริง)
-    // eslint-disable-next-line
-    const { personId, personOrganizationAffiliationId } =
+    const { personId } =
       await this.accessControlService.verifyOrganizationAccess(
         clerkId,
         param.organization_id,
@@ -38,7 +37,6 @@ export class GetTemplateHandler implements IQueryHandler<
         id: true,
         name: true,
         deletedAt: true,
-        organizationDentalClinic: true,
       },
     });
 
@@ -69,12 +67,6 @@ export class GetTemplateHandler implements IQueryHandler<
     return {
       id: organization.id,
       name: organization.name,
-      organizationDentalClinic: organization.organizationDentalClinic
-        ? {
-            subscriptionEndDate:
-              organization.organizationDentalClinic.subscriptionEndDate,
-          }
-        : null,
       // ตัวอย่างการ map ข้อมูลจาก findMany
       organizations: organizations.map((org) => ({
         id: org.id,

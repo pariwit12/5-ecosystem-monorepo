@@ -1,8 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { PaymentStatus } from '@prisma/client';
-
 // 🛡️ DTO ขาเข้า
 export const GetOrganizationByIdDtoParamSchema = z.object({
   organization_id: z.uuid({
@@ -28,9 +26,4 @@ export class GetOrganizationByIdQuery {
 export interface GetOrganizationByIdResponse {
   id: string;
   name: string;
-  organizationDentalClinic: {
-    id: string;
-    paymentStatus: PaymentStatus; // 👈 ใช้ Enum ของ Prisma ตรงๆ ได้เลย!
-    subscriptionEndDate: Date | null;
-  } | null;
 }

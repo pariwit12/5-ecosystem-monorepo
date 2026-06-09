@@ -67,15 +67,14 @@ model Template {
 }
 
 model TemplateOneTemplateTwoAffiliation {
-  id String @id @default(uuid(7)) @db.Uuid
-
-  templateOneId String   @unique @map("template_one_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
-  template      Template @relation(fields: [templateOneId], references: [id], onDelete: Restrict)
-
+  templateOneId String      @unique @map("template_one_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
+  template      Template    @relation(fields: [templateOneId], references: [id], onDelete: Restrict)
   templateTwoId String      @map("template_two_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
   templateTwo   TemplateTwo @relation(fields: [templateTwoId], references: [id], onDelete: Restrict)
 
-  @@unique([templateOneId, templateTwoId]) // ต้องมี สำหรับทุกตาราง Affiliation
+  @@id([templateOneId, templateTwoId]) // ต้องมี สำหรับทุกตาราง Affiliation
+  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+  @@index([templateTwoId])
   @@map("template_one_template_two_affiliation")
 }
 

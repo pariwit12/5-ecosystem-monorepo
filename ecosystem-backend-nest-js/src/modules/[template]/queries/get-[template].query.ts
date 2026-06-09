@@ -57,10 +57,6 @@ export class GetTemplateQuery {
 export interface GetTemplateResponse {
   id: string;
   name: string;
-  organizationDentalClinic: {
-    // paymentStatus: TemplateEnumInSchemaPrisma; // 👈 ใช้ Enum ของ Prisma ตรงๆ ได้เลย!
-    subscriptionEndDate: Date | null;
-  } | null;
   organizations: {
     id: string;
     name: string;

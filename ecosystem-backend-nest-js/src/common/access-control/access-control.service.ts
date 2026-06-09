@@ -67,13 +67,7 @@ export class AccessControlService {
         personOrganizationAffiliations: {
           where: { organizationId: organizationId },
           select: {
-            id: true,
-            // organization: {
-            //   select: {
-            //     id: true,
-            //     deletedAt: true,
-            //   },
-            // },
+            organizationId: true,
           },
         },
       },
@@ -102,8 +96,6 @@ export class AccessControlService {
 
     return {
       personId: person.id,
-      personOrganizationAffiliationId:
-        person.personOrganizationAffiliations[0].id,
     };
   }
 }

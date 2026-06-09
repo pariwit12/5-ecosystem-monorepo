@@ -1,9 +1,3 @@
-enum PaymentStatus {
-  DONE
-  CREDIT_CARD_EXPIRED
-  CREDIT_CARD_INVALID
-}
-
 model OrganizationDentalClinic {
   id                  String       @id @default(uuid(7)) @db.Uuid
   organizationId      String       @map("organization_id") @db.Uuid
@@ -20,9 +14,6 @@ model OrganizationDentalClinic {
   taxId               String? @map("tax_id") // สำหรับเอาไปใช้ออกใบเสร็จ
   phone               String?
 
-  // 1. บอกสถานะ
-  paymentStatus PaymentStatus @default(DONE) @map("payment_status")
-
   // version    Int @default(1)
   // // ใช้สำหรับ
   // // 1. 
@@ -31,6 +22,8 @@ model OrganizationDentalClinic {
   personDentalPatientAffiliations         PersonDentalPatientAffiliation[]
   ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+  @@index([organizationId])
   @@map("organization_dental_clinic")
 }
 
@@ -42,6 +35,8 @@ model PersonDentistAffiliation {
 
   // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
   @@id([personDentistId, organizationDentalClinicId])
+  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+  @@index([organizationDentalClinicId])
   @@map("person_dentist_affiliation")
 }
 
@@ -56,6 +51,8 @@ model PersonDentalPatientAffiliation {
 
   // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
   @@id([personDentalPatientId, organizationDentalClinicId])
+  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+  @@index([organizationDentalClinicId])
   @@map("person_dental_patient_affiliation")
 }
 

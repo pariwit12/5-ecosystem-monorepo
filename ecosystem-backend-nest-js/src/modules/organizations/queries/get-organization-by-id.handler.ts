@@ -37,13 +37,6 @@ export class GetOrganizationByIdHandler implements IQueryHandler<
       select: {
         id: true,
         name: true,
-        organizationDentalClinic: {
-          select: {
-            id: true,
-            paymentStatus: true,
-            subscriptionEndDate: true,
-          },
-        },
       },
     });
 
@@ -59,14 +52,6 @@ export class GetOrganizationByIdHandler implements IQueryHandler<
     return {
       id: organization.id,
       name: organization.name,
-      organizationDentalClinic: organization.organizationDentalClinic
-        ? {
-            id: organization.organizationDentalClinic.id,
-            paymentStatus: organization.organizationDentalClinic.paymentStatus,
-            subscriptionEndDate:
-              organization.organizationDentalClinic.subscriptionEndDate,
-          }
-        : null,
     };
   }
 }

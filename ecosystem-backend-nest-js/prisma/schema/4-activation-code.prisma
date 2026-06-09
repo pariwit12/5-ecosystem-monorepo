@@ -1,7 +1,6 @@
 model ActivationCodeOrganizationDentalClinic {
-  id                               String                    @id @default(uuid(7)) @db.Uuid
   // code เราพิมพ์สร้างเองแล้วกดส่งมาให้ DB บันทึก = ง่ายสุด
-  code                             String                    @unique // รหัสที่จะส่งให้ User กรอก เช่น TOOTHCRAFT-PRO-XXXX
+  code                             String                    @id // รหัสที่จะส่งให้ User กรอก เช่น TOOTHCRAFT-PRO-XXXX
   planType                         String                    @map("plan_type") // ระดับแพ็กเกจ รอทำเป็น Enum
   duration                         Int // จำนวนวัน (30 = 1 เดือน, 90 = 3 เดือน, 180 = 6 เดือน, 365 = 1 ปี) อาจทำเป็น Enum
   price                            Int // อาจทำเป็น Enum
@@ -17,5 +16,7 @@ model ActivationCodeOrganizationDentalClinic {
   // // ใช้สำหรับ
   // // 1. 
 
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+  @@index([usedByOrganizationDentalClinicId])
   @@map("activation_code_organization_dental_clinic")
 }
