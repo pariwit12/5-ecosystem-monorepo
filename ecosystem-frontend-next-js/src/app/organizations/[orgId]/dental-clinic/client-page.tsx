@@ -3,10 +3,10 @@
 import Link from "next/link";
 
 export default function DentalClinicListClient({ orgId }: { orgId: string }) {
-  // 🔄 จำลองข้อมูลคลินิกสาขาต่างๆ (รอบรรจุ useQuery ในอนาคต)
-  const mockClinics = [
-    // { id: "clinic-1", name: "สาขาอารีย์", status: "ACTIVE", subscriptionEndDate: "2027-01-01" },
-  ];
+  // // 🔄 จำลองข้อมูลคลินิกสาขาต่างๆ (รอบรรจุ useQuery ในอนาคต)
+  // const mockClinics = [
+  //   // { id: "clinic-1", name: "สาขาอารีย์", status: "ACTIVE", subscriptionEndDate: "2027-01-01" },
+  // ];
 
   return (
     <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
@@ -50,7 +50,7 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
       </div>
 
       {/* 🟢 ส่วนแสดงรายชื่อคลินิก (Empty State vs Data Grid) */}
-      {mockClinics.length === 0 ? (
+      {/* {mockClinics.length === 0 ? (
         <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 flex flex-col items-center justify-center text-center bg-gray-50/50">
           <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mb-4">
             🏢
@@ -94,7 +94,7 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
             </div>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

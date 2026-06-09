@@ -1,0 +1,89 @@
+// 1. ตารางสถานที่ทำงาน (ใช้ได้กับทุกธุรกิจ เช่น คลินิก, ร้านอาหาร, โรงงาน)
+model OrganizationWorkSchedulePlace {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  // ใช้ deleted_at เพื่อให้รู้เวลาที่ลบ (ถ้าเป็น null คือยังไม่ลบ)
+  deletedAt      DateTime?    @map("deleted_at")
+  // // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
+  // subscriptionEndDate DateTime?    @map("subscription_end_date")
+
+  // 🌟 บังคับใส่ Timezone มาตรฐาน IANA เสมอ (เช่น "Asia/Bangkok", "Europe/London")
+  timezone String // @default("Asia/Bangkok") // เอาไว้บอกว่าต้องแสดงข้อมูล ในโมดูลนี้ด้วย timezone ไหน
+
+  name String // เช่น "คลินิกสาขาอารีย์", "วอร์ดพยาบาลผู้ป่วยใน ICU"
+
+  // version    Int @default(1)
+  // // ใช้สำหรับ
+  // // 1. 
+
+  organizationWorkSchedulePlaceStaffAffiliations OrganizationWorkSchedulePlaceStaffAffiliation[]
+
+  workScheduleSlotTemplates WorkScheduleSlotTemplate[]
+  workScheduleSlots         WorkScheduleSlot[]
+
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+  @@index([organizationId])
+  @@map("organization_work_schedule_place")
+}
+
+// Template ให้ OrganizationWorkSchedulePlace ใช้สร้าง Slot
+model WorkScheduleSlotTemplate {
+  id                              String                        @id @default(uuid(7)) @db.Uuid
+  organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
+  organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
+
+  name           String // เช่น "เวรเช้า (M)", "เวรบ่าย (A)", "เวรดึก (N)", "กะเปิดร้าน"
+  // 🌟 เก็บเป็น String (Wall-clock Time) เสมอ! ห้ามเก็บเป็น DateTime เด็ดขาด (โยนเรื่อง timezone ไปให้ OrganizationWorkSchedulePlace เก็บ)
+  startTime      String @map("start_time") // "20:00"
+  durationMinute Int    @map("duration_minute") // 720 (นาที)
+
+  //   colorCode   String?   @map("color_code") // เอาไว้ให้หน้าบ้านระบายสีปฏิทินสวยๆ
+
+  @@index([organizationWorkSchedulePlaceId])
+  @@map("work_schedule_slot_template")
+}
+
+// Slot จริง ให้พนักงานมาลง หรือ admin จัดใส่ให้
+model WorkScheduleSlot {
+  id                              String                        @id @default(uuid(7)) @db.Uuid
+  organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
+  organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
+
+  name String // เช่น "เวรเช้า (M)", "เวรบ่าย (A)", "เวรดึก (N)", "กะเปิดร้าน"
+
+  personId                                      String?                                        @map("person_id") @db.Uuid
+  organizationWorkSchedulePlaceStaffAffiliation OrganizationWorkSchedulePlaceStaffAffiliation? @relation(fields: [personId, organizationWorkSchedulePlaceId], references: [personId, organizationWorkSchedulePlaceId], onDelete: Restrict)
+
+  // กลายเป็นเวลาจุดเริ่ม-จบ บนเส้นเวลาโลก (UTC) ที่พร้อมให้แอดมินลากยืดหดได้ตามใจชอบ
+  // ตอนสร้างก็ให้ประกอบร่าง datetime และไปเอา timezone จาก OrganizationWorkSchedulePlace มาประกอบ
+  actualStartTime DateTime @map("actual_start_time") @db.Timestamptz
+  actualEndTime   DateTime @map("actual_end_time") @db.Timestamptz
+
+  //   status          String    @default("OPEN") // PENDING, PUBLISHED, CANCELED
+
+  //   note            String? // Description
+
+  // discuss กับ AI แล้ว ใช้แค่ 2 ตัวนี้ ครอบคลุมเกือบทุกกรณีของ 3 ตัวแปรนี้แล้ว
+  @@index([organizationWorkSchedulePlaceId, actualStartTime])
+  @@index([personId, actualStartTime])
+  @@map("work_schedule_slot")
+}
+
+model OrganizationWorkSchedulePlaceStaffAffiliation {
+  personId                        String                        @map("person_id") @db.Uuid
+  person                          Person                        @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
+  organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
+
+  //   role        String    @default("STAFF") // เช่น "HEAD_NURSE", "NURSE", "PART_TIME"
+  //   isActive    Boolean   @default(true) @map("is_active")
+
+  workScheduleSlots WorkScheduleSlot[]
+
+  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
+  @@id([personId, organizationWorkSchedulePlaceId])
+  // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
+  @@index([organizationWorkSchedulePlaceId])
+  @@map("organization_work_schedule_place_staff_affiliation")
+}

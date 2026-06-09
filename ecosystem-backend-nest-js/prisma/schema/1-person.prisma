@@ -16,7 +16,8 @@ model Organization {
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
 
-  organizationDentalClinics OrganizationDentalClinic[]
+  organizationDentalClinics      OrganizationDentalClinic[]
+  organizationWorkSchedulePlaces OrganizationWorkSchedulePlace[]
 
   @@map("organization")
 }
@@ -35,7 +36,8 @@ model Person {
   // 1. เปลี่ยนแปลงข้อมูล Person
   // 2. สร้าง + เปลี่ยนแปลงข้อมูล Organization (หน้าจัดการองค์กร)
 
-  personOrganizationAffiliations PersonOrganizationAffiliation[]
+  personOrganizationAffiliations                 PersonOrganizationAffiliation[]
+  organizationWorkSchedulePlaceStaffAffiliations OrganizationWorkSchedulePlaceStaffAffiliation[]
 
   // personDentist       PersonDentist?
   // personDentalPatient PersonDentalPatient?

@@ -7,6 +7,9 @@ model OrganizationDentalClinic {
   // // 2. บอกวันหมดอายุ (รอเปลี่ยนเป็น moduleOneSubscriptionEndDate โดย ถ้า null แปลว่ายังไม่ได้สมัคร)
   // subscriptionEndDate DateTime?    @map("subscription_end_date")
 
+  // 🌟 บังคับใส่ Timezone มาตรฐาน IANA เสมอ (เช่น "Asia/Bangkok", "Europe/London")
+  timezone String // @default("Asia/Bangkok") // เอาไว้บอกว่าต้องแสดงข้อมูล ในโมดูลนี้ด้วย timezone ไหน
+
   // name                String
   // address             String?
   // province            String // รอสร้าง Enum ของชื่อจังหวัด
