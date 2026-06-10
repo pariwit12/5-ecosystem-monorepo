@@ -36,9 +36,9 @@ model Person {
   // 1. เปลี่ยนแปลงข้อมูล Person
   // 2. สร้าง + เปลี่ยนแปลงข้อมูล Organization (หน้าจัดการองค์กร)
 
-  personOrganizationAffiliations                 PersonOrganizationAffiliation[]
-  organizationWorkSchedulePlaceStaffAffiliations OrganizationWorkSchedulePlaceStaffAffiliation[]
-
+  personOrganizationAffiliations PersonOrganizationAffiliation[]
+  workScheduleAdmins             WorkScheduleAdmin[]
+  workScheduleStaffs             WorkScheduleStaff[]
   // personDentist       PersonDentist?
   // personDentalPatient PersonDentalPatient?
 

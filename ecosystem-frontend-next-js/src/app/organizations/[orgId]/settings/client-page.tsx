@@ -165,6 +165,40 @@ export default function OrganizationSettingsClient({
             </div>
           </div>
 
+          {/* 🌟 การ์ดแอป Work Schedule (ใหม่) */}
+          <div className="border border-purple-100 bg-white rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden transition-all hover:border-purple-300 hover:shadow-md">
+            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+              ใหม่
+            </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center font-bold text-2xl">
+                🗓️
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Work Schedule System
+                </h4>
+                <p className="text-sm text-gray-500">ระบบบริหารตารางการทำงาน</p>
+              </div>
+            </div>
+            <p className="text-gray-600 text-sm mb-6 flex-1">
+              จัดการกะทำงาน สร้างแม่แบบเวร
+              และให้พนักงานกดจองคิวลงเวลาทำงานได้แบบยืดหยุ่น
+            </p>
+            <div className="flex items-center justify-between border-t pt-4">
+              <span className="text-sm font-medium text-gray-500">
+                สถานะ:{" "}
+                <span className="text-purple-600 font-bold">พร้อมใช้งาน</span>
+              </span>
+              <Link
+                href={`/organizations/${orgId}/work-schedule`}
+                className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+              >
+                เข้าสู่ระบบจัดเวร
+              </Link>
+            </div>
+          </div>
+
           {/* การ์ดแอป HR (ตัวอย่างแอปในอนาคต) */}
           <div className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col opacity-75 grayscale hover:grayscale-0 transition-all">
             <div className="flex items-center gap-4 mb-4">

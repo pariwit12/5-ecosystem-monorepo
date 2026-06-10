@@ -1,4 +1,3 @@
-import { z } from "zod";
 import apiClient from "@/lib/axios";
 
 import { GetOrganizationsResponse } from "@backend/modules/organizations/queries/get-organizations.query";

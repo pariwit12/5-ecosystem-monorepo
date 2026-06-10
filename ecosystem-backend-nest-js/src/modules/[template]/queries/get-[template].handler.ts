@@ -51,6 +51,7 @@ export class GetTemplateHandler implements IQueryHandler<
 
     const organizations = await this.prisma.organization.findMany({
       where: {
+        // organizationId: param.organization_id,
         deletedAt: null,
         personOrganizationAffiliations: {
           some: {

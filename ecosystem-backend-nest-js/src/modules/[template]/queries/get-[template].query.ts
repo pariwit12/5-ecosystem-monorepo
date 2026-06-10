@@ -11,6 +11,17 @@ export enum TemplateEnum {
   INACTIVE = 'INACTIVE',
 }
 
+// ฟังก์ชัน Native JS สำหรับตรวจสอบว่า String นั้นเป็น IANA Timezone ที่ถูกต้องจริงไหม
+const isValidIanaTimezone = (tz: string): boolean => {
+  try {
+    // ถ้าผ่านคำสั่งนี้ได้โดยไม่แครช แปลว่าระบบรองรับ Timezone นี้จริง
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // ==========================================
 // DTO ขาเข้า (Param)
 // ==========================================
@@ -36,6 +47,11 @@ export const GetTemplateDtoQuerySchema = z.object({
     })
     .trim()
     .min(1, 'กรุณาระบุชื่อองค์กร (ห้ามเป็นค่าว่าง)'),
+
+  timezone: z.string().trim().refine(isValidIanaTimezone, {
+    message:
+      'timezone ไม่ถูกต้องตามมาตรฐาน IANA (ตัวอย่างที่ถูกต้อง: Asia/Bangkok)',
+  }),
 });
 
 // แปลงเป็น DTO Class ให้ NestJS เอาไปตรวจ Pipe ได้

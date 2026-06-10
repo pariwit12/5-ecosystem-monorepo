@@ -9,6 +9,9 @@ model Template {
 
   id String @id @default(uuid(7)) @db.Uuid
 
+  // ใช้ deleted_at เพื่อให้รู้เวลาที่ลบ (ถ้าเป็น null คือยังไม่ลบ)
+  deletedAt DateTime? @map("deleted_at")
+
   // หากมี parent ได้ 0-1 อันเท่านั้น (ไม่แนะนำวิธีนี้ ถ้าเป็นไปได้ แยกไปทำตาราง Affiliation จะ Flexible กว่ามาก และ Consistency กว่า + อ่านโค้ดง่ายกว่า)
   parentId String? @unique @map("parent_id") @db.Uuid // ถ้าไม่ safe จริงๆ ไม่ควรใช้
 
@@ -63,6 +66,8 @@ model Template {
   //   templateTwo       TemplateTwo? // หากต้นทางใส่ @unique
   templateTwos TemplateTwo[] // หากต้นทางไม่ใส่ @unique
 
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+
   @@map("template")
 }
 
@@ -72,6 +77,8 @@ model TemplateOneTemplateTwoAffiliation {
   templateTwoId String      @map("template_two_id") @db.Uuid // เป็น unique หรือไม่ ขึ้นอยู่กับ logic ของความสัมพันธ์นั้นๆ
   templateTwo   TemplateTwo @relation(fields: [templateTwoId], references: [id], onDelete: Restrict)
 
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
+  // 🔥 ใช้ Composite PK แทน id ใหม่ (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
   @@id([templateOneId, templateTwoId]) // ต้องมี สำหรับทุกตาราง Affiliation
   // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
   @@index([templateTwoId])
@@ -85,6 +92,8 @@ model TemplateTwo {
   template      Template @relation(fields: [templateOneId], references: [id], onDelete: Restrict)
 
   templateOneTemplateTwoAffiliations TemplateOneTemplateTwoAffiliation[] // หากต้นทางไม่ใส่ @unique
+
+  // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
 
   @@map("template_two")
 }

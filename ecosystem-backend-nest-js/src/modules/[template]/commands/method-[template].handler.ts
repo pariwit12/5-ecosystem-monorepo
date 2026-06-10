@@ -9,7 +9,7 @@ import { AccessControlService } from '../../../common/access-control/access-cont
 @CommandHandler(MethodTemplateHandler)
 export class MethodTemplateHandler implements ICommandHandler<
   MethodTemplateCommand,
-  MethodTemplateResponse
+  MethodTemplateResponse // หากมีการคืนค่า หากไม่มีก็ลบตรงนี้ออกได้เลย
 > {
   constructor(
     private readonly prisma: PrismaService,
@@ -19,6 +19,8 @@ export class MethodTemplateHandler implements ICommandHandler<
   async execute(
     command: MethodTemplateCommand,
   ): Promise<MethodTemplateResponse> {
+    // หากไม่คืนค่าก็ให้ใส่เป็น <void> แทน <MethodTemplateResponse>
+
     const { clerkId, param, body } = command;
 
     // ตรวจสอบ AccessControl (ปรับตามจริง)
@@ -56,6 +58,7 @@ export class MethodTemplateHandler implements ICommandHandler<
     // ปรับตามจริง (ไว้ debug)
     // console.log(`✅ สร้างองค์กร ${dto.name} สำเร็จ โดย: ${clerkId}`);
 
+    // หากมีการคืนค่า หากไม่มีก็ลบตรงนี้ออกได้เลย
     return {
       // ปรับตามจริง
       id: newPerson.id,

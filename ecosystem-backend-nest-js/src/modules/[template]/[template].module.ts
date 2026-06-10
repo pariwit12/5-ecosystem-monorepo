@@ -17,4 +17,4 @@ const QueryHandlers = [GetTemplateHandler];
 })
 export class TemplateModule {}
 
-// อย่าลืมไปลงทะเบียน Module ใน app.module.ts
+// อย่าลืมไปลงทะเบียน Module ใน Module ชั้นเหนือกว่า 1 ชั้น หรือ app.module.ts

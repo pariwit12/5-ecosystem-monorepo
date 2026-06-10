@@ -30,14 +30,14 @@ import {
 import {
   MethodTemplateCommand,
   MethodTemplateResponse,
-  MethodTemplateDtoParam, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
-  MethodTemplateDtoBody, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
+  MethodTemplateDtoParam, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
+  MethodTemplateDtoBody, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
 } from './commands/method-[template].command';
 import {
   GetTemplateQuery,
   GetTemplateResponse,
-  GetTemplateDtoParam, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
-  GetTemplateDtoQuery, // ห้ามใส่ type ไม่งั้น zod จะไม่ทำงาน
+  GetTemplateDtoParam, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
+  GetTemplateDtoQuery, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
 } from './queries/get-[template].query';
 
 @Controller('api/template(Business Logic)')
@@ -71,7 +71,7 @@ export class TemplateController {
   ) {
     return this.commandBus.execute<
       MethodTemplateCommand,
-      MethodTemplateResponse
+      MethodTemplateResponse // หากไม่มีการคืนค่า ให้ใส่ void แทน MethodTemplateResponse
     >(new MethodTemplateCommand(clerkUser.sub, param, body));
   }
 
