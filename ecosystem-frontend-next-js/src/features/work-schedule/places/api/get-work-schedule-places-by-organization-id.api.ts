@@ -47,7 +47,7 @@ export const getWorkSchedulePlacesByOrganizationId = async (
 
   const response =
     await apiClient.get<GetWorkSchedulePlacesByOrganizationIdResponse>(
-      `/api/work-schedule/places/${parsedParam.data.organization_id}`,
+      `/api/work-schedule/places/by-organization-id/${parsedParam.data.organization_id}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         skipErrorCodes: skipErrorCodes,

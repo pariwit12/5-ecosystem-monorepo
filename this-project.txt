@@ -1,7 +1,13 @@
 # งานจัดการ error ทำแค่พื้นฐานไว้ ที่เหลือไว้ค่อยส่งต่อให้คนอื่นทำ หรือค่อยมาทำตอนที่ว่างๆ
 # งาน UI ทำแค่ให้พอใช้งานได้ดี ที่เหลือไว้ค่อยส่งต่อให้คนอื่นทำ หรือค่อยมาทำตอนที่ว่างๆ
 
+# เขียน create-work-schedule-place.api.ts กับ use-create-work-schedule-place.ts เสร็จแล้ว
+- พรุ่งนี้จัดการนำไปใช้ที่หน้า frontend ต่อ สร้าง organizations/[orgId]/work-schedule/new/client-page.tsx กับ page.tsx ต่อ
+
 # เปลี่ยน method ทั้งโปรแกรม ให้เป็นแบบไม่ต้องคืนค่า
+# เปลี่ยนโครงสร้างไฟล์ฝั่ง frontend  ให้เป็น format เดียวกันกับ template
+- เปลี่ยนชื่อไฟล์ key, .queries และย้ายตำแหน่ง
+# ทำ template สำหรับ feature ใน frontend
 
 # ระบบ log พื้นฐาน - create/update/delete - ควรเก็บทุกตาราง
 

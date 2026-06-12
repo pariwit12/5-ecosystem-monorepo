@@ -1,3 +1,5 @@
+// เอาไว้ตรวจว่า ต่อเน็ต หรือ ยังไม่ได้ต่อเน็ต เพื่อเอาไปแสดง icon
+
 "use client";
 
 import { useSyncExternalStore } from "react";
