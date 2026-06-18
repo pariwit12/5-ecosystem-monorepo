@@ -1,24 +1,33 @@
 # งานจัดการ error ทำแค่พื้นฐานไว้ ที่เหลือไว้ค่อยส่งต่อให้คนอื่นทำ หรือค่อยมาทำตอนที่ว่างๆ
 # งาน UI ทำแค่ให้พอใช้งานได้ดี ที่เหลือไว้ค่อยส่งต่อให้คนอื่นทำ หรือค่อยมาทำตอนที่ว่างๆ
 
-# เขียน create-work-schedule-place.api.ts กับ use-create-work-schedule-place.ts เสร็จแล้ว
-- พรุ่งนี้จัดการนำไปใช้ที่หน้า frontend ต่อ สร้าง organizations/[orgId]/work-schedule/new/client-page.tsx กับ page.tsx ต่อ
+######### งานค้าง #########
 
-# เปลี่ยน method ทั้งโปรแกรม ให้เป็นแบบไม่ต้องคืนค่า
-# เปลี่ยนโครงสร้างไฟล์ฝั่ง frontend  ให้เป็น format เดียวกันกับ template
+# เปลี่ยนโครงสร้างไฟล์ฝั่ง frontend ให้เป็น format เดียวกันกับ template
 - เปลี่ยนชื่อไฟล์ key, .queries และย้ายตำแหน่ง
 # ทำ template สำหรับ feature ใน frontend
+
+# สร้าง organizations/[orgId]/work-schedule/new/client-page.tsx กับ page.tsx
+
+# เปลี่ยน method ทั้งโปรแกรม ให้เป็นแบบไม่ต้องคืนค่า
+
+# โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
+- ทำ flow การสร้าง organizationWorkSchedulePlace และ การสร้าง admin ให้จบ (= จบส่วนที่ควรทำจากหน้า organizations)
+
+# โปรแกรมทันตกรรม
+- ทำหน้ากระบวนการสร้าง organizationDentalClinic (ค้างอยู่)
+- ตรวจสอบหน้า organizations/[orgId]/dental-clinic ตรวจสอบการ render ข้อมูล organizationDentalClinic ที่มีอยู่
+- ทำให้จบส่วนที่ควรทำจากหน้า organizations
+
+######### ไอเดีย #########
+
+# โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
 
 # ระบบ log พื้นฐาน - create/update/delete - ควรเก็บทุกตาราง
 
 # ระบบ log สำหรับ query ตาม กฏหมายกำหนด
 
-# โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
-- แยกเข้าโปรแกรมตารางทำงานของพนักงาน ออกมาจาก organizations/[orgId]/settings
-
 # โปรแกรมทันตกรรม
-- ทำหน้ากระบวนการสร้าง organizationDentalClinic (ค้างอยู่)
-- ตรวจสอบหน้า organizations/[orgId]/dental-clinic ตรวจสอบการ render ข้อมูล organizationDentalClinic ที่มีอยู่
 
 # โปรแกรม HR
 # โปรแกรม เงินเดือน (อาจรวมกับ HR)
@@ -26,6 +35,7 @@
 # โปรแกรม การเงิน
 # โปรแกรม ตารางนัด (คน กับ คน ที่ สถานที่) -> คลินิกนัดคนไข้กับหมอ ผ่านวิธีนี้ โดยจะนัดได้เฉพาะเวลาที่หมอคนนั้นทำงาน (จาก ตารางการทำงาน)
 
+# โปรแกรม Task-Manager
 # โปรแกรม ร้านอาหาร
 # โปรแกรม สั่งอาหาร แบบล่วงหน้า
 # โปรแกรม ขายรถ ขายบ้าน ขายเสื้อผ้า
