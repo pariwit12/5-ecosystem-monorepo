@@ -19,6 +19,7 @@ import { isAxiosError } from "axios"; // ตรวจสอบว่าเป็
 import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
 
 // 🌟 2. Import Components ของ Feature (Folder ของ Feature)
+import { CreateWorkSchedulePlaceForm } from "@/features/[template]/components/method-[template]-form";
 // import { CreateTemplateModal } from "@/features/[template]/components/create-[template]-modal";
 
 // Import Components ของ หน้า UI นี้ (Folder เดียวกัน)
@@ -231,6 +232,9 @@ export default function TemplateClient({ templateId }: { templateId: string }) {
           </div>
         </div>
       </div>
+
+      {/* 🟢 ส่วน Component: Form */}
+      <CreateWorkSchedulePlaceForm orgId={templateId} />
     </div>
   );
 }
