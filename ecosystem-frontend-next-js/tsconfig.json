@@ -31,7 +31,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "src/app/not-found.tsx.backup"
   ],
   "exclude": ["node_modules", "../ecosystem-backend-nest-js/src/**/*.ts"]
 }

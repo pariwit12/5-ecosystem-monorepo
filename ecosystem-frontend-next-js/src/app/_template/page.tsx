@@ -26,7 +26,7 @@ import { CreateOrgModal } from "@/features/organizations/components/create-organ
 import TemplateLoading from "./loading";
 
 // Import Components ของ หน้า UI ส่วนกลาง
-// ...
+import { DataStateWrapper } from "@/components/data-state-wrapper";
 
 // 🌟 3. Import Error Codes และ Error Message
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum"; // ErrorCode ที่สร้างขึ้นใน Backend
@@ -35,6 +35,7 @@ import { USER_ERROR_MESSAGES } from "@/constants/error-messages"; // ข้อ�
 // ==========================================
 // 🛡️ Component ดักจับ Error จาก URL
 // ==========================================
+// (💡 Tip: ในอนาคตสามารถแยกฟังก์ชันนี้ไปไว้ใน components/url-error-toast.tsx ได้)
 function ToastNotifier() {
   const searchParams = useSearchParams();
 
@@ -92,6 +93,7 @@ export default function TemplatePage() {
     // ปรับตามใช้งานจริง
     data,
     isLoading,
+    isFetching,
     error,
   } = useQuery(
     // ปรับตามใช้งานจริง
@@ -102,29 +104,44 @@ export default function TemplatePage() {
     ]),
   );
 
-  // ============================
-  // 🎯 2. ฟังก์ชันจัดการเมื่อ "กดปุ่ม"
-  // ============================
+  // ==========================================
+  // 🌟 2. ด่านดักจับ Error แล้ว Redirect
+  // ==========================================
+  useEffect(() => {
+    // เช็คว่ามี Error และเป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
+    if (error && isAxiosError(error)) {
+      // ปรับตามใช้งานจริง (จาก Backend)
+      const errorCode = error.response?.data?.errorCode;
 
-  // ปรับตามใช้งานจริง
-  const handleSelectOrganization = (orgId: string) => {
-    // ปรับตามใช้งานจริง
-    router.push(`/organizations/${orgId}/settings`);
-  };
+      // สร้างลิสต์ของ Error ที่เราต้องการเตะออก (ใช้ Enum ที่ import มาได้เลย)
+      // ปรับตามใช้งานจริง
+      const accessDeniedErrors = [
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        ErrorCode.ORGANIZATION_DELETED,
+        ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+      ];
 
-  // =========================================================
-  // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // =========================================================
-  // แกะเอา array organizations ออกมาจาก Response (ใส่ fallback เป็น [] กันแครช)
-  // ปรับตามใช้งานจริง
-  const organizations = data?.organizations || [];
+      if (accessDeniedErrors.includes(errorCode)) {
+        // ปรับตามใช้งานจริง
+        router.push(`/organizations?error=${errorCode}`);
+      }
+    }
+  }, [error, router]);
 
   // ===================
   // Loading / Error UI
   // ===================
   // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
-  if (!isLoaded || isLoading) {
-    return <TemplateLoading />;
+  if (!isLoaded) {
+    return (
+      <div className="p-8 text-gray-500">กำลังโหลดข้อมูล... (!isLoaded)</div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-gray-500">กำลังโหลดข้อมูล... (isLoading)</div>
+    );
   }
 
   // ป้องกันหน้าจอกระพริบ (UI Flash):
@@ -149,11 +166,28 @@ export default function TemplatePage() {
 
   // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
 
+  // ============================
+  // 🎯 2. ฟังก์ชันจัดการเมื่อ "กดปุ่ม"
+  // ============================
+
+  // ปรับตามใช้งานจริง
+  const handleSelectOrganization = (orgId: string) => {
+    // ปรับตามใช้งานจริง
+    router.push(`/organizations/${orgId}/settings`);
+  };
+
+  // =========================================================
+  // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
+  // =========================================================
+  // แกะเอา array organizations ออกมาจาก Response (ใส่ fallback เป็น [] กันแครช)
+  // ปรับตามใช้งานจริง
+  const organizations = data?.organizations || [];
+
   // ==================
   // ส่วนแสดงผล UI หลัก
   // ==================
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8 relative">
+    <>
       {/* ใส่ fallback={null} เพื่อบอกว่าระหว่างรอโหลด ไม่ต้องโชว์อะไร */}
       <Suspense fallback={null}>
         {/* 💡 เกร็ดความรู้เพิ่มเติม: การที่เราเอา <Suspense> มาครอบไว้แบบนี้ เป็นการบอก Next.js
@@ -162,46 +196,62 @@ export default function TemplatePage() {
         <ToastNotifier />
       </Suspense>
 
-      {/* ========== ส่วนหัวข้อ ========== */}
-      <div className="w-full">
-        <h2 className="text-3xl font-bold text-gray-800">องค์กรของคุณ</h2>
-        <p className="text-gray-500 mt-2">
-          จัดการและเลือกองค์กรที่คุณสังกัด หรือสร้างองค์กรใหม่
-        </p>
-      </div>
-
-      {/* ========== ส่วนแสดงผล ========== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* ========== ส่วนแสดงผลหลัก ========== */}
-        {organizations.map((org) => (
-          <div
-            key={org.id}
-            className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start"
-          >
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
-              {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
-              {org.name.charAt(0).toUpperCase()}
-            </div>
-            <h3 className="text-lg font-bold text-gray-800">{org.name}</h3>
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              ID:{" "}
-              <span className="font-mono text-xs">{org.id.slice(0, 8)}...</span>
+      {/* =============================== */}
+      {/* Loading / Error UI (By Wrapper) */}
+      {/* =============================== */}
+      <DataStateWrapper
+        isAuthLoaded={isLoaded}
+        isQueryLoading={isLoading}
+        errorQuery={error}
+      >
+        {/* ================== */}
+        {/* Main UI (children) */}
+        {/* ================== */}
+        <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8 relative">
+          {/* ========== ส่วนหัวข้อ ========== */}
+          <div className="w-full">
+            <h2 className="text-3xl font-bold text-gray-800">องค์กรของคุณ</h2>
+            <p className="text-gray-500 mt-2">
+              จัดการและเลือกองค์กรที่คุณสังกัด หรือสร้างองค์กรใหม่
             </p>
-
-            {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
-            <button
-              onClick={() => handleSelectOrganization(org.id)}
-              className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-            >
-              ตั้งค่าองค์กร
-            </button>
           </div>
-        ))}
 
-        {/* ส่วนแสดงผลปุ่มเปิด Modal */}
-        {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
-        <CreateOrgModal />
-      </div>
-    </div>
+          {/* ========== ส่วนแสดงผล ========== */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* ========== ส่วนแสดงผลหลัก ========== */}
+            {organizations.map((org) => (
+              <div
+                key={org.id}
+                className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start"
+              >
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
+                  {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
+                  {org.name.charAt(0).toUpperCase()}
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">{org.name}</h3>
+                <p className="text-sm text-gray-500 mt-1 mb-6">
+                  ID:{" "}
+                  <span className="font-mono text-xs">
+                    {org.id.slice(0, 8)}...
+                  </span>
+                </p>
+
+                {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
+                <button
+                  onClick={() => handleSelectOrganization(org.id)}
+                  className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  ตั้งค่าองค์กร
+                </button>
+              </div>
+            ))}
+
+            {/* ส่วนแสดงผลปุ่มเปิด Modal */}
+            {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
+            <CreateOrgModal />
+          </div>
+        </div>
+      </DataStateWrapper>
+    </>
   );
 }
