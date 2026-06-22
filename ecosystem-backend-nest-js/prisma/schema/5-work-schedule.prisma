@@ -16,15 +16,31 @@ model OrganizationWorkSchedulePlace {
   // // ใช้สำหรับ
   // // 1. 
 
-  workScheduleAdmins    WorkScheduleAdmin[]
-  workSchedulePositions WorkSchedulePosition[]
-  workScheduleStaffs    WorkScheduleStaff[]
+  // workScheduleAdminInvitationRequests WorkScheduleAdminInvitationRequest[] (ระบบเชิญ admin ค่อยทำทีหลัง)
+  workScheduleAdmins                  WorkScheduleAdmin[]
+  workSchedulePositions               WorkSchedulePosition[]
+  workScheduleStaffs                  WorkScheduleStaff[]
 
   @@index([organizationId])
   @@map("organization_work_schedule_place")
 }
 
-// 2. สร้าง Admin (ผู้ดูแลเรื่องตารางเวร ของ สถานที่ทำงาน)
+// รอค่อยมาทำระบบการเชิญทีหลัง
+// 2. เชิญ / ร้องขอ การเป็น Admin (adminInvitation / adminRequest)
+// model WorkScheduleAdminInvitationRequest {
+//   personId                        String                        @map("person_id") @db.Uuid
+//   person                          Person                        @relation(fields: [personId], references: [id], onDelete: Restrict)
+//   organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
+//   organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
+//   personApprove                   Boolean                       @default(false) @map("person_approve")
+//   workSchedulePlaceApprove        Boolean                       @default(false) @map("work_schedule_place_approve")
+//   informationNote                 String?                       @map("information_note")
+
+//   @@id([personId, organizationWorkSchedulePlaceId])
+//   @@map("work_schedule_admin_invitation_request")
+// }
+
+// 3. สร้าง Admin (ผู้ดูแลเรื่องตารางเวร ของ สถานที่ทำงาน)
 model WorkScheduleAdmin {
   personId                        String                        @map("person_id") @db.Uuid
   person                          Person                        @relation(fields: [personId], references: [id], onDelete: Restrict)
@@ -37,7 +53,7 @@ model WorkScheduleAdmin {
   @@map("work_schedule_admin")
 }
 
-// 3. สร้างตำแหน่งงานต่างๆ
+// 4. สร้างตำแหน่งงานต่างๆ
 model WorkSchedulePosition {
   id                              String                        @id @default(uuid(7)) @db.Uuid
   organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
@@ -54,7 +70,7 @@ model WorkSchedulePosition {
   @@map("work_schedule_position")
 }
 
-// 4. สร้าง Template ให้ Admin ใช้สร้าง Slot ง่ายๆ
+// 5. สร้าง Template ให้ Admin ใช้สร้าง Slot ง่ายๆ
 model WorkScheduleSlotTemplate {
   id                     String               @id @default(uuid(7)) @db.Uuid
   workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
@@ -72,7 +88,7 @@ model WorkScheduleSlotTemplate {
   @@map("work_schedule_slot_template")
 }
 
-// 5. สร้าง Slot จริง ให้ Staff มาลง หรือ admin จัดใส่ให้
+// 6. สร้าง Slot จริง ให้ Staff มาลง หรือ admin จัดใส่ให้
 model WorkScheduleSlot {
   id                        String                     @id @default(uuid(7)) @db.Uuid
   workSchedulePositionId    String                     @map("work_schedule_position_id") @db.Uuid
@@ -97,7 +113,7 @@ model WorkScheduleSlot {
   @@map("work_schedule_slot")
 }
 
-// 6. สร้างพนักงานของ OrganizationWorkSchedulePlace
+// 7. สร้างพนักงานของ OrganizationWorkSchedulePlace
 model WorkScheduleStaff {
   id                              String                        @id @default(uuid(7)) @db.Uuid
   organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
@@ -118,7 +134,7 @@ model WorkScheduleStaff {
   @@map("work_schedule_staff")
 }
 
-// 7. สร้างตำแหน่งให้ Staff เพื่อจะนำไปใช้ลง Slot ได้ตรงตำแหน่งตัวเอง
+// 8. สร้างตำแหน่งให้ Staff เพื่อจะนำไปใช้ลง Slot ได้ตรงตำแหน่งตัวเอง
 model WorkScheduleStaffPosition {
   workScheduleStaffId    String               @map("work_schedule_staff_id") @db.Uuid
   workScheduleStaff      WorkScheduleStaff    @relation(fields: [workScheduleStaffId], references: [id], onDelete: Restrict)

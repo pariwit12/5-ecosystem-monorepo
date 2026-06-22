@@ -21,7 +21,7 @@ export const templateQueries = {
 
   // 1
   // ปรับตามใช้งานจริง
-  detail: (
+  detailByClerkId: (
     // ปรับตามใช้งานจริง
     userId: string | null | undefined,
     getToken: () => Promise<string | null>,

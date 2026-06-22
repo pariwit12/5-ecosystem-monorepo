@@ -1,8 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+
+// ปรับตามใช้งานจริง
 import {
   MethodTemplateCommand,
   MethodTemplateResponse,
 } from './method-[template].command';
+
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 

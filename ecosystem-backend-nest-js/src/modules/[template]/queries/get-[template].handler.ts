@@ -1,5 +1,8 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+
+// ปรับตามใช้งานจริง
 import { GetTemplateQuery, GetTemplateResponse } from './get-[template].query';
+
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 
@@ -64,6 +67,63 @@ export class GetTemplateHandler implements IQueryHandler<
         name: true,
       },
     });
+
+    // ==========================================
+    // 🚀 3. THE PRISMA MAGIC (Parallel Execution)
+    // ==========================================
+    // ใช้ Promise.all เพื่อยิง 2 คำสั่งเข้าไปหา Database พร้อมๆ กัน (ประหยัดเวลาลงครึ่งนึง!)
+    // eslint-disable-next-line
+    const [placesAsAdmin, placesAsStaff] = await Promise.all([
+      // ก้อนที่ 1: ค้นหาสถานที่ที่คนๆ นี้เป็น "Admin"
+      this.prisma.organizationWorkSchedulePlace.findMany({
+        where: {
+          deletedAt: null,
+          workScheduleAdmins: {
+            some: {
+              personId: personId,
+              deletedAt: null,
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+
+      // ก้อนที่ 2: ค้นหาสถานที่ที่คนๆ นี้เป็น "Staff"
+      this.prisma.organizationWorkSchedulePlace.findMany({
+        where: {
+          deletedAt: null,
+          workScheduleStaffs: {
+            some: {
+              personId: personId,
+              deletedAt: null,
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+    ]);
+
+    // ==========================================
+    // 📨 4. ส่งข้อมูลกลับไปให้ Frontend
+    // ==========================================
+    // return {
+    //   placesAsAdmin: placesAsAdmin.map((place) => ({
+    //     id: place.id,
+    //     name: place.name,
+    //   })),
+    //   placesAsStaff: placesAsStaff.map((place) => ({
+    //     id: place.id,
+    //     name: place.name,
+    //   })),
+    // };
 
     return {
       id: organization.id,
