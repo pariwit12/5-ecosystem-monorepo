@@ -6,6 +6,14 @@ export enum ErrorCode {
   ORGANIZATION_DELETED = 'ORGANIZATION_DELETED',
   NOT_A_MEMBER_OF_ORGANIZATION = 'NOT_A_MEMBER_OF_ORGANIZATION',
 
+  // ==========================
+  // Work-Schedule
+  // ==========================
+
+  WORK_SCHEDULE_PLACE_NOT_FOUND = 'WORK_SCHEDULE_PLACE_NOT_FOUND',
+  WORK_SCHEDULE_PLACE_DELETED = 'WORK_SCHEDULE_PLACE_DELETED',
+  NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE = 'NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE',
+
   // ค่อยเขียนเพิ่มเติมในภายหลัง เพื่อระบุให้ละเอียดขึ้น ตอนนี้เราควรเอาเวลาไปโฟกัสที่ business logic มากกว่า
 
   //   // หมวด Auth

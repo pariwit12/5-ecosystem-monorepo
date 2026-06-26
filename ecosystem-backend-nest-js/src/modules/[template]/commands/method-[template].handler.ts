@@ -9,10 +9,10 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
 
-@CommandHandler(MethodTemplateHandler)
+@CommandHandler(MethodTemplateCommand)
 export class MethodTemplateHandler implements ICommandHandler<
   MethodTemplateCommand,
-  MethodTemplateResponse // หากมีการคืนค่า หากไม่มีก็ลบตรงนี้ออกได้เลย
+  MethodTemplateResponse // หากมีการคืนค่า หากไม่มีก็ลบตรงนี้ออก หรือว่า ใส่เป็น void ได้เลย
 > {
   constructor(
     private readonly prisma: PrismaService,

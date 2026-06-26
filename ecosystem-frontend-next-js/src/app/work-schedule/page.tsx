@@ -1,18 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { workScheduleLogInQueries } from "@/features/work-schedule/log-in/work-schedule-log-in.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 
 // ==========================================
+// 🛡️ Component ดักจับ Error จาก URL
+// ==========================================
+// (💡 Tip: ในอนาคตสามารถแยกฟังก์ชันนี้ไปไว้ใน components/url-error-toast.tsx ได้)
+function ToastNotifier() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const errorCode = searchParams.get("error");
+    if (!errorCode) return; // ถ้าไม่มี error ใน URL ก็ไม่ต้องทำอะไรเลย
+
+    if (errorCode === "invalid_id") {
+      toast.error("รหัสองค์กรไม่ถูกต้อง");
+
+      //   // ปรับตามใช้งานจริง
+      // } else if (
+      //   // ปรับตามใช้งานจริง
+      //   errorCode === ErrorCode.ORGANIZATION_NOT_FOUND ||
+      //   errorCode === ErrorCode.ORGANIZATION_DELETED ||
+      //   errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
+      // ) {
+      //   // ปรับตามใช้งานจริง
+      //   const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
+
+      //   // ปรับตามใช้งานจริง
+      //   toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
+      //     description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
+      //   });
+    }
+
+    // ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า
+    window.history.replaceState(null, "", "/work-schedule");
+  }, [searchParams]);
+
+  return null; // ไม่ต้องแสดงผล UI อะไรออกมา
+}
+
+// ==========================================
 // 🖥️ Component หลัก
 // ==========================================
 export default function TemplatePage() {
-  const router = useRouter();
-
   // =================================
   // 🚀 1. ดึงข้อมูลจาก useQuery / Hook
   // =================================
@@ -27,12 +64,6 @@ export default function TemplatePage() {
   // 🎯 2. ฟังก์ชันจัดการเมื่อ "กดปุ่ม"
   // ============================
 
-  // ปรับตามใช้งานจริง
-  const handleSelectOrganization = (orgId: string) => {
-    // ปรับตามใช้งานจริง
-    router.push(`/organizations/${orgId}/settings`);
-  };
-
   // =========================================================
   // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
   // =========================================================
@@ -45,6 +76,14 @@ export default function TemplatePage() {
   // ==================
   return (
     <>
+      {/* ใส่ fallback={null} เพื่อบอกว่าระหว่างรอโหลด ไม่ต้องโชว์อะไร */}
+      <Suspense fallback={null}>
+        {/* 💡 เกร็ดความรู้เพิ่มเติม: การที่เราเอา <Suspense> มาครอบไว้แบบนี้ เป็นการบอก Next.js
+            ว่า "ตรงส่วนนี้มีการใช้งานข้อมูลที่ต้องรอดึงจากเบราว์เซอร์ (URL) นะ ยูสามารถข้ามไปประมวลผล (Build) หน้าจอส่วนอื่นๆ ก่อนได้เลย ไม่ต้องรอ!"
+            ซึ่งจะช่วยให้ระบบ Static Rendering ของ Next.js ทำงานได้เต็มประสิทธิภาพ และผ่านฉลุยตอนสั่ง pnpm run build ครับ */}
+        <ToastNotifier />
+      </Suspense>
+
       {/* =============================== */}
       {/* Loading / Error UI (By Wrapper) */}
       {/* =============================== */}
@@ -109,13 +148,6 @@ export default function TemplatePage() {
                   </span>
                 )}
               </div>
-              <Link
-                // ปรับตามใช้งานจริง
-                href={`/`}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors shadow-sm text-sm"
-              >
-                + สร้างสถานที่ทำงานใหม่
-              </Link>
             </div>
           </div>
 
@@ -132,13 +164,6 @@ export default function TemplatePage() {
                 {`เริ่มต้นจัดการตารางเวลาด้วยการสร้าง "สถานที่ทำงาน (Workplace)"
                 เช่น แผนกผู้ป่วยนอก, คลินิกสาขา, หรือพื้นที่ที่ต้องการจัดเวร`}
               </p>
-              <Link
-                // ปรับตามใช้งานจริง
-                href={`/`}
-                className="px-6 py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-all text-sm shadow-md"
-              >
-                สร้างสถานที่ทำงานแห่งแรก
-              </Link>
             </div>
           ) : (
             <div
@@ -164,8 +189,7 @@ export default function TemplatePage() {
                         </h4>
                         <div className="mt-auto pt-4 border-t flex gap-2">
                           <Link
-                            // ปรับตามใช้งานจริง
-                            href={`/`}
+                            href={`/work-schedule/admin/${place.id}`}
                             className="flex-1 text-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
                           >
                             จัดการตารางเวร

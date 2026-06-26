@@ -113,7 +113,8 @@ export default function OrganizationsPage() {
         ))}
 
         {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
-        <CreateOrgModal />
+        {/* ปิดไว้ก่อน รอพร้อมให้คนสร้างองค์กรต่างๆได้แล้วค่อยเปิด ตอนนี้เน้นสร้าง function หลักให้ครบก่อน */}
+        {/* <CreateOrgModal /> */}
       </div>
     </div>
   );

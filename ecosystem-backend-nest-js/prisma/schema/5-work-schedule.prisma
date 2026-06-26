@@ -17,9 +17,9 @@ model OrganizationWorkSchedulePlace {
   // // 1. 
 
   // workScheduleAdminInvitationRequests WorkScheduleAdminInvitationRequest[] (ระบบเชิญ admin ค่อยทำทีหลัง)
-  workScheduleAdmins                  WorkScheduleAdmin[]
-  workSchedulePositions               WorkSchedulePosition[]
-  workScheduleStaffs                  WorkScheduleStaff[]
+  workScheduleAdmins    WorkScheduleAdmin[]
+  workSchedulePositions WorkSchedulePosition[]
+  workScheduleStaffs    WorkScheduleStaff[]
 
   @@index([organizationId])
   @@map("organization_work_schedule_place")
@@ -129,7 +129,9 @@ model WorkScheduleStaff {
 
   workScheduleStaffPositions WorkScheduleStaffPosition[]
 
-  @@index([organizationWorkSchedulePlaceId])
+  @@unique([organizationWorkSchedulePlaceId, personId])
+  // 🌟 2. เราไม่ต้องมี @@index ของ organizationWorkSchedulePlaceId แล้ว เพราะตัว unique ข้างบนจัดการให้แล้ว
+  // @@index([organizationWorkSchedulePlaceId])
   @@index([personId])
   @@map("work_schedule_staff")
 }

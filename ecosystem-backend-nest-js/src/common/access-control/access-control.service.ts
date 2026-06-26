@@ -89,7 +89,79 @@ export class AccessControlService {
     ) {
       throw new AppException(
         ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-        'PersonId นี้ไม่มี PersonOrganizationAffiliations ที่เชื่อมกับ OrganizationId นี้',
+        'PersonId นี้ไม่มี PersonOrganizationAffiliation ที่เชื่อมกับ OrganizationId นี้',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return {
+      personId: person.id,
+    };
+  }
+
+  // =====================================================================================
+  // โปรแกรม Work-Schedule
+  // =====================================================================================
+
+  // ==========================================
+  // 🏢 ด่านตรวจสอบ สิทธิ์ workScheduleAdmin
+  // ==========================================
+  async verifyWorkScheduleAdminAccess(clerkId: string, placeId: string) {
+    const organizationWorkSchedulePlace =
+      await this.prisma.organizationWorkSchedulePlace.findUnique({
+        where: { id: placeId },
+        select: {
+          id: true,
+          deletedAt: true,
+        },
+      });
+
+    // 1. เช็คตัวตน
+    if (!organizationWorkSchedulePlace) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
+        'OrganizationWorkSchedulePlaceId นี้ไม่มีในตาราง OrganizationWorkSchedulePlace',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2. เช็คว่าองค์กรโดนลบไปหรือยัง
+    if (organizationWorkSchedulePlace.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+        'OrganizationWorkSchedulePlaceId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const person = await this.prisma.person.findUnique({
+      where: { clerkId: clerkId },
+      select: {
+        id: true,
+        workScheduleAdmins: {
+          where: { organizationWorkSchedulePlaceId: placeId, deletedAt: null },
+          select: {
+            organizationWorkSchedulePlaceId: true,
+          },
+        },
+      },
+    });
+
+    // 1. เช็คตัวตน
+    if (!person) {
+      throw new AppException(
+        ErrorCode.PERSON_NOT_FOUND,
+        'ClerkId นี้ไม่มีในตาราง Person',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2. เช็คความเป็น Admin
+    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+      throw new AppException(
+        // ปรับ
+        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
         HttpStatus.FORBIDDEN,
       );
     }
