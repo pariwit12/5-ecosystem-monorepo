@@ -134,7 +134,12 @@ export const CreateWorkSchedulePlaceForm = ({
       <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() =>
+            router.push(
+              // ปรับตามใช้งานจริง
+              `/work-schedule`,
+            )
+          }
           disabled={isPending}
           className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
         >

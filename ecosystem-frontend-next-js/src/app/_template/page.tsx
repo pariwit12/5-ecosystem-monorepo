@@ -17,13 +17,16 @@ import { useAuth } from "@clerk/nextjs";
 import { isAxiosError } from "axios"; // ตรวจสอบว่าเป็น Error เป็นรูปแบบ Error จาก Axios หรือไม่
 
 // 🌟 1. Import Queries ของ Feature นี้
+// ปรับตามใช้งานจริง
 import { templateQueries } from "@/features/[template]/[template].queries";
 
 // 🌟 2. Import Components ของ Feature (Folder ของ Feature)
+// ปรับตามใช้งานจริง
 // import { CreateTemplateModal } from "@/features/[template]/components/create-[template]-modal";
 import { CreateOrgModal } from "@/features/organizations/components/create-organization-modal";
 
 // Import Components ของ หน้า UI นี้ (Folder เดียวกัน)
+// ปรับตามใช้งานจริง
 // eslint-disable-next-line
 import TemplateLoading from "./loading";
 
@@ -61,7 +64,7 @@ function ToastNotifier() {
       const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
 
       // ปรับตามใช้งานจริง
-      toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
+      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
         description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
       });
     }

@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { workScheduleLogInQueries } from "@/features/work-schedule/log-in/work-schedule-log-in.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 
 // ==========================================
 // 🛡️ Component ดักจับ Error จาก URL
@@ -22,21 +24,16 @@ function ToastNotifier() {
 
     if (errorCode === "invalid_id") {
       toast.error("รหัสองค์กรไม่ถูกต้อง");
+    } else if (
+      errorCode === ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND ||
+      errorCode === ErrorCode.WORK_SCHEDULE_PLACE_DELETED ||
+      errorCode === ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE
+    ) {
+      const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
 
-      //   // ปรับตามใช้งานจริง
-      // } else if (
-      //   // ปรับตามใช้งานจริง
-      //   errorCode === ErrorCode.ORGANIZATION_NOT_FOUND ||
-      //   errorCode === ErrorCode.ORGANIZATION_DELETED ||
-      //   errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
-      // ) {
-      //   // ปรับตามใช้งานจริง
-      //   const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
-
-      //   // ปรับตามใช้งานจริง
-      //   toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
-      //     description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
-      //   });
+      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
+        description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
+      });
     }
 
     // ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า

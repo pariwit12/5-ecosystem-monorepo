@@ -1,29 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-import { toast } from "sonner";
-import { isAxiosError } from "axios"; // ตรวจสอบว่าเป็น Error เป็นรูปแบบ Error จาก Axios หรือไม่
-
-// 🌟 1. Import Queries ของ Feature นี้
-import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
-
-// 🌟 2. Import Components ของ Feature (Folder ของ Feature)
-import { CreateWorkSchedulePlaceForm } from "@/features/[template]/components/method-[template]-form";
-// import { CreateTemplateModal } from "@/features/[template]/components/create-[template]-modal";
-
-// Import Components ของ หน้า UI นี้ (Folder เดียวกัน)
-// import TemplateLoading from "./loading";
-
-// Import Components ของ หน้า UI ส่วนกลาง
-import { DataStateWrapper } from "@/components/data-state-wrapper";
-
-// 🌟 3. Import Error Codes และ Error Message
-import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages"; // ข้อความที่เตรียมไว้สำหรับ ErrorCode แต่ละประเภท
 
 // ==========================================
 // 🖥️ Component หลัก
@@ -34,8 +11,6 @@ export default function WorkScheduleAdminClient({
 }: {
   placeId: string;
 }) {
-  const router = useRouter();
-
   // ==================
   // ส่วนแสดงผล UI หลัก
   // ==================
@@ -55,9 +30,9 @@ export default function WorkScheduleAdminClient({
       <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
         {/* 🟢 STREAMING_CHUNK:Rendering the header and back button */}
         <div className="flex items-center gap-4 border-b pb-6">
-          <button
-            onClick={() => router.back()}
-            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-all focus:outline-none focus:ring-2 focus:ring-purple-200"
+          <Link
+            href={`/work-schedule`}
+            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-all"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +48,7 @@ export default function WorkScheduleAdminClient({
                 d="M10 19l-7-7m0 0l7-7m-7 7h18"
               />
             </svg>
-          </button>
+          </Link>
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h2 className="text-3xl font-bold text-gray-800">
@@ -108,7 +83,7 @@ export default function WorkScheduleAdminClient({
               <div className="absolute top-0 left-0 w-full h-1 bg-purple-500 group-hover:h-2 transition-all duration-300"></div>
 
               <div className="flex items-start gap-6">
-                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">
+                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8"
@@ -165,7 +140,7 @@ export default function WorkScheduleAdminClient({
               <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 group-hover:h-2 transition-all duration-300"></div>
 
               <div className="flex items-start gap-6">
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8"

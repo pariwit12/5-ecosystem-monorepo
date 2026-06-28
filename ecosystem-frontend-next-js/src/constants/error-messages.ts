@@ -6,6 +6,13 @@ export const USER_ERROR_MESSAGES: Record<string, string> = {
   ORGANIZATION_DELETED: "องค์กรนี้ถูกปิดตัวหรือลบออกจากระบบไปแล้ว",
   NOT_A_MEMBER_OF_ORGANIZATION: "ไม่มีสิทธิเข้าถึงองค์กรนี้",
 
+  // ==========================
+  // Work-Schedule
+  // ==========================
+  WORK_SCHEDULE_PLACE_NOT_FOUND: "ไม่พบองค์กรที่คุณพยายามเข้าถึง",
+  WORK_SCHEDULE_PLACE_DELETED: "องค์กรนี้ถูกปิดตัวหรือลบออกจากระบบไปแล้ว",
+  NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE: "ไม่มีสิทธิเข้าถึงข้อมูลนี้",
+
   // อื่นๆ
   NETWORK_ERROR:
     "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ต หรือลองอีกครั้งในภายหลัง",

@@ -17,9 +17,11 @@ import { toast } from "sonner";
 import { isAxiosError } from "axios"; // ตรวจสอบว่าเป็น Error เป็นรูปแบบ Error จาก Axios หรือไม่
 
 // 🌟 1. Import Queries ของ Feature นี้
+// ปรับตามใช้งานจริง
 import { organizationsQueries } from "@/features/organizations/hooks/organizations.queries";
 
 // 🌟 2. Import Components ของ Feature (Folder ของ Feature)
+// ปรับตามใช้งานจริง
 import { CreateWorkSchedulePlaceForm } from "@/features/[template]/components/method-[template]-form";
 // import { CreateTemplateModal } from "@/features/[template]/components/create-[template]-modal";
 
@@ -60,7 +62,7 @@ function ToastNotifier() {
       const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
 
       // ปรับตามใช้งานจริง
-      toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
+      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
         description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
       });
     }
@@ -208,10 +210,15 @@ export default function TemplateClient({ templateId }: { templateId: string }) {
         {/* Main UI (children) */}
         {/* ================== */}
         <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+          {/* ============================ */}
           {/* 🟢 ส่วนหัวข้อ และปุ่มย้อนกลับ */}
+          {/* ============================ */}
           <div className="flex items-center gap-4 border-b pb-6">
+            {/* ============================ */}
+            {/* 🟢 ปุ่มย้อนกลับ */}
+            {/* ============================ */}
             <Link
-              href="/organizations"
+              href={`/work-schedule/${templateId}/new`} // ปรับตามใช้งานจริง
               className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
             >
               <svg
@@ -230,14 +237,20 @@ export default function TemplateClient({ templateId }: { templateId: string }) {
               </svg>
             </Link>
 
+            {/* ============================ */}
+            {/* 🟢 ส่วนหัวข้อ */}
+            {/* ============================ */}
             <div className="flex-1 flex items-center justify-between">
               <div>
+                {/* หัวข้อ */}
                 <h2 className="text-3xl font-bold text-gray-800">
                   ตั้งค่าองค์กร: {orgDetails?.name}
                 </h2>
+                {/* รายละเอียด */}
                 <p className="text-gray-500 mt-1 font-mono text-sm">
                   Organization ID: {orgDetails?.id}
                 </p>
+                {/* สถานะการโหลด */}
                 {isFetching && !isLoading && (
                   <span className="text-sm text-gray-400 flex items-center gap-2 mt-2">
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
