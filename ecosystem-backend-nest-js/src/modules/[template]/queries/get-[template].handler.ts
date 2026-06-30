@@ -1,139 +1,279 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-
-// ปรับตามใช้งานจริง
-import { GetTemplateQuery, GetTemplateResponse } from './get-[template].query';
-
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AccessControlService } from '../../../common/access-control/access-control.service';
-
 import { AppException } from '../../../common/exceptions/app.exception';
 import { ErrorCode } from '../../../common/exceptions/error-codes.enum';
 import { HttpStatus } from '@nestjs/common';
 
-@QueryHandler(GetTemplateQuery)
+import {
+  // ปรับตามใช้งานจริง
+  GetTemplateQuery, // ปรับตามใช้งานจริง
+  GetTemplateResponse, // ปรับตามใช้งานจริง
+
+  // ปรับตามใช้งานจริง
+} from './get-[template].query';
+
+@QueryHandler(
+  GetTemplateQuery, // ปรับตามใช้งานจริง
+)
+// ปรับตามใช้งานจริง
 export class GetTemplateHandler implements IQueryHandler<
-  GetTemplateQuery,
-  GetTemplateResponse
+  //
+  GetTemplateQuery, // ปรับตามใช้งานจริง
+  GetTemplateResponse // ปรับตามใช้งานจริง
 > {
   constructor(
+    //
+    // ปรับตามใช้งานจริง
     private readonly prisma: PrismaService,
     private readonly accessControlService: AccessControlService,
   ) {}
 
-  async execute(query: GetTemplateQuery): Promise<GetTemplateResponse> {
-    // eslint-disable-next-line
-    const { clerkId, param, queryFromUrl } = query;
+  async execute(
+    //
+    query: GetTemplateQuery, // ปรับตามใช้งานจริง
+    //
+  ): Promise<//
+  // ปรับตามใช้งานจริง
+  GetTemplateResponse> {
+    //
+    const {
+      //
+      // ปรับตามใช้งานจริง
+      clerkId,
+      param,
+      // eslint-disable-next-line
+      queryFromUrl,
+      //
+    } = query;
 
-    // ตรวจสอบ AccessControl (ปรับตามจริง)
-    const { personId } =
-      await this.accessControlService.verifyOrganizationAccess(
+    // ===========================
+    // ตรวจสอบ AccessControl
+    // ===========================
+
+    const {
+      //
+      // ปรับตามใช้งานจริง
+      // eslint-disable-next-line
+      personId,
+      //
+    } = await this.accessControlService
+      //
+      // ปรับตามใช้งานจริง
+      .verifyOrganizationAccess(
+        //
+        // ปรับตามใช้งานจริง
         clerkId,
-        param.organization_id,
+        param.param_uuidv7,
+        //
       );
 
-    // โค้ด prisma ตาม logic ของ API (ปรับตามจริง)
-    const organization = await this.prisma.organization.findFirst({
-      where: {
-        id: param.organization_id,
-      },
-      select: {
-        id: true,
-        name: true,
-        deletedAt: true,
-      },
-    });
+    // ===========================
+    // (จบ) ตรวจสอบ AccessControl
+    // ===========================
 
-    // ต้องตรวจ เพราะ TS จะบ่น (เพราะเป็น Error ที่ทำให้โปรแกรมพัง) แต่ตามตรรกะเราตรวจแล้ว
-    if (!organization) {
+    // =====================================================================
+    // Main Logic ของ API
+    // =====================================================================
+
+    // ============================
+    // FindFirst / FindUnique
+    // ============================
+
+    const template = // ปรับตามใช้งานจริง
+      //
+      await this.prisma.template // ปรับตามใช้งานจริง
+        .findFirst({
+          where: {
+            //
+            // ปรับตามใช้งานจริง
+            id: param.param_uuidv7,
+            deletedAt: null,
+          },
+          select: {
+            //
+            // ปรับตามใช้งานจริง
+            id: true,
+          },
+        });
+
+    // --------------------------------------------------
+    // --------- สำหรับ findFirst หรือ findUnique ---------
+
+    // ตรวจว่า data เป็น object ไม่ใช่ null ก่อนจะ return (ไม่งั้น TS จะบ่น)
+    // แต่ตามตรรกะเราควรตรวจแล้ว ในขั้นตอน AccessControl
+
+    // ถือว่าตรวจเผื่อมีการแก้ไขระหว่างเวลา ดึงจริง กับ ตรวจ AccessControl
+
+    // ปรับตามใช้งานจริง
+    if (!template) {
+      //
       throw new AppException(
-        ErrorCode.ORGANIZATION_NOT_FOUND,
-        'OrganizationId นี้ไม่มีในตาราง Organization',
-        HttpStatus.NOT_FOUND,
+        //
+        ErrorCode.ORGANIZATION_NOT_FOUND, // ปรับตามใช้งานจริง
+
+        'TemplateId นี้ไม่มีในตาราง Template', // ปรับตามใช้งานจริง
+
+        HttpStatus.NOT_FOUND, // ปรับตามใช้งานจริง
       );
     }
 
-    const organizations = await this.prisma.organization.findMany({
-      where: {
-        // organizationId: param.organization_id,
-        deletedAt: null,
-        personOrganizationAffiliations: {
-          some: {
-            personId: personId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    // --------------------------------------------------
 
-    // ==========================================
-    // 🚀 3. THE PRISMA MAGIC (Parallel Execution)
-    // ==========================================
-    // ใช้ Promise.all เพื่อยิง 2 คำสั่งเข้าไปหา Database พร้อมๆ กัน (ประหยัดเวลาลงครึ่งนึง!)
-    // eslint-disable-next-line
-    const [placesAsAdmin, placesAsStaff] = await Promise.all([
-      // ก้อนที่ 1: ค้นหาสถานที่ที่คนๆ นี้เป็น "Admin"
-      this.prisma.organizationWorkSchedulePlace.findMany({
-        where: {
-          deletedAt: null,
-          workScheduleAdmins: {
-            some: {
-              personId: personId,
-              deletedAt: null,
+    // ============================
+    // (จบ) FindFirst / FindUnique
+    // ============================
+
+    // ============================
+    // FindMany
+    // ============================
+
+    const templates = // ปรับตามใช้งานจริง
+      //
+      await this.prisma.templateTwo // ปรับตามใช้งานจริง
+        .findMany({
+          where: {
+            //
+            // ปรับตามใช้งานจริง
+            templateOneTemplateTwoAffiliations: {
+              some: {
+                templateTwoId: param.param_uuidv7,
+              },
             },
           },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: { name: 'asc' },
-      }),
+          select: {
+            //
+            // ปรับตามใช้งานจริง
+            id: true,
+          },
+          orderBy: [
+            //
+            // ปรับตามใช้งานจริง
+            // { deletedAt: 'asc' }, // ปรับตามใช้งานจริง
+            { id: 'asc' }, // ปรับตามใช้งานจริง
+          ],
+        });
 
-      // ก้อนที่ 2: ค้นหาสถานที่ที่คนๆ นี้เป็น "Staff"
-      this.prisma.organizationWorkSchedulePlace.findMany({
-        where: {
-          deletedAt: null,
-          workScheduleStaffs: {
-            some: {
-              personId: personId,
-              deletedAt: null,
+    // ============================
+    // (จบ) FindMany
+    // ============================
+
+    // ============================
+    // 🚀 (จบ) Promise.all
+    // ============================
+
+    const [
+      // ปรับตามใช้งานจริง
+      // eslint-disable-next-line
+      templatesAsA,
+      // eslint-disable-next-line
+      templatesAsB,
+      //
+    ] = await Promise.all([
+      //
+      // API 1
+      this.prisma.template // ปรับตามใช้งานจริง
+
+        // ปรับตามใช้งานจริง
+        .findMany({
+          //
+          where: {
+            //
+            // ปรับตามใช้งานจริง
+            deletedAt: null,
+          },
+          select: {
+            //
+            // ปรับตามใช้งานจริง
+            id: true,
+          },
+          orderBy: [
+            //
+            // ปรับตามใช้งานจริง
+            { deletedAt: 'asc' }, // ปรับตามใช้งานจริง
+            { id: 'asc' }, // ปรับตามใช้งานจริง
+          ],
+        }),
+
+      // API 2
+      this.prisma.template // ปรับตามใช้งานจริง
+
+        // ปรับตามใช้งานจริง
+        .findMany({
+          //
+          where: {
+            //
+            // ปรับตามใช้งานจริง
+            deletedAt: null,
+            templateOneTemplateTwoAffiliation: {
+              templateTwoId: param.param_uuidv7,
             },
           },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: { name: 'asc' },
-      }),
+          select: {
+            //
+            // ปรับตามใช้งานจริง
+            id: true,
+          },
+          orderBy: [
+            //
+            // ปรับตามใช้งานจริง
+            { deletedAt: 'asc' }, // ปรับตามใช้งานจริง
+            { id: 'asc' }, // ปรับตามใช้งานจริง
+          ],
+        }),
     ]);
 
-    // ==========================================
-    // 📨 4. ส่งข้อมูลกลับไปให้ Frontend
-    // ==========================================
-    // return {
-    //   placesAsAdmin: placesAsAdmin.map((place) => ({
-    //     id: place.id,
-    //     name: place.name,
-    //   })),
-    //   placesAsStaff: placesAsStaff.map((place) => ({
-    //     id: place.id,
-    //     name: place.name,
-    //   })),
-    // };
+    // ============================
+    // 🚀 (จบ) Promise.all
+    // ============================
+
+    // =====================================================================
+    // (จบ) Main Logic ของ API
+    // =====================================================================
+
+    // =====================================================================
+    // 📨 จัดเรียงข้อมูล ส่งกลับไปให้ Frontend (ตาม Type GetTemplateResponse)
+    // =====================================================================
 
     return {
-      id: organization.id,
-      name: organization.name,
-      // ตัวอย่างการ map ข้อมูลจาก findMany
-      organizations: organizations.map((org) => ({
-        id: org.id,
-        name: org.name,
-      })),
+      //
+      // ปรับตามใช้งานจริง
+      response_data_string:
+        //
+        // ปรับตามใช้งานจริง
+        template.id, // ปรับตามใช้งานจริง
+
+      // ปรับตามใช้งานจริง
+      response_data_object: {
+        //
+        // ปรับตามใช้งานจริง
+        data1:
+          //
+          // ปรับตามใช้งานจริง
+          template.id, // ปรับตามใช้งานจริง
+      },
+
+      // ปรับตามใช้งานจริง
+      response_data_array_object:
+        //
+        // ปรับตามใช้งานจริง
+        templates.map(
+          (
+            temp, // ปรับตามใช้งานจริง
+          ) => ({
+            //
+            // ปรับตามใช้งานจริง
+            data1:
+              //
+              // ปรับตามใช้งานจริง
+              temp.id, // ปรับตามใช้งานจริง
+          }),
+        ),
     };
+
+    // =====================================================================
+    // 📨 (จบ) จัดเรียงข้อมูล ส่งกลับไปให้ Frontend (ตาม Type GetTemplateResponse)
+    // =====================================================================
   }
 }
 

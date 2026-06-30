@@ -1,45 +1,68 @@
 // ------------------------------------------------------------------------
-// Pattern B: Server Validator + Client Render (page.tsx + client-page.tsx)
+// Pattern: Server Internal Only + Client Query (Client-Backend)
 // ------------------------------------------------------------------------
 
-// เหมาะสำหรับ: หน้าที่มี Dynamic Route เช่น /[id]/edit หรือ /[id]/dashboard ที่
-// - ต้องการใช้พลังของ Server Component ในการตรวจสอบรูปแบบ UUID (Zod) หรือเช็คสิทธิ์เบื้องต้น
-// - ถ้าผิดก็ดักเตะออก (Redirect) ตั้งแต่ฝั่งเซิร์ฟเวอร์ หน้าจอก็จะไม่กระพริบครับ
-
 import { redirect } from "next/navigation";
+
+// ปรับตามใช้งานจริง
 import TemplateClient from "./client-page";
 
 // ==========================================
-// เตรียมฟังก์ชัน สำหรับตรวจสอบ URL
+// สร้างฟังก์ชัน สำหรับตรวจสอบ URL
 // ==========================================
+
 // 🌟 สร้าง Regex ตรวจสอบ UUID (วางไว้นอก Component เพื่อไม่ให้ถูกสร้างใหม่ทุกรอบ)
-// ฟอร์แมตนี้เฉพาะ UUIDv7 เท่านั้น (ปลอดภัยและรัดกุมขั้นสุด)
-const uuidV7Regex =
+
+const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
   /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// ==========================================
+// (จบ) สร้างฟังก์ชัน สำหรับตรวจสอบ URL
+// ==========================================
 
 // ==========================================
 // 🖥️ Component หลัก
 // ==========================================
+
+// ปรับตามใช้งานจริง
 export default async function TemplatePage({
   params,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{
+    //
+    // ปรับตามใช้งานจริง
+    templateId: string;
+  }>;
 }) {
-  const resolvedParams = await params;
+  //
+  // ==========================================
+  // ตรวจสอบ URL
+  // ==========================================
 
   // ฝั่ง Server จะใช้ await params;
   // ฝั่ง Client จะใช้ use(params);
 
-  // ปรับตามใช้งานจริง
-  const templateId = resolvedParams.templateId;
-
-  // 🌟 ด่านที่ 1 (Server): เช็ค URL ตั้งแต่ก่อนเรนเดอร์หน้าเว็บ
+  const resolvedParams = await params;
 
   // ปรับตามใช้งานจริง
-  if (!uuidV7Regex.test(templateId)) {
-    // 🌟 แนบ Parameter ?error=invalid_id กลับไปด้วย
-    // ปรับตามใช้งานจริง
-    redirect("/organizations?error=invalid_id"); // เตะกลับทันทีที่ฝั่งเซิร์ฟเวอร์ (ไร้รอยต่อ)
+  const templateId = resolvedParams.templateId; // ปรับตามใช้งานจริง
+
+  // ปรับตามใช้งานจริง
+  if (
+    !uuidV7Regex // ปรับตามใช้งานจริง
+      .test(
+        templateId, // ปรับตามใช้งานจริง
+      )
+  ) {
+    //
+    // 🌟 เตะกลับทันทีที่ฝั่งเซิร์ฟเวอร์ (ไร้รอยต่อ) + แนบ Parameter ?error=invalid_id กลับไปด้วย
+
+    redirect(
+      //
+      // ปรับตามใช้งานจริง
+      "/template?error=invalid_id", // ปรับตามใช้งานจริง
+    );
+
     // ฝั่ง Server ใช้ redirect() (จาก next/navigation)
     // พื้นที่ทำงาน: ทำงานบน Server เท่านั้น (ใช้ใน Server Components, Server Actions หรือ Route Handlers)
     // จังหวะการทำงาน: ทำงาน "ก่อน" ที่หน้าเว็บจะถูกสร้างเสร็จและส่งไปหาผู้ใช้
@@ -53,8 +76,21 @@ export default async function TemplatePage({
     // ประสบการณ์ผู้ใช้ (UX): หากเอามาใช้ทำหน้าที่ดักจับผู้ใช้ผิดๆ (เช่น เอาไปใส่ใน useEffect แบบตอนแรก) ผู้ใช้จะต้องรอให้หน้าจอวาดโครงสร้างเสร็จก่อนแวบนึง พอ React ทำงานถึงจะโดนเตะออก ทำให้เกิดอาการ "หน้าจอกระพริบ (UI Flash)" ให้เห็นครับ
   }
 
-  // ถ้าผ่านมาได้ แปลว่า orgId เป็น UUID แน่นอน 100% ค่อยส่งไปให้หน้า UI
+  // ==========================================
+  // (จบ) ตรวจสอบ URL
+  // ==========================================
 
-  // ปรับตามใช้งานจริง
-  return <TemplateClient templateId={templateId} />;
+  // =============================
+  // เรียก Client-Page
+  // =============================
+
+  return (
+    //
+    // ปรับตามใช้งานจริง
+    <TemplateClient
+      //
+      // ปรับตามใช้งานจริง
+      templateId={templateId} // ปรับตามใช้งานจริง
+    />
+  );
 }

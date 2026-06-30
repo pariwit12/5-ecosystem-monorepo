@@ -1,15 +1,42 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-// 🌟 สามารถ import Enum มาจาก prisma ได้โดยตรง
-// eslint-disable-next-line
-import { TemplateEnumInSchemaPrisma } from '@prisma/client';
+//================================
+// 🌟 Import ENUM จาก prisma
+//================================
 
-// ถ้าเขียนแค่ enum RoleStatus { ACTIVE, INACTIVE } TypeScript จะมองว่ามันคือ Numeric Enum (ตัวเลข)
+import {
+  // ปรับตามใช้งานจริง
+  // eslint-disable-next-line
+  TemplateEnumInSchemaPrisma,
+  //
+} from '@prisma/client';
+
+//================================
+// 🌟 (จบ) Import ENUM จาก prisma
+//================================
+
+// ====================================================
+// สร้าง ENUM (Frontend เอาไปตรวจ zod ก่อนยิง API ได้)
+// ====================================================
+
+// ปรับตามใช้งานจริง
 export enum TemplateEnum {
+  //
+  // ปรับตามใช้งานจริง
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
+
+  // ถ้าเขียนแค่ enum TemplateEnum { ACTIVE, INACTIVE } TypeScript จะมองว่ามันคือ Numeric Enum (ตัวเลข)
 }
+
+// ====================================================
+// (จบ) สร้าง ENUM (Frontend เอาไปตรวจ zod ก่อนยิง API ได้)
+// ====================================================
+
+// =============================
+// สร้างฟังก์ชันสำหรับใช้ตรวจสอบ
+// =============================
 
 // ฟังก์ชัน Native JS สำหรับตรวจสอบว่า String นั้นเป็น IANA Timezone ที่ถูกต้องจริงไหม
 const isValidIanaTimezone = (tz: string): boolean => {
@@ -22,62 +49,127 @@ const isValidIanaTimezone = (tz: string): boolean => {
   }
 };
 
+// =============================
+// (จบ) สร้างฟังก์ชันสำหรับใช้ตรวจสอบ
+// =============================
+
 // ==========================================
 // DTO ขาเข้า (Param)
 // ==========================================
-export const GetTemplateDtoParamSchema = z.object({
-  organization_id: z.uuid({
-    version: 'v7', // 🌟 ล็อกให้เป็น UUIDv7 เท่านั้น เวอร์ชันอื่นส่งมาจะถูกดีดออกทันที
-    message: 'รูปแบบรหัสองค์กรไม่ถูกต้อง',
-  }),
-});
 
-// แปลงเป็น DTO Class ให้ NestJS เอาไปตรวจ Pipe ได้
-export class GetTemplateDtoParam extends createZodDto(
-  GetTemplateDtoParamSchema,
-) {}
+export const GetTemplateDtoParamSchema = // ปรับตามใช้งานจริง
+  z.object({
+    //
+    // ปรับตามใช้งานจริง
+    param_uuidv7: z
+
+      // ปรับตามใช้งานจริง
+      .uuid({
+        version: 'v7', // ปรับตามใช้งานจริง
+        message: 'รูปแบบรหัส...ไม่ถูกต้อง', // ปรับตามใช้งานจริง
+      }),
+  });
+
+// แปลงเป็น DTO Class ให้ NestJS เอาไปตรวจ Pipe ได้ (ใช้ใน Backend)
+
+export class GetTemplateDtoParam // ปรับตามใช้งานจริง
+  extends createZodDto(
+    GetTemplateDtoParamSchema, // ปรับตามใช้งานจริง
+  ) {}
+
+// ==========================================
+// (จบ) DTO ขาเข้า (Param)
+// ==========================================
 
 // ==========================================
 // DTO ขาเข้า (Query)
 // ==========================================
-export const GetTemplateDtoQuerySchema = z.object({
-  name: z
-    .string({
-      message: 'ชื่อองค์กรต้องเป็นตัวอักษรเท่านั้น',
-    })
-    .trim()
-    .min(1, 'กรุณาระบุชื่อองค์กร (ห้ามเป็นค่าว่าง)'),
 
-  timezone: z.string().trim().refine(isValidIanaTimezone, {
-    message:
-      'timezone ไม่ถูกต้องตามมาตรฐาน IANA (ตัวอย่างที่ถูกต้อง: Asia/Bangkok)',
-  }),
-});
+export const GetTemplateDtoQuerySchema = // ปรับตามใช้งานจริง
+  z.object({
+    //
+    // ปรับตามใช้งานจริง
+    query_string: z
 
-// แปลงเป็น DTO Class ให้ NestJS เอาไปตรวจ Pipe ได้
-export class GetTemplateDtoQuery extends createZodDto(
-  GetTemplateDtoQuerySchema,
-) {}
+      // ปรับตามใช้งานจริง
+      .string({
+        message: 'ชื่อ...ต้องเป็นตัวอักษรเท่านั้น', // ปรับตามใช้งานจริง
+      })
+      .trim()
+      .min(
+        1, // ปรับตามใช้งานจริง
+        'กรุณาระบุชื่อ... (ห้ามเป็นค่าว่าง)', // ปรับตามใช้งานจริง
+      ),
 
-// 🌟 นี่คือ "หน้าตาข้อมูล" ขาเข้า
+    // ปรับตามใช้งานจริง
+    query_timezone: z
+
+      // ปรับตามใช้งานจริง
+      .string({
+        message: 'ชื่อ timezone ต้องเป็นตัวอักษรเท่านั้น', // ปรับตามใช้งานจริง
+      })
+      .trim()
+      .refine(
+        isValidIanaTimezone, // ปรับตามใช้งานจริง
+        {
+          message:
+            'timezone ไม่ถูกต้องตามมาตรฐาน IANA (ตัวอย่างที่ถูกต้อง: Asia/Bangkok)', // ปรับตามใช้งานจริง
+        },
+      ),
+  });
+
+// แปลงเป็น DTO Class ให้ NestJS เอาไปตรวจ Pipe ได้ (ใช้ใน Backend)
+
+export class GetTemplateDtoQuery // ปรับตามใช้งานจริง
+  extends createZodDto(
+    GetTemplateDtoQuerySchema, // ปรับตามใช้งานจริง
+  ) {}
+
+// ==========================================
+// (จบ) DTO ขาเข้า (Query)
+// ==========================================
+
+// ==========================
+// 🌟 "หน้าตาข้อมูล" ขาเข้า
+// ==========================
+
+// ปรับตามใช้งานจริง
 export class GetTemplateQuery {
   constructor(
+    //
+    // ปรับตามใช้งานจริง
     public readonly clerkId: string,
-    public readonly param: GetTemplateDtoParam,
-    public readonly queryFromUrl: GetTemplateDtoQuery,
+    public readonly param: GetTemplateDtoParam, // ปรับตามใช้งานจริง
+    public readonly queryFromUrl: GetTemplateDtoQuery, // ปรับตามใช้งานจริง
   ) {}
 }
 
-// 🌟 นี่คือ "หน้าตาข้อมูล" ขาออก
+// ==========================
+// 🌟 (จบ) "หน้าตาข้อมูล" ขาเข้า
+// ==========================
+
+// ===========================
+// 🚀 "หน้าตาข้อมูล" ขาออก
+// ===========================
+
 // เขียนเอง, ใช้ Omit, ใช้ Pick (ควรเขียนเอง ตรงนี้จะได้เป็นที่รวมหน้าตาของ Response ที่เดียว ไม่ต้องไปหาต่อ)
+
+// ปรับตามใช้งานจริง
 export interface GetTemplateResponse {
-  id: string;
-  name: string;
-  organizations: {
-    id: string;
-    name: string;
+  //
+  // ปรับตามใช้งานจริง
+  response_data_string: string;
+  response_data_object: {
+    data1: string;
+  };
+  response_data_array_object: {
+    data1: string;
   }[];
 }
+
+// ===========================
+// 🚀 (จบ) "หน้าตาข้อมูล" ขาออก
+// ===========================
 
 // อย่าลืมไปลงทะเบียน ใน [template].controller.ts
 // อย่าลืมไปลงทะเบียน ใน get-[template].handler.ts

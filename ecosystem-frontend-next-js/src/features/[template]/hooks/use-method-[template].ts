@@ -1,13 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 
-import {
-  // ปรับตามใช้งานจริง
-  methodTemplate,
-
-  // ปรับตามใช้งานจริง
-} from "../api/mutations/method-[template].api";
-
+// ---------- Import Keys ----------
 import {
   // ปรับตามใช้งานจริง
   templateKeys,
@@ -15,51 +9,99 @@ import {
   // ปรับตามใช้งานจริง
 } from "../[template]-keys";
 
-// ปรับตามใช้งานจริง
-export const useMethodTemplate = () => {
-  const { getToken, userId } = useAuth(); // ดึงใน use-hooks
-  const queryClient = useQueryClient();
+// ---------- Import Function (.api) ----------
+import {
+  // ปรับตามใช้งานจริง
+  methodTemplate,
 
-  return useMutation({
-    // mutationFn สามารถรับค่ามาได้แค่ 1 ตัวแปร จึงต้องใส่มาเป็น Object
-    mutationFn: async ({
-      // ปรับตามใช้งานจริง
-      orgId,
-      valueOne,
-      valueTwo,
-      skipErrorCodes,
-    }: {
-      orgId: string;
-      valueOne: string;
-      valueTwo: string;
-      skipErrorCodes?: string[];
-    }) => {
-      const token = await getToken();
-      if (!token) throw new Error("Authentication token is missing");
-      return methodTemplate(
+  // ปรับตามใช้งานจริง
+} from "../api/mutations/method-[template].api";
+
+export const useMethodTemplate = // ปรับตามใช้งานจริง
+  () => {
+    const queryClient = useQueryClient();
+    const { getToken, userId } = useAuth(); // เรียกเองได้ (ถ้าเป็น .queries ต้องรับเข้ามา เรียกเองไม่ได้)
+
+    return useMutation({
+      mutationFn: async ({
+        //
+        // mutationFn สามารถรับค่ามาได้แค่ 1 ตัวแปร จึงต้องใส่มาเป็น Object
+
         // ปรับตามใช้งานจริง
-        orgId,
         valueOne,
         valueTwo,
-        token,
+        valueThree,
         skipErrorCodes,
-      );
-    },
+        //
+      }: {
+        //
+        // ปรับตามใช้งานจริง
+        valueOne: string;
+        valueTwo: string;
+        valueThree: string;
+        skipErrorCodes?: string[];
+        //
+      }) => {
+        //
+        // ปรับตามใช้งานจริง
+        const token = await getToken();
+        if (!token) throw new Error("Authentication token is missing");
 
-    // ตัวแปรที่ 1 (_) คือ Response จาก API, ตัวแปรที่ 2 (variables) คือค่าที่ส่งเข้ามาใน mutationFn
-    // ใส่ _ แปลว่า API นี้ไม่ได้ยิงอะไรกลับมา
-    onSuccess: (_, variables) => {
-      if (userId && variables.orgId) {
-        // ล้าง cache
-        queryClient.invalidateQueries({
+        // ปรับตามใช้งานจริง
+        return methodTemplate(
+          //
           // ปรับตามใช้งานจริง
-          queryKey: templateKeys.listsByOrganizationId(
-            // ปรับตามใช้งานจริง
-            userId,
-            variables.orgId,
-          ),
-        });
-      }
-    },
-  });
-};
+          valueOne,
+          valueTwo,
+          valueThree,
+          token,
+          skipErrorCodes,
+          //
+        );
+      },
+
+      onSuccess: (
+        //
+        // ตัวแปรที่ 1 (_) คือ Response จาก API (ใส่ _ แปลว่า API นี้ไม่ได้ยิงอะไรกลับมา)
+        // ตัวแปรที่ 2 (variables) คือค่าที่ส่งเข้ามาใน mutationFn
+
+        _,
+        variables,
+        //
+      ) => {
+        //
+        // ===============
+        // ล้าง cache
+        // ===============
+
+        if (
+          //
+          // ตัวแปรที่ใช้ระบุ cache
+
+          // ปรับตามใช้งานจริง
+          userId &&
+          variables.valueOne
+          //
+        ) {
+          queryClient.invalidateQueries({
+            //
+            queryKey: templateKeys // ปรับตามใช้งานจริง
+              //
+              // ปรับตามใช้งานจริง
+              .listsByValueOne(
+                //
+                // ปรับตามใช้งานจริง
+                userId,
+                variables.valueOne,
+                //
+              ),
+          });
+        }
+
+        // ===============
+        // (จบ) ล้าง cache
+        // ===============
+        //
+      },
+    });
+  };

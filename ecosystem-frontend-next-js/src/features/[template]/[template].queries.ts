@@ -1,11 +1,16 @@
 import { queryOptions } from "@tanstack/react-query";
 
+// ---------- Import Keys ----------
 import {
   // ปรับตามใช้งานจริง
   templateKeys,
 
   // ปรับตามใช้งานจริง
 } from "./[template]-keys";
+
+// ============================================
+// ---------- Import Function (.api) ----------
+// ============================================
 
 import {
   // ปรับตามใช้งานจริง
@@ -14,46 +19,86 @@ import {
   // ปรับตามใช้งานจริง
 } from "./api/queries/get-[template].api";
 
+// ============================================
+// ------- (จบ) Import Function (.api) --------
+// ============================================
+
 // ปรับตามใช้งานจริง
 export const templateQueries = {
-  // ผูก queryKey กับ API
-  // ไม่ใช่ไฟล์ hooks แต่ทำหน้าที่คล้ายๆ (จึงต้องรับ getToken และ userId เข้ามา เรียกเองไม่ได้)
+  //
+  // ===========================================
+  // รายการ Query (ผูก QueryKey กับ QueryAPI)
+  // ===========================================
 
   // 1
   // ปรับตามใช้งานจริง
-  detailByClerkId: (
+  getTemplate: (
+    //
     // ปรับตามใช้งานจริง
-    userId: string | null | undefined,
-    getToken: () => Promise<string | null>,
-    orgId: string,
     valueOne: string,
     valueTwo: string,
+    valueThree: string,
+
+    // ปรับตามใช้งานจริง
+    // ต้องรับ getToken และ userId เข้ามา เรียกเองไม่ได้
+    userId: string | null | undefined,
+    getToken: () => Promise<string | null>,
+
+    // ปรับตามใช้งานจริง
     skipErrorCodes?: string[],
+    //
   ) =>
     queryOptions({
-      // ปรับตามใช้งานจริง
-      queryKey: userId && orgId ? templateKeys.detail(userId, orgId) : [],
-      queryFn: async () => {
+      queryKey:
+        //
         // ปรับตามใช้งานจริง
-        if (!orgId) throw new Error("Organization ID is required");
+        userId && valueOne // ปรับตามใช้งานจริง
+          ? //
+            templateKeys // ปรับตามใช้งานจริง
+              //
+              // ปรับตามใช้งานจริง
+              .listsByValueOne(
+                //
+                // ปรับตามใช้งานจริง
+                userId,
+                valueOne,
+                //
+              )
+          : [],
+
+      queryFn: async () => {
+        //
+        // ปรับตามใช้งานจริง
+        if (!valueOne) throw new Error("ValueOne is required");
         const token = await getToken();
         if (!token) throw new Error("Authentication token is missing");
 
         // ปรับตามใช้งานจริง
         return getTemplate(
+          //
           // ปรับตามใช้งานจริง
-          orgId,
           valueOne,
           valueTwo,
+          valueThree,
           token,
           skipErrorCodes,
         );
       },
 
       // ปรับตามใช้งานจริง
-      staleTime: 60 * 1000,
+      staleTime: 60 * 1000, // ปรับตามใช้งานจริง
 
       // ปรับตามใช้งานจริง
-      enabled: !!userId && !!orgId,
+      enabled:
+        //
+        // ปรับตามใช้งานจริง
+        !!userId && // ปรับตามใช้งานจริง
+        !!valueOne, // ปรับตามใช้งานจริง
+      //
     }),
+
+  // ===========================================
+  // (จบ) รายการ Query (ผูก QueryKey กับ QueryAPI)
+  // ===========================================
+  //
 };

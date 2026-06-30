@@ -201,11 +201,6 @@ export default function WorkScheduleAdminStaffClient({
                 className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md transition-shadow relative"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  {/* Avatar Placeholder (ใช้อักษรตัวแรกของชื่อ) */}
-                  <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-xl uppercase shrink-0">
-                    {staff.name.charAt(0)}
-                  </div>
-
                   <div className="overflow-hidden">
                     <h4
                       className="text-lg font-bold text-gray-800 truncate"
@@ -224,11 +219,11 @@ export default function WorkScheduleAdminStaffClient({
 
                 <div className="mt-auto border-t pt-4 flex justify-end">
                   <button
-                    onClick={() =>
-                      router.push(
-                        `/work-schedule/admin/${placeId}/staff/${staff.id}`,
-                      )
-                    }
+                    // onClick={() =>
+                    //   router.push(
+                    //     `/work-schedule/admin/${placeId}/staff/${staff.id}`,
+                    //   )
+                    // }
                     className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
                   >
                     ดูรายละเอียด &rarr;

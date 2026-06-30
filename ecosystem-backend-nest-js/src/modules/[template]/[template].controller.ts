@@ -1,7 +1,3 @@
-// ไม่ควรใช้เวลาสร้าง Template นานเกินไป เราควรทำไว้แค่ที่ตัวเองใช้และให้รัดกุมพอ แต่ว่าไม่จำเป็นต้องทำไว้เผื่อทุกกรณีที่อาจจะเจอในอนาคต
-// เราจะใช้วิธี "เมื่อเจอแล้ว ค่อยสร้างเป็น Template"
-// และโค้ดที่ใช้เขียนซ้ำเกิน 3 ครั้งเท่านั้น ถึงจะควรทำ Template ไว้ ถ้าใช้แค่ 1-2 ครั้ง ไม่ควรทำ
-
 import {
   Controller,
   UseGuards,
@@ -11,41 +7,90 @@ import {
   Param,
   Query,
   Body,
-  // Request,
+  Request,
 } from '@nestjs/common';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 
+// =================================
+// Import Guard and Decoration
+// =================================
+
 import {
+  //
+  // ปรับตามใช้งานจริง
   // eslint-disable-next-line
   type RequestBeforeClerkAuthGuard, // ใช้แทน Request จาก Express เพื่อป้องกันการ import แล้วชนกับ Request จาก @nestjs/common ที่เป็น ตัวฟังก์ชัน
   ClerkAuthGuard,
   // eslint-disable-next-line
   type RequestFromClerkAuthGuard,
+  //
 } from '../../common/guards/clerk-auth.guard';
 import {
+  //
+  // ปรับตามใช้งานจริง
   ClerkUser,
   type ClerkUserData,
+  //
 } from '../../common/guards/clerk-user.decorator';
 
+// =================================
+// (จบ) Import Guard and Decoration
+// =================================
+
+// ===========================
+// Import Type (Command)
+// ===========================
+
 import {
-  MethodTemplateCommand,
-  MethodTemplateResponse,
-  MethodTemplateDtoParam, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
-  MethodTemplateDtoBody, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
+  //
+  // ปรับตามใช้งานจริง
+  MethodTemplateCommand, // ปรับตามใช้งานจริง
+  MethodTemplateResponse, // ปรับตามใช้งานจริง
+  MethodTemplateDtoParam, // ปรับตามใช้งานจริง
+  MethodTemplateDtoBody, // ปรับตามใช้งานจริง
+
+  // ปรับตามใช้งานจริง
 } from './commands/method-[template].command';
+
+// ===========================
+// (จบ) Import Type (Command)
+// ===========================
+
+// =========================
+// Import Type (Query)
+// =========================
+
 import {
-  GetTemplateQuery,
-  GetTemplateResponse,
-  GetTemplateDtoParam, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
-  GetTemplateDtoQuery, // ห้ามใส่ type ทั่วไป ไม่งั้น zod จะไม่ทำงาน (ต้องสร้างจาก zod - createZodDto)
+  //
+  // ปรับตามใช้งานจริง
+  GetTemplateQuery, // ปรับตามใช้งานจริง
+  GetTemplateResponse, // ปรับตามใช้งานจริง
+  GetTemplateDtoParam, // ปรับตามใช้งานจริง
+  GetTemplateDtoQuery, // ปรับตามใช้งานจริง
+
+  // ปรับตามใช้งานจริง
 } from './queries/get-[template].query';
 
-@Controller('api/template(Business Logic)')
+// =========================
+// (จบ) Import Type (Query)
+// =========================
+
+@Controller(
+  'api/template', // ปรับตามใช้งานจริง
+)
+// ปรับตามใช้งานจริง
 export class TemplateController {
+  //
   constructor(
+    //
+    // ปรับตามใช้งานจริง
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
   ) {}
+
+  // ========================================================================================
+  // Method
+  // ========================================================================================
 
   // ==========================================
   // [POST] Business Logic
@@ -55,25 +100,60 @@ export class TemplateController {
   // [PATCH] Business Logic
   // ==========================================
 
+  // ในโลกของ NestJS และ TypeScript การเรียงลำดับ Decorator ที่อยู่ "บนหัวฟังก์ชัน" (Method Decorators) จะสลับบรรทัดกันอย่างไร ตัวระบบก็ไม่พังครับ
+  // มันจะเก็บข้อมูลเข้ากระเป๋าไปจัดลำดับการทำงาน (Lifecycle) ของมันเองอยู่ดีครับ
+
+  // ปรับตามใช้งานจริง
   @Post(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
   @Patch(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
+
   // ปรับให้ตรงตามที่ใช้จริง
   @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
+
+  // ปรับตามใช้งานจริง
   async methodTemplate(
+    //
     // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
-    @Param() param: MethodTemplateDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
-    @Body() body: MethodTemplateDtoBody, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+
+    // ปรับตามใช้งานจริง
+    @Param() param: MethodTemplateDtoParam, // ปรับตามใช้งานจริง
+    @Body() body: MethodTemplateDtoBody, // ปรับตามใช้งานจริง
 
     // หมวด Request จาก Guards และ Decorators ที่เราสร้างขึ้นมาเอง เพื่อดึงข้อมูลที่ Guard ตรวจสอบและฝังไว้ให้มาใช้ได้เลย
-    // @Request() req: RequestBeforeClerkAuthGuard, // กรณีอยากใช้ Request แบบดิบๆ ยังไม่ผ่าน ClerkAuthGuard
+
+    // ปรับตามใช้งานจริง
+    // @Request() req: RequestBeforeClerkAuthGuard, // ใช้ในกรณีอยากใช้ Request แบบดิบๆ ที่ยังไม่ผ่าน ClerkAuthGuard
     // @Request() req: RequestFromClerkAuthGuard,
-    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
+    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard
+    //
   ) {
     return this.commandBus.execute<
-      MethodTemplateCommand,
-      MethodTemplateResponse // หากไม่มีการคืนค่า ให้ใส่ void แทน MethodTemplateResponse
-    >(new MethodTemplateCommand(clerkUser.sub, param, body));
+      //
+      // ปรับตามใช้งานจริง
+      MethodTemplateCommand, // ปรับตามใช้งานจริง
+      //
+      // หากไม่มีการคืนค่า ให้ใส่ void แทน MethodTemplateResponse
+      MethodTemplateResponse // ปรับตามใช้งานจริง
+      //
+    >(
+      // ปรับตามใช้งานจริง
+      new MethodTemplateCommand(
+        //
+        // ปรับตามใช้งานจริง
+        clerkUser.sub,
+        param,
+        body,
+      ),
+    );
   }
+
+  // ========================================================================================
+  // (จบ) Method
+  // ========================================================================================
+
+  // ========================================================================================
+  // Query
+  // ========================================================================================
 
   // ==========================================
   // [GET] Business Logic
@@ -81,23 +161,51 @@ export class TemplateController {
 
   // ในโลกของ NestJS และ TypeScript การเรียงลำดับ Decorator ที่อยู่ "บนหัวฟังก์ชัน" (Method Decorators) จะสลับบรรทัดกันอย่างไร ตัวระบบก็ไม่พังครับ
   // มันจะเก็บข้อมูลเข้ากระเป๋าไปจัดลำดับการทำงาน (Lifecycle) ของมันเองอยู่ดีครับ
-  @Get(':param1_id/:param2_id') // ปรับให้ตรงตามที่ใช้จริง
+
+  @Get(':param1_id/:param2_id') // ปรับตามใช้งานจริง
+
   // ปรับให้ตรงตามที่ใช้จริง
   @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)
+
+  // ปรับตามใช้งานจริง
   async getTemplate(
+    //
     // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง) ดังนั้นให้ไล่เป็น @Param (เบาสุด), @Query, @Body (หนักสุด), @ClerkUser (และอื่นๆ ที่ไม่ต้องตรวจ)
-    @Param() param: GetTemplateDtoParam, // 🌟 ใช้ DTO จากไฟล์ Command / Query
-    @Query() queryFromUrl: GetTemplateDtoQuery, // 🌟 ใช้ DTO จากไฟล์ Command / Query
+
+    // ปรับตามใช้งานจริง
+    @Param() param: GetTemplateDtoParam, // ปรับตามใช้งานจริง
+    @Query() queryFromUrl: GetTemplateDtoQuery, // ปรับตามใช้งานจริง
 
     // หมวด Request จาก Guards และ Decorators ที่เราสร้างขึ้นมาเอง เพื่อดึงข้อมูลที่ Guard ตรวจสอบและฝังไว้ให้มาใช้ได้เลย
-    // @Request() req: RequestBeforeClerkAuthGuard, // กรณีอยากใช้ Request แบบดิบๆ ยังไม่ผ่าน ClerkAuthGuard
+
+    // ปรับตามใช้งานจริง
+    // @Request() req: RequestBeforeClerkAuthGuard, // ใช้ในกรณีอยากใช้ Request แบบดิบๆ ที่ยังไม่ผ่าน ClerkAuthGuard
     // @Request() req: RequestFromClerkAuthGuard,
-    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard มาใช้ได้เลย
+    @ClerkUser() clerkUser: ClerkUserData, // 🌟 ใช้ Decorator ที่เราสร้างขึ้นมาเพื่อดึงข้อมูล user จาก ClerkAuthGuard
+    //
   ) {
-    return this.queryBus.execute<GetTemplateQuery, GetTemplateResponse>(
-      new GetTemplateQuery(clerkUser.sub, param, queryFromUrl),
+    return this.queryBus.execute<
+      //
+      // ปรับตามใช้งานจริง
+      GetTemplateQuery, // ปรับตามใช้งานจริง
+      GetTemplateResponse // ปรับตามใช้งานจริง
+      //
+    >(
+      // ปรับตามใช้งานจริง
+      new GetTemplateQuery(
+        //
+        // ปรับตามใช้งานจริง
+        clerkUser.sub,
+        param,
+        queryFromUrl,
+      ),
     );
   }
+
+  // ========================================================================================
+  // (จบ) Query
+  // ========================================================================================
+  //
 }
 
 // อย่าลืมไปลงทะเบียน ใน [template].module.ts

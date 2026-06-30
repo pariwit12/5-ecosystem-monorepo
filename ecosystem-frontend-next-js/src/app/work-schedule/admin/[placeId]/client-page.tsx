@@ -16,14 +16,6 @@ export default function WorkScheduleAdminClient({
   // ==================
   return (
     <>
-      {/* =============================== */}
-      {/* Loading / Error UI (By Wrapper) */}
-      {/* =============================== */}
-      {/* <DataStateWrapper
-        isAuthLoaded={isLoaded}
-        isQueryLoading={isLoading}
-        errorQuery={error}
-      > */}
       {/* ================== */}
       {/* Main UI (children) */}
       {/* ================== */}
@@ -188,7 +180,6 @@ export default function WorkScheduleAdminClient({
           </div>
         </div>
       </div>
-      {/* </DataStateWrapper> */}
     </>
   );
 }

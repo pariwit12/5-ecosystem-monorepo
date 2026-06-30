@@ -6,30 +6,34 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { z } from "zod";
 
-// 🌟 Import your Mutation Hook and Shared Schema
+// ------------- Import Function (useHooks) -------------
 import {
   // ปรับตามใช้งานจริง
-  useCreateWorkSchedulePlace,
+  useMethodTemplate,
 
   // ปรับตามใช้งานจริง
-} from "@/features/work-schedule/places/hooks/use-create-work-schedule-place";
+} from "@/features/[template]/hooks/use-method-[template]";
+
+// ------------- Import Schema (From Backend) -------------
 import {
   // ปรับตามใช้งานจริง
-  CreateWorkSchedulePlaceDtoBodySchema,
+  MethodTemplateDtoBodySchema,
 
   // ปรับตามใช้งานจริง
-} from "@backend/modules/work-schedule/places/commands/create-work-schedule-place.command";
+} from "@backend/modules/[template]/commands/method-[template].command";
 
 // ==========================================
-// 🌟 Schema สำหรับตรวจสอบข้อมูล
+// 🌟 สร้าง Schema + Type สำหรับ Form
 // ==========================================
-// ปรับตามใช้งานจริง
-const CreateWorkSchedulePlaceFrontendFormSchema =
+
+const MethodTemplateFrontendFormSchema = // ปรับตามใช้งานจริง
+  //
   // ปรับตามใช้งานจริง
-  CreateWorkSchedulePlaceDtoBodySchema.pick({
+  MethodTemplateDtoBodySchema.pick({
+    //
     // ปรับตามใช้งานจริง
-    name: true,
-    timezone: true,
+    body_string: true,
+    body_timezone: true,
 
     // ==============================================
     // กรณีมี field ที่ต้องการเพิ่มเติมจาก backendSchema
@@ -38,187 +42,369 @@ const CreateWorkSchedulePlaceFrontendFormSchema =
     //   isConfirmed: z.boolean().refine((val) => val === true, {
     //     message: "คุณต้องยืนยันข้อมูลก่อนบันทึก", // "You must confirm before saving"
     //   }),
+    //
   });
+type MethodTemplateFrontendForm = // ปรับตามใช้งานจริง
+  z.infer<
+    typeof MethodTemplateFrontendFormSchema // ปรับตามใช้งานจริง
+  >;
 
-// 3. INFER: Now, we infer the type from our NEW custom frontend schema!
-// ปรับตามใช้งานจริง
-type CreateWorkSchedulePlaceFrontendForm = z.infer<
-  // ปรับตามใช้งานจริง
-  typeof CreateWorkSchedulePlaceFrontendFormSchema
->;
+// ==========================================
+// 🌟 (จบ) สร้าง Schema + Type สำหรับ Form
+// ==========================================
+
+// ======================================
+// เตรียมข้อมูล / ฟังก์ชัน สำหรับใช้ใน Form
+// ======================================
 
 // Get Timezone data
 const allTimezones = Intl.supportedValuesOf("timeZone");
 const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+// ======================================
+// (จบ) เตรียมข้อมูล / ฟังก์ชัน สำหรับใช้ใน Form
+// ======================================
+
 // ==========================================
 // 🌟 Main
 // ==========================================
-// ปรับตามใช้งานจริง
-export const CreateWorkSchedulePlaceForm = ({
-  // ปรับตามใช้งานจริง
-  orgId,
-  className = "",
-}: {
-  // ปรับตามใช้งานจริง
-  orgId: string;
-  className?: string; // 🌟 This makes your component flexible!
-}) => {
-  const router = useRouter();
 
-  // 🧠 1. Logic: Form State & API Mutation
-  const {
+export const MethodTemplateForm = // ปรับตามใช้งานจริง
+  ({
     // ปรับตามใช้งานจริง
-    mutate: createPlace,
-    isPending,
+    valueOne,
 
     // ปรับตามใช้งานจริง
-  } = useCreateWorkSchedulePlace();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
+    skipErrorCodes,
 
     // ปรับตามใช้งานจริง
-  } = useForm<CreateWorkSchedulePlaceFrontendForm>({
-    resolver: zodResolver(
+    className = "",
+    //
+  }: {
+    // ปรับตามใช้งานจริง
+    valueOne: string;
+
+    // ปรับตามใช้งานจริง
+    skipErrorCodes?: string[];
+
+    // ปรับตามใช้งานจริง
+    className?: string;
+    //
+  }) => {
+    const router = useRouter();
+
+    const {
       // ปรับตามใช้งานจริง
-      CreateWorkSchedulePlaceFrontendFormSchema,
-    ),
-    defaultValues: {
-      // ปรับตามใช้งานจริง
-      name: "",
-      timezone: defaultTimezone,
-    },
-  });
+      mutate: methodTemplate, // ปรับตามใช้งานจริง
+      isPending,
 
-  const onSubmit = (
-    data: CreateWorkSchedulePlaceFrontendForm, // ปรับตามใช้งานจริง
-  ) => {
-    // ปรับตามใช้งานจริง
-    createPlace(
+      // ปรับตามใช้งานจริง
+    } = useMethodTemplate();
+
+    // ===============
+    // ตั้งค่า Form
+    // ===============
+
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+      //
+    } = useForm<MethodTemplateFrontendForm>( // ปรับตามใช้งานจริง
+      //
       {
-        // ปรับตามใช้งานจริง
-        orgId: orgId,
-        body: data,
-        // name: data.name,
-      },
-      {
-        onSuccess: () => {
-          toast.success(
-            // ปรับตามใช้งานจริง
-            "สร้างสถานที่ทำงานเรียบร้อยแล้ว",
-          );
-          // Redirect back to the Dashboard list
-          router.push(
-            // ปรับตามใช้งานจริง
-            `/organizations/${orgId}/work-schedule`,
-          );
-        },
-        onError: () => {
-          toast.error(
-            // ปรับตามใช้งานจริง
-            "ไม่สามารถสร้างสถานที่ทำงานได้ กรุณาลองใหม่อีกครั้ง",
-          );
+        resolver: zodResolver(
+          //
+          MethodTemplateFrontendFormSchema, // ปรับตามใช้งานจริง
+          //
+        ),
+        defaultValues: {
+          //
+          // ปรับตามใช้งานจริง
+          body_string: "",
+          body_timezone: defaultTimezone,
+          //
         },
       },
     );
-  };
 
-  // 🎨 2. UI: Render the form
-  return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      // 🌟 Merge the default styling with the injected className
-      className={`bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col gap-6 ${className}`}
-    >
-      {/* ======================= */}
-      {/* 🟢 Input Zone */}
-      {/* ======================= */}
+    // ===============
+    // (จบ) ตั้งค่า Form
+    // ===============
 
-      {/* Template Text Input */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor="name" className="text-sm font-bold text-gray-700">
-          {/* ปรับตามใช้งานจริง */}
-          ชื่อสถานที่ทำงาน <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="name" // ปรับตามใช้งานจริง
-          type="text" // ปรับตามใช้งานจริง
-          {...register("name")} // ปรับตามใช้งานจริง
-          placeholder="เช่น คลินิกสาขาอารีย์, วอร์ดผู้ป่วยใน" // ปรับตามใช้งานจริง
-          disabled={isPending} // ปรับตามใช้งานจริง
-          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
-            errors.name // ปรับตามใช้งานจริง
-              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
-              : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
-          }`}
-        />
-        {errors.name && ( // ปรับตามใช้งานจริง
-          <p className="text-sm text-red-500 mt-1">
-            {
-              errors.name.message // ปรับตามใช้งานจริง
-            }
-          </p>
-        )}
-      </div>
+    // ================
+    // จัดการผลลัพธ์
+    // ================
 
-      {/* 🟢 Timezone Selector Input */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor="timezone" className="text-sm font-bold text-gray-700">
-          เขตเวลา (Timezone) <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="timezone"
-          {...register("timezone")}
-          disabled={isPending}
-          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
-            errors.timezone
-              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
-              : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
-          }`}
-        >
-          {allTimezones.map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-        {errors.timezone && (
-          <p className="text-sm text-red-500 mt-1">{errors.timezone.message}</p>
-        )}
-        <p className="text-xs text-gray-500">
-          เวลามาตรฐานที่จะถูกใช้ในการคำนวณและแสดงผลตารางกะการทำงาน
-        </p>
-      </div>
+    const onSubmit = (
+      //
+      data: MethodTemplateFrontendForm, // ปรับตามใช้งานจริง
+      //
+    ) => {
+      //
+      // ปรับตามใช้งานจริง
+      methodTemplate(
+        {
+          // ปรับตามใช้งานจริง
+          valueOne: valueOne,
+          valueTwo: data.body_string,
+          valueThree: data.body_timezone,
 
-      {/* ======================= */}
-      {/* 🟢 Action Buttons */}
-      {/* ======================= */}
+          // ปรับตามใช้งานจริง
+          skipErrorCodes: skipErrorCodes,
+          //
+        },
+        {
+          onSuccess: () => {
+            //
+            // ปรับตามใช้งานจริง
+            toast.success(
+              //
+              "...เรียบร้อยแล้ว", // ปรับตามใช้งานจริง
+              //
+            );
 
-      <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={() =>
+            // ปรับตามใช้งานจริง
             router.push(
-              // ปรับตามใช้งานจริง
-              `/work-schedule`,
+              //
+              `/template/${valueOne}/client-query`, // ปรับตามใช้งานจริง
+              //
+            );
+            //
+          },
+          onError: () => {
+            //
+            // ปรับตามใช้งานจริง
+            toast.error(
+              //
+              "ไม่สามารถ...ได้ กรุณาลองใหม่อีกครั้ง", // ปรับตามใช้งานจริง
+              //
+            );
+            //
+          },
+        },
+      );
+    };
+
+    // ================
+    // (จบ) จัดการผลลัพธ์
+    // ================
+
+    // ==================
+    // ------- UI -------
+    // ==================
+
+    return (
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className={`bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col gap-6 ${className}`}
+      >
+        {/* ======================= */}
+        {/* 🟢 Input Zone */}
+        {/* ======================= */}
+
+        {/* ================ */}
+        {/* Text Input */}
+        {/* ================ */}
+
+        <div className="flex flex-col gap-2">
+          <label
+            //
+            htmlFor="body_string" // ปรับตามใช้งานจริง
+            //
+            className="text-sm font-bold text-gray-700"
+          >
+            {/*  */}
+            ชื่อ... {/* ปรับตามใช้งานจริง */}
+            <span className="text-red-500">*</span> {/* ปรับตามใช้งานจริง */}
+            {/*  */}
+          </label>
+          <input
+            //
+            id="body_string" // ปรับตามใช้งานจริง
+            //
+            type="text"
+            //
+            {...register(
+              //
+              "body_string", // ปรับตามใช้งานจริง
+              //
+            )}
+            //
+            placeholder="เช่น ..." // ปรับตามใช้งานจริง
+            //
+            disabled={isPending}
+            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
+              //
+              errors.body_string // ปรับตามใช้งานจริง
+                ? //
+                  "border-red-300 focus:ring-red-100 focus:border-red-500"
+                : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
+            }`}
+          />
+          {
+            //
+            errors.body_string && ( // ปรับตามใช้งานจริง
+              //
+              <p className="text-sm text-red-500 mt-1">
+                {
+                  //
+                  errors.body_string.message // ปรับตามใช้งานจริง
+                  //
+                }
+              </p>
             )
           }
-          disabled={isPending}
-          className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
-        >
-          ยกเลิก
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-        </button>
-      </div>
-    </form>
-  );
-};
+        </div>
+
+        {/* ================ */}
+        {/* (จบ) Text Input */}
+        {/* ================ */}
+
+        {/* ==================== */}
+        {/* Selector Input */}
+        {/* ==================== */}
+
+        <div className="flex flex-col gap-2">
+          <label
+            //
+            htmlFor="timezone" // ปรับตามใข้งานจริง
+            //
+            className="text-sm font-bold text-gray-700"
+          >
+            {/*  */}
+            เขตเวลา (Timezone) {/* ปรับตามใข้งานจริง */}
+            <span className="text-red-500">*</span> {/* ปรับตามใข้งานจริง */}
+            {/*  */}
+          </label>
+          <select
+            //
+            id="timezone" // ปรับตามใช้งานจริง
+            //
+            {...register(
+              //
+              "body_timezone", // ปรับตามใช้งานจริง
+              //
+            )}
+            disabled={isPending}
+            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
+              //
+              errors.body_timezone // ปรับตามใช้งานจริง
+                ? //
+                  "border-red-300 focus:ring-red-100 focus:border-red-500"
+                : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
+            }`}
+          >
+            {
+              //
+              allTimezones // ปรับตามใช้งานจริง
+                //
+                .map(
+                  (
+                    //
+                    tz, // ปรับตามใช้งานจริง
+                    //
+                  ) => (
+                    <option
+                      //
+                      key={tz} // ปรับตามใช้งานจริง
+                      value={tz} // ปรับตามใช้งานจริง
+                    >
+                      {/*  */}
+                      {tz} {/* ปรับตามใช้งานจริง */}
+                      {/*  */}
+                    </option>
+                  ),
+                )
+            }
+          </select>
+          {
+            //
+            errors.body_timezone && ( // ปรับตามใช้งานจริง
+              //
+              <p className="text-sm text-red-500 mt-1">
+                {
+                  //
+                  errors.body_timezone.message // ปรับตามใช้งานจริง
+                  //
+                }
+              </p>
+            )
+          }
+          <p className="text-xs text-gray-500">
+            {/*  */}
+            {/* ปรับตามใช้งานจริง */}
+            เวลามาตรฐานที่จะถูกใช้ในการคำนวณและแสดงผลตารางกะการทำงาน
+            {/*  */}
+          </p>
+        </div>
+
+        {/* ==================== */}
+        {/* (จบ) Selector Input */}
+        {/* ==================== */}
+
+        {/* ======================= */}
+        {/* 🟢 (จบ) Input Zone */}
+        {/* ======================= */}
+
+        {/* ============================ */}
+        {/* 🟢 Action Buttons Zone */}
+        {/* ============================ */}
+
+        <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
+          {/*  */}
+          {/* ==================== */}
+          {/* Back Button */}
+          {/* ==================== */}
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                //
+                `/template/${valueOne}/server-query`, // ปรับตามใช้งานจริง
+                //
+              )
+            }
+            disabled={isPending}
+            className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
+          >
+            ยกเลิก
+          </button>
+
+          {/* ==================== */}
+          {/* (จบ) Back Button */}
+          {/* ==================== */}
+
+          {/* ==================== */}
+          {/* Submit Button */}
+          {/* ==================== */}
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {
+              isPending
+                ? //
+                  "กำลังบันทึก..." // ปรับตามใช้งานจริง
+                : //
+                  "บันทึกข้อมูล" // ปรับตามใช้งานจริง
+              //
+            }
+          </button>
+
+          {/* ==================== */}
+          {/* (จบ) Submit Button */}
+          {/* ==================== */}
+          {/*  */}
+        </div>
+
+        {/* ============================ */}
+        {/* 🟢 (จบ) Action Buttons Zone */}
+        {/* ============================ */}
+        {/*  */}
+      </form>
+    );
+  };
