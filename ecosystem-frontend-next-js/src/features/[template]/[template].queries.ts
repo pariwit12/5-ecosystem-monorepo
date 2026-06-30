@@ -51,20 +51,16 @@ export const templateQueries = {
     queryOptions({
       queryKey:
         //
-        // ปรับตามใช้งานจริง
-        userId && valueOne // ปรับตามใช้งานจริง
-          ? //
-            templateKeys // ปรับตามใช้งานจริง
-              //
-              // ปรับตามใช้งานจริง
-              .listsByValueOne(
-                //
-                // ปรับตามใช้งานจริง
-                userId,
-                valueOne,
-                //
-              )
-          : [],
+        templateKeys // ปรับตามใช้งานจริง
+          //
+          // ปรับตามใช้งานจริง
+          .listsByValueOne(
+            //
+            // ปรับตามใช้งานจริง
+            userId ?? "",
+            valueOne,
+            //
+          ),
 
       queryFn: async () => {
         //

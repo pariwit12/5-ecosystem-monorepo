@@ -1,11 +1,31 @@
 // ------------------------------------------------------------------------
-// Pattern: Server Internal Only + Client Query (Client-Backend)
+// Pattern: Server First Query (Hydration) + Client Fetching
 // ------------------------------------------------------------------------
 
+// Client Side Rendering                เหมาะกับ query ข้อมูลขนาดใหญ่
+// Server Side Rendering (Hydration)    เหมาะกับ query ข้อมูลขนาดเล็ก
+// Server Side Rendering (initialData)  เหมาะกับ มี DB สำหรับ GET แยกออกมาอีกตัว (สามารถใช้โควต้าได้อย่างสิ้นเปลือง แต่ UX จะเร็วและดีกว่า)
+
 import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server"; // ตัวแทน useAuth ฝั่ง Server
+import { isAxiosError } from "axios";
+import {
+  QueryClient,
+  dehydrate,
+  HydrationBoundary,
+} from "@tanstack/react-query";
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
 // ปรับตามใช้งานจริง
 import TemplateClient from "./client-page";
+
+// ----------- Import Queries -----------
+import {
+  // ปรับตามใช้งานจริง
+  templateQueries,
+
+  // ปรับตามใช้งานจริง
+} from "@/features/[template]/[template].queries";
 
 // ==========================================
 // สร้างฟังก์ชัน สำหรับตรวจสอบ URL
@@ -81,16 +101,90 @@ export default async function TemplatePage({
   // ==========================================
 
   // =============================
+  // Server Query + Hydration
+  // =============================
+
+  const { userId, getToken } = await auth();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 0, // 👈 ปิด Retry บน Server
+      },
+    },
+  });
+
+  try {
+    await queryClient.fetchQuery(
+      //
+      templateQueries // ปรับตามใช้งานจริง
+        //
+        // ปรับตามใช้งานจริง
+        .getTemplate(
+          //
+          // ปรับตามใช้งานจริง
+          templateId,
+          "valueTwo",
+          "valueThree",
+
+          // ปรับตามใช้งานจริง
+          userId,
+          getToken, // ส่ง getToken ของฝั่ง Server เข้าไปได้เลย เพราะ signature ตรงกัน (Promise<string | null>)
+
+          // ปรับตามใช้งานจริง
+          [],
+          //
+        ),
+    );
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      // ปรับตามใช้งานจริง (จาก Backend)
+      const errorCode = error.response?.data?.errorCode;
+
+      // สร้างลิสต์ของ Error ที่เราต้องการเตะออก (ใช้ Enum ที่ import มาได้เลย)
+
+      const accessDeniedErrors = [
+        //
+        // ปรับตามใช้งานจริง
+        ErrorCode.ORGANIZATION_NOT_FOUND,
+        ErrorCode.ORGANIZATION_DELETED,
+        ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+      ];
+
+      if (accessDeniedErrors.includes(errorCode)) {
+        //
+        // ปรับตามใช้งานจริง
+        redirect(
+          //
+          // ปรับตามใช้งานจริง
+          `/template?error=${errorCode}`,
+          //
+        );
+        //
+      }
+    }
+
+    throw error; // ส่งไปให้ error.tsx จัดการ
+  }
+
+  // =============================
+  // (จบ) Server Query + Hydration
+  // =============================
+
+  // =============================
   // เรียก Client-Page
   // =============================
 
   return (
-    //
-    // ปรับตามใช้งานจริง
-    <TemplateClient
-      //
-      // ปรับตามใช้งานจริง
-      templateId={templateId} // ปรับตามใช้งานจริง
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      {/*  */}
+      <TemplateClient // ปรับตามใช้งานจริง
+        //
+        // ปรับตามใช้งานจริง
+        templateId={templateId} // ปรับตามใช้งานจริง
+        //
+      />
+    </HydrationBoundary>
   );
 }
+
+// อย่าลืมไปลงทะเบียน protected route ใน src/proxy.ts

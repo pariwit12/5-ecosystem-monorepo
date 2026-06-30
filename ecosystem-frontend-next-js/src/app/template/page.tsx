@@ -918,3 +918,5 @@ export default function TemplatePage() {
     </>
   );
 }
+
+// อย่าลืมไปลงทะเบียน protected route ใน src/proxy.ts
