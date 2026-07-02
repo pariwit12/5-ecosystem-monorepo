@@ -32,7 +32,7 @@ export const templateQueries = {
 
   // 1
   // ปรับตามใช้งานจริง
-  getTemplate: (
+  queryGetTemplate: (
     //
     // ปรับตามใช้งานจริง
     valueOne: string,

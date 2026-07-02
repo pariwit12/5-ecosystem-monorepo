@@ -1,7 +1,6 @@
 "use client";
 
-// ปรับตามใช้งานจริง
-export default function TemplateErrorQuery({
+export default function ErrorQuery({
   //
   // เราเขียน throw error จากใน page.tsx -> Next.js จะจัดการใส่ error กับ reset มาให้โดยอัตโนมัติ
   // error,

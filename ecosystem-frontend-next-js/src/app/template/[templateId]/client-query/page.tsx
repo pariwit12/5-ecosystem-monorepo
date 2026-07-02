@@ -1,10 +1,10 @@
 // ------------------------------------------------------------------------
-// Pattern: Server Internal Only + Client Query (Client-Backend)
+// Pattern: Server Internal Only + CSR
 // ------------------------------------------------------------------------
 
-// Client Side Rendering                เหมาะกับ query ข้อมูลขนาดใหญ่
-// Server Side Rendering (Hydration)    เหมาะกับ query ข้อมูลขนาดเล็ก
-// Server Side Rendering (initialData)  เหมาะกับ มี DB สำหรับ GET แยกออกมาอีกตัว (สามารถใช้โควต้าได้อย่างสิ้นเปลือง แต่ UX จะเร็วและดีกว่า)
+// CSR - Client Side Rendering                เหมาะกับ query ข้อมูลขนาดใหญ่
+// SSR - Server Side Rendering (Hydration)    เหมาะกับ query ข้อมูลขนาดเล็ก
+// SSR - Server Side Rendering (initialData)  เหมาะกับ มี DB สำหรับ GET แยกออกมาอีกตัว (สามารถใช้โควต้าได้อย่างสิ้นเปลือง แต่ UX จะเร็วและดีกว่า)
 
 import { redirect } from "next/navigation";
 
@@ -64,7 +64,7 @@ export default async function TemplatePage({
     redirect(
       //
       // ปรับตามใช้งานจริง
-      "/template?error=invalid_id", // ปรับตามใช้งานจริง
+      `/${templateId}/template?error=invalid_id`, // ปรับตามใช้งานจริง
     );
 
     // ฝั่ง Server ใช้ redirect() (จาก next/navigation)

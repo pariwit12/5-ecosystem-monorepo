@@ -5,7 +5,8 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { isAxiosError } from "axios"; // ตรวจสอบว่าเป็น Error เป็นรูปแบบ Error จาก Axios หรือไม่
+import { toast } from "sonner";
+import { isAxiosError } from "axios";
 import { workScheduleStaffQueries } from "@/features/work-schedule/staff/work-schedule-staff.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
@@ -50,9 +51,17 @@ export default function WorkScheduleAdminStaffClient({
 
       if (accessDeniedErrors.includes(errorCode)) {
         router.push(`/work-schedule?error=${errorCode}`);
+
+        return;
+      }
+
+      if (error && data !== undefined) {
+        toast.error(
+          "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
+        );
       }
     }
-  }, [error, router]);
+  }, [error, router, data]);
 
   // ===================
   // Loading / Error UI

@@ -92,6 +92,8 @@ export class MethodTemplateHandler implements ICommandHandler<
           },
           select: {
             //
+            // หากไม่ต้องการข้อมูลตอบกลับ ให้เลือก select field ที่ข้อมูลขนาดเล็กส่งมา (ถ้าลบ select ออก DB จะส่งกลับมาทุก field)
+            //
             // ปรับตามใช้งานจริง
             id: true,
             title: true,
@@ -134,6 +136,8 @@ export class MethodTemplateHandler implements ICommandHandler<
           },
           select: {
             //
+            // หากไม่ต้องการข้อมูลตอบกลับ ให้เลือก select field ที่ข้อมูลขนาดเล็กส่งมา (ถ้าลบ select ออก DB จะส่งกลับมาทุก field)
+            //
             // ปรับตามใช้งานจริง
             id: true,
             title: true,
@@ -169,6 +173,8 @@ export class MethodTemplateHandler implements ICommandHandler<
             //
           },
           select: {
+            //
+            // หากไม่ต้องการข้อมูลตอบกลับ ให้เลือก select field ที่ข้อมูลขนาดเล็กส่งมา (ถ้าลบ select ออก DB จะส่งกลับมาทุก field)
             //
             // ปรับตามใช้งานจริง
             id: true,

@@ -95,7 +95,7 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
 
     const {
       // ปรับตามใช้งานจริง
-      mutate: methodTemplate, // ปรับตามใช้งานจริง
+      mutate: mutateMethodTemplate, // ปรับตามใช้งานจริง
       isPending,
 
       // ปรับตามใช้งานจริง
@@ -143,10 +143,12 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
     ) => {
       //
       // ปรับตามใช้งานจริง
-      methodTemplate(
+      mutateMethodTemplate(
         {
           // ปรับตามใช้งานจริง
           valueOne: valueOne,
+
+          // ปรับตามใช้งานจริง
           valueTwo: data.body_string,
           valueThree: data.body_timezone,
 

@@ -23,8 +23,8 @@ model Organization {
 }
 
 model Person {
-  id      String  @id @default(uuid(7)) @db.Uuid
-  clerkId String? @unique @map("clerk_id") // unique เป็น index ในตัวอยู่แล้ว ไม่ต้องใส่ @@index เพิ่ม
+  id      String @id @default(uuid(7)) @db.Uuid
+  clerkId String @unique @map("clerk_id") // ไม่ได้ใช้ clerkId เป็น id เพื่อความยืดหยุ่น (ลดการผูกติดกับ Clerk)
 
   // firstName String @map("first_name")
   // lastName  String @map("last_name")

@@ -1,8 +1,7 @@
 // สามารถใช้เป็น client ได้ หากมีปุ่มหรือว่าต้องการสร้างอะไรที่ซับซ้อน แต่ประสิทธิภาพจะไม่เท่า server component
 // "use client";
 
-// ปรับตามใช้งานจริง
-export default function TemplateLoading() {
+export default function Loading() {
   return (
     //
     // ปรับตามใช้งานจริง (คง Default หรือ ทำ Skeleton หรือ ปรับแต่งใหม่)

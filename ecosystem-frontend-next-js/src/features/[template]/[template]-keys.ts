@@ -9,6 +9,7 @@ export const templateKeys =
       [
         // ปรับตามใช้งานจริง
         userId,
+        "program", // ปรับตามใช้งานจริง
         "template", // ปรับตามใช้งานจริง
       ] as const,
 

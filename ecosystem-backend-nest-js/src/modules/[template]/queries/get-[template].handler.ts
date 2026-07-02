@@ -159,7 +159,7 @@ export class GetTemplateHandler implements IQueryHandler<
     // ============================
 
     // ============================
-    // 🚀 (จบ) Promise.all
+    // 🚀 Promise.all
     // ============================
 
     const [

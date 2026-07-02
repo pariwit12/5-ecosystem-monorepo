@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WorkSchedulePlacesModule } from './places/work-schedule-places.module';
+import { WorkSchedulePositionModule } from './position/work-schedule-position.module';
 import { WorkScheduleLogInModule } from './log-in/work-schedule-log-in.module';
 import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
 
@@ -7,6 +8,7 @@ import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
 @Module({
   imports: [
     WorkSchedulePlacesModule,
+    WorkSchedulePositionModule,
     WorkScheduleLogInModule,
     WorkScheduleStaffModule,
   ],

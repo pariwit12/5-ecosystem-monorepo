@@ -162,7 +162,7 @@ export class TemplateController {
   // ในโลกของ NestJS และ TypeScript การเรียงลำดับ Decorator ที่อยู่ "บนหัวฟังก์ชัน" (Method Decorators) จะสลับบรรทัดกันอย่างไร ตัวระบบก็ไม่พังครับ
   // มันจะเก็บข้อมูลเข้ากระเป๋าไปจัดลำดับการทำงาน (Lifecycle) ของมันเองอยู่ดีครับ
 
-  @Get(':param1_id/:param2_id') // ปรับตามใช้งานจริง
+  @Get('by-param1-id-and-param2-id/:param1_id/:param2_id') // ปรับตามใช้งานจริง
 
   // ปรับให้ตรงตามที่ใช้จริง
   @UseGuards(ClerkAuthGuard) // ปรับให้ตรงตามที่ใช้จริง (ซ้ายทำงานก่อน)

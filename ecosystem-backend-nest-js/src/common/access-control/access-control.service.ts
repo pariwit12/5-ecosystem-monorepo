@@ -9,8 +9,9 @@ export class AccessControlService {
   constructor(private prisma: PrismaService) {}
 
   // ==========================================
-  // 👤 ด่านตรวจสอบระดับ PERSON
+  // 👤 ด่านตรวจสอบ Person
   // ==========================================
+
   async verifyPerson(clerkId: string) {
     const person = await this.prisma.person.findUnique({
       where: { clerkId },
@@ -31,13 +32,17 @@ export class AccessControlService {
   }
 
   // ==========================================
-  // 🏢 ด่านตรวจสอบระดับ ORGANIZATION
+  // 👤 (จบ) ด่านตรวจสอบ Person
   // ==========================================
+
+  // =====================================================================
+  // 🏢 ด่านตรวจสอบ Organization + สิทธิ PersonOrganizationAffiliation
+  // =====================================================================
+
   async verifyOrganizationAccess(clerkId: string, organizationId: string) {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
-        id: true,
         deletedAt: true,
       },
     });
@@ -99,24 +104,28 @@ export class AccessControlService {
     };
   }
 
+  // =====================================================================
+  // 🏢 (จบ) ด่านตรวจสอบ Organization + สิทธิ PersonOrganizationAffiliation
+  // =====================================================================
+
   // =====================================================================================
   // โปรแกรม Work-Schedule
   // =====================================================================================
 
-  // ==========================================
-  // 🏢 ด่านตรวจสอบ สิทธิ์ workScheduleAdmin
-  // ==========================================
+  // ==============================================================
+  // 🏢 ด่านตรวจสอบ WorkSchedulePlace + สิทธิ WorkScheduleAdmin
+  // ==============================================================
+
   async verifyWorkScheduleAdminAccess(clerkId: string, placeId: string) {
     const organizationWorkSchedulePlace =
       await this.prisma.organizationWorkSchedulePlace.findUnique({
         where: { id: placeId },
         select: {
-          id: true,
           deletedAt: true,
         },
       });
 
-    // 1. เช็คตัวตน
+    // 1
     if (!organizationWorkSchedulePlace) {
       throw new AppException(
         ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
@@ -125,7 +134,7 @@ export class AccessControlService {
       );
     }
 
-    // 2. เช็คว่าองค์กรโดนลบไปหรือยัง
+    // 2
     if (organizationWorkSchedulePlace.deletedAt !== null) {
       throw new AppException(
         ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
@@ -141,13 +150,13 @@ export class AccessControlService {
         workScheduleAdmins: {
           where: { organizationWorkSchedulePlaceId: placeId, deletedAt: null },
           select: {
-            organizationWorkSchedulePlaceId: true,
+            deletedAt: true,
           },
         },
       },
     });
 
-    // 1. เช็คตัวตน
+    // 3
     if (!person) {
       throw new AppException(
         ErrorCode.PERSON_NOT_FOUND,
@@ -156,10 +165,9 @@ export class AccessControlService {
       );
     }
 
-    // 2. เช็คความเป็น Admin
+    // 4
     if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
       throw new AppException(
-        // ปรับ
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
         'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
         HttpStatus.FORBIDDEN,
@@ -170,4 +178,108 @@ export class AccessControlService {
       personId: person.id,
     };
   }
+
+  // ==============================================================
+  // 🏢 (จบ) ด่านตรวจสอบ WorkSchedulePlace + สิทธิ WorkScheduleAdmin
+  // ==============================================================
+
+  // =================================================================
+  // 🌟 ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
+  // =================================================================
+
+  async verifyWorkSchedulePositionByWorkScheduleAdmin(
+    clerkId: string,
+    positionId: string,
+  ) {
+    const workSchedulePosition =
+      await this.prisma.workSchedulePosition.findUnique({
+        where: { id: positionId },
+        select: {
+          deletedAt: true,
+          organizationWorkSchedulePlace: {
+            select: {
+              id: true,
+              deletedAt: true,
+            },
+          },
+        },
+      });
+
+    // 1
+    if (!workSchedulePosition) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,
+        'WorkSchedulePositionId นี้ไม่มีในตาราง WorkSchedulePosition',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2
+    if (workSchedulePosition.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
+        'WorkSchedulePositionId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    // 3
+    if (workSchedulePosition.organizationWorkSchedulePlace.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+        'OrganizationWorkSchedulePlaceId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const person = await this.prisma.person.findUnique({
+      where: { clerkId: clerkId },
+      select: {
+        id: true,
+        workScheduleAdmins: {
+          where: {
+            organizationWorkSchedulePlaceId:
+              workSchedulePosition.organizationWorkSchedulePlace.id,
+            deletedAt: null,
+          },
+          select: {
+            deletedAt: true,
+          },
+        },
+      },
+    });
+
+    // 4
+    if (!person) {
+      throw new AppException(
+        ErrorCode.PERSON_NOT_FOUND,
+        'ClerkId นี้ไม่มีในตาราง Person',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 5
+    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+      throw new AppException(
+        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return {
+      personId: person.id,
+      organizationWorkSchedulePlaceId:
+        workSchedulePosition.organizationWorkSchedulePlace.id,
+    };
+  }
+
+  // =================================================================
+  // 🌟 (จบ) ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
+  // =================================================================
+
+  // =====================================================================================
+  // (จบ) โปรแกรม Work-Schedule
+  // =====================================================================================
+  //
 }
