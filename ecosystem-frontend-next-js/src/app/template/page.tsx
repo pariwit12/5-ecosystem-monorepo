@@ -689,7 +689,7 @@ export default function TemplatePage() {
           <h3
             className={cn(
               //
-              "text-md sm:text-lg",
+              "text-lg",
 
               "font-bold text-gray-800",
             )}
@@ -1181,7 +1181,7 @@ export default function TemplatePage() {
           <h3
             className={cn(
               //
-              "text-md sm:text-lg",
+              "text-lg",
 
               "font-bold text-red-600",
 
