@@ -244,13 +244,11 @@ export default function TemplatePage() {
               // justify-center (Main Axis): จะทำหน้าที่จัดกึ่งกลางในแนวหลัก
               // ซึ่งในกรณีของ flex-col มันคือการจัดกึ่งกลาง แนวตั้ง (Vertical / บน-ล่าง) ครับ!
 
-              // Horizontal
               "gap-2 sm:gap-3", // ระยะระหว่าง component (ซ้าย-ขวา และ บน-ล่าง (หากเกิดการ flex-wrap))
 
-              // Vertical
               "border-b",
-              "pt-2 sm:pt-3", // ระยะขอบ ด้านบน (ไปต่อกับ padding ของ div ใหญ่อีกที)
-              "pb-4 sm:pb-6", // ระยะขอบ ด้านล่าง
+              // "pt-2 sm:pt-3", // ระยะขอบ ด้านบน (ไปต่อกับ padding ของ div ใหญ่อีกที)
+              "pb-4 sm:pb-4", // ระยะขอบ ด้านล่าง
             )}
           >
             {/*  */}
@@ -276,8 +274,11 @@ export default function TemplatePage() {
               )}
             >
               <svg
+                className={cn(
+                  //
+                  "h-6 w-6",
+                )}
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -361,27 +362,53 @@ export default function TemplatePage() {
               }
               className={cn(
                 //
-                "px-4 sm:px-5 py-2 sm:py-2.5", // ทำให้ปุ่มหน้าตาเป็นปุ่ม
 
-                "min-w-0", // min-w-0 เพื่อเปิดทางให้กล่องลูกสามารถ "ตัดคำ" ได้
+                // ทำให้ปุ่มหน้าตาเป็นปุ่ม
+                "p-2 sm:px-4 sm:py-2",
+                "rounded-full sm:rounded-xl",
 
-                "text-xs sm:text-sm", // ขนาด font
-
-                "rounded-xl",
-
-                "font-medium text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-colors",
+                "text-white",
+                "bg-blue-500",
+                "hover:bg-blue-700",
+                "active:bg-blue-800",
+                "shadow-sm",
+                "transition-colors",
               )}
             >
+              <svg
+                className={cn(
+                  //
+                  "h-6 w-6",
+
+                  "sm:hidden",
+                )}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+
               <span
                 className={cn(
                   //
+                  "hidden sm:block",
+
+                  "text-xs sm:text-sm", // ขนาด font
+
                   "truncate", // ตัดคำเป็น ... ถ้ายาวเกิน
+
+                  "font-medium",
                 )}
               >
                 {/* 
                   -------- ปรับตามใช้งานจริง --------
                 */}
-                + สร้างข้อมูลใหม่
+                + สร้างข้อมูลใหม่ / สร้าง...ใหม่
                 {/* 
                   --------------------------------
                 */}
