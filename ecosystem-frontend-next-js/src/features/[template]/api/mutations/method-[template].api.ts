@@ -225,7 +225,9 @@ export const methodTemplate = // ปรับตามใช้งานจร�
         //
         `/api/template/${parsedParam.data.param_uuidv7}`, // ปรับตามใช้งานจริง
 
-        parsedBody.data, // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        parsedBody.data,
+        // undefined, // 👈 ใช้ undefined หรือ null เพื่อบอกว่าไม่มี Body (ห้ามลบออกไปดื้อๆ)
 
         {
           headers: { Authorization: `Bearer ${token}` },

@@ -339,7 +339,11 @@ export default function TemplateClient({
       {/* Main UI (children) */}
       {/* ========================================================================================== */}
 
-      <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+      <div
+        className="p-8
+      w-full 
+      max-w-6xl mx-auto flex flex-col gap-8"
+      >
         {/*  */}
         {/* ============================== */}
         {/* ส่วนหัวข้อ + สถานะ fetching */}

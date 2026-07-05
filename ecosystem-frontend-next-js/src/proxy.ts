@@ -5,8 +5,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // 1. กำหนดว่า Path ไหนบ้างที่ต้องล็อกอินก่อนถึงจะเข้าได้
 // ใช้ (.*) เพื่อให้ครอบคลุมทุก sub-path เช่น /work-schedule/admin/...
 const isProtectedRoute = createRouteMatcher([
+  //
+  // สามารถเพิ่ม path อื่นๆ ได้ที่นี่
+
+  "/organizations(.*)",
+  "/person(.*)",
   "/work-schedule(.*)",
-  "/organizations(.*)", // สามารถเพิ่ม path อื่นๆ ได้ที่นี่
+
+  //
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

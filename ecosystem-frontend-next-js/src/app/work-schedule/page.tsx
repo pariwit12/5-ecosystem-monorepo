@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
+import { isAxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { workScheduleLogInQueries } from "@/features/work-schedule/log-in/work-schedule-log-in.queries";
@@ -47,6 +49,7 @@ function ToastNotifier() {
 // 🖥️ Component หลัก
 // ==========================================
 export default function TemplatePage() {
+  const router = useRouter();
   // =================================
   // 🚀 1. ดึงข้อมูลจาก useQuery / Hook
   // =================================
@@ -54,12 +57,49 @@ export default function TemplatePage() {
 
   const { data, isLoading, isFetching, error } = useQuery(
     // ปรับตามใช้งานจริง
-    workScheduleLogInQueries.userRolesByClerkId(userId, getToken, []),
+    workScheduleLogInQueries.userRolesByClerkId(userId, getToken, [
+      ErrorCode.PERSON_NOT_FOUND,
+    ]),
   );
 
-  // ============================
-  // 🎯 2. ฟังก์ชันจัดการเมื่อ "กดปุ่ม"
-  // ============================
+  // ==========================================
+  // 🌟 2. ด่านดักจับ Error แล้ว Redirect
+  // ==========================================
+  useEffect(() => {
+    // เช็คว่ามี Error และเป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
+    if (error && isAxiosError(error)) {
+      const errorCode = error.response?.data?.errorCode;
+
+      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
+        router.push(`/person/new?error=${errorCode}`);
+
+        return;
+      }
+
+      if (error && data !== undefined) {
+        toast.error(
+          "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
+        );
+      }
+    }
+  }, [error, router, data]);
+
+  // ===================
+  // Loading / Error UI
+  // ===================
+
+  // ป้องกันหน้าจอกระพริบ (UI Flash):
+  if (
+    error &&
+    isAxiosError(error) &&
+    [ErrorCode.PERSON_NOT_FOUND].includes(error.response?.data?.errorCode)
+  ) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        เกิดข้อผิดพลาด กำลังพากลับไปยังหน้าที่เหมาะสม...
+      </div>
+    );
+  }
 
   // =========================================================
   // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย

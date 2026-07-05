@@ -123,6 +123,8 @@ export class MethodTemplateHandler implements ICommandHandler<
           },
           update: {
             //
+            // สามารปล่อยว่างได้ = update: {},
+
             // ปรับตามใช้งานจริง
             deletedAt: null,
             //

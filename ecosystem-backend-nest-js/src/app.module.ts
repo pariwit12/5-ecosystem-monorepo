@@ -7,7 +7,7 @@ import { AccessControlModule } from './common/access-control/access-control.modu
 
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
-import { PersonsModule } from './modules/persons/persons.module';
+import { PersonModule } from './modules/person/person.module';
 import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module';
 
 @Module({
@@ -17,7 +17,7 @@ import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module
 
     WebhooksModule,
     OrganizationsModule,
-    PersonsModule,
+    PersonModule,
     WorkScheduleModule,
   ],
   controllers: [AppController],

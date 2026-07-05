@@ -28,6 +28,7 @@ export default function WorkScheduleAdminStaffClient({
   const { getToken, userId, isLoaded } = useAuth();
   const { data, isLoading, isFetching, error } = useQuery(
     workScheduleStaffQueries.listsByPlaceId(userId, getToken, placeId, [
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
       ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
@@ -42,14 +43,19 @@ export default function WorkScheduleAdminStaffClient({
     if (error && isAxiosError(error)) {
       const errorCode = error.response?.data?.errorCode;
 
-      // สร้างลิสต์ของ Error ที่เราต้องการเตะออก (ใช้ Enum ที่ import มาได้เลย)
-      const accessDeniedErrors = [
-        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-      ];
+      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
+        router.push(`/person/new?error=${errorCode}`);
 
-      if (accessDeniedErrors.includes(errorCode)) {
+        return;
+      }
+
+      if (
+        [
+          ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
+          ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+          ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        ].includes(errorCode)
+      ) {
         router.push(`/work-schedule?error=${errorCode}`);
 
         return;
@@ -72,6 +78,7 @@ export default function WorkScheduleAdminStaffClient({
     error &&
     isAxiosError(error) &&
     [
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
       ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
@@ -83,19 +90,6 @@ export default function WorkScheduleAdminStaffClient({
       </div>
     );
   }
-
-  // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
-
-  // ============================
-  // 🎯 2. ฟังก์ชันจัดการเมื่อ "กดปุ่ม"
-  // ============================
-
-  // ปรับตามใช้งานจริง
-  // eslint-disable-next-line
-  const handleSelectOrganization = (orgId: string) => {
-    // ปรับตามใช้งานจริง
-    router.push(`/organizations/${orgId}/settings`);
-  };
 
   // =========================================================
   // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย

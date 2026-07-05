@@ -25,6 +25,7 @@ export default function OrganizationSettingsClient({
     error,
   } = useQuery(
     organizationsQueries.detail(userId, orgId, getToken, [
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.ORGANIZATION_NOT_FOUND,
       ErrorCode.ORGANIZATION_DELETED,
       ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
@@ -39,14 +40,19 @@ export default function OrganizationSettingsClient({
     if (error && isAxiosError(error)) {
       const errorCode = error.response?.data?.errorCode;
 
-      // สร้างลิสต์ของ Error ที่เราต้องการเตะออก (ใช้ Enum ที่ import มาได้เลย)
-      const accessDeniedErrors = [
-        ErrorCode.ORGANIZATION_NOT_FOUND,
-        ErrorCode.ORGANIZATION_DELETED,
-        ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-      ];
+      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
+        router.push(`/person/new?error=${errorCode}`);
 
-      if (accessDeniedErrors.includes(errorCode)) {
+        return;
+      }
+
+      if (
+        [
+          ErrorCode.ORGANIZATION_NOT_FOUND,
+          ErrorCode.ORGANIZATION_DELETED,
+          ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
+        ].includes(errorCode)
+      ) {
         router.push(`/organizations?error=${errorCode}`);
       }
     }
@@ -66,6 +72,7 @@ export default function OrganizationSettingsClient({
     error &&
     isAxiosError(error) &&
     [
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.ORGANIZATION_NOT_FOUND,
       ErrorCode.ORGANIZATION_DELETED,
       ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,

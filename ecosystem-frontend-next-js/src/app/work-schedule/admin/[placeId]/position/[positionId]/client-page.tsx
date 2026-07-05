@@ -42,10 +42,11 @@ export default function WorkScheduleAdminPositionIdClient({
       getToken,
 
       [
-        ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,
-        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
+        ErrorCode.PERSON_NOT_FOUND,
         ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,
+        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
       ],
     ),
   );
@@ -53,6 +54,12 @@ export default function WorkScheduleAdminPositionIdClient({
   useEffect(() => {
     if (errorQuery && isAxiosError(errorQuery)) {
       const errorCode = errorQuery.response?.data?.errorCode;
+
+      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
+        router.push(`/person/new?error=${errorCode}`);
+
+        return;
+      }
 
       if (
         [
@@ -95,10 +102,11 @@ export default function WorkScheduleAdminPositionIdClient({
     dataQuery === undefined &&
     isAxiosError(errorQuery) &&
     [
-      ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,
-      ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
       ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+      ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,
+      ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
     ].includes(errorQuery.response?.data?.errorCode)
   ) {
     return <Loading />;

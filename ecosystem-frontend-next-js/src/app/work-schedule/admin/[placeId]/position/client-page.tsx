@@ -68,6 +68,7 @@ export default function WorkScheduleAdminPositionClient({
       getToken,
 
       [
+        ErrorCode.PERSON_NOT_FOUND,
         ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
         ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
@@ -79,13 +80,19 @@ export default function WorkScheduleAdminPositionClient({
     if (errorQuery && isAxiosError(errorQuery)) {
       const errorCode = errorQuery.response?.data?.errorCode;
 
-      const accessDeniedErrors = [
-        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-      ];
+      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
+        router.push(`/person/new?error=${errorCode}`);
 
-      if (accessDeniedErrors.includes(errorCode)) {
+        return;
+      }
+
+      if (
+        [
+          ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
+          ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+          ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        ].includes(errorCode)
+      ) {
         router.push(`/work-schedule?error=${errorCode}`);
 
         return;
@@ -108,6 +115,7 @@ export default function WorkScheduleAdminPositionClient({
     dataQuery === undefined &&
     isAxiosError(errorQuery) &&
     [
+      ErrorCode.PERSON_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
       ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
       ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,

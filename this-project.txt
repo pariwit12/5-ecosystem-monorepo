@@ -9,66 +9,103 @@
 _________________________________________________________________________
 
 
+template structure
+@ url/template (หน้า รายการ template)
+  - ปุ่ม สร้าง template (ขวาบนของ Header)
+    @ url/template/new (หน้า สร้าง template)
+  - รายการ template
+  - ปุ่ม เลือก template
+    @ url/template/[templateId] (หน้า home ของ templateId)
+      - แสดงเมนูให้เลือกไปต่อ
+        - เมนู: อื่นๆ
+        - เมนู: รายละเอียด
+          @ url/template/[templateId]/detail (หน้า แสดงรายละเอียดของ templateId)
+            - แสดงรายละเอียด ของ templateId
+            - ปุ่ม แก้ไข รายละเอียด
+              @ url/template/[templateId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
+                - form สำหรับ แก้ไข ข้อมูล
+                - ปุ่ม ยกเลิก (redirect ไป url/template/[templateId]/detail)
+                - ปุ่ม บันทึก (redirect ไป url/template/[templateId]/detail)
+        - เมนู: ลบ
+          @ url/template/[templateId]/delete (หน้า ยืนยันที่จะลบ templateId)
+            - แสดงรายละเอียด ของ templateId
+            - ปุ่ม ยกเลิก (redirect ไป url/template/[templateId])
+            - ปุ่ม ลบ
+              - pop-up/หน้าต่าง ยืนยันที่จะลบ (redirect ไป url/template)
+
+_________________________________________________________________________
+
+
 ######### งานค้าง #########
-
-- เอา sync clerkId กับ Person ออก
-  - ลบ function ที่ backend
-  - ลบ การใช้ออกจาก frontend
-    - provider
-    - layout
-  - accessControl
-    - แก้การจัดการ person NOT FOUND ให้เหมาะสมกับ Logic ใหม่
-
-- หน้า positionId ค้างอยู่
 
 # โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
 
-- หน้าต่างของผู้ที่เป็น admin
-  - เลือก จัดการตำแหน่งงานและตารางเวร
-    - สร้าง WorkSchedulePosition
-    - หน้ารายการ WorkSchedulePosition ของ placeId (พร้อมปุ่ม ลบ WorkSchedulePosition)
-      - เลือก position
-        - หน้าต่าง admin/position
-          - รายการ Slot ของ position นั้นๆ
-            - ปุ่ม ลบ Slot นั้น (มีหรือไม่มี Staff ลงก็ได้)
+Step 1
+
+@ work-schedule/admin/[placeId]/position/[positionId] (หน้า รายละเอียดของ position)
+  - แสดงเมนูให้เลือกไปต่อ (ถ้ามี)
+    - ปุ่ม ไปหน้า รายการ Slot
+      @ work-schedule/admin/[placeId]/position/[positionId]/slot (หน้า รายการ slot)
+        - ปุ่ม สร้าง slot
+          @ work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu
+            - แสดงเมนูให้เลือก
+              - ใช้ slotTemplate
+                @ work-schedule/admin/[placeId]/position/[positionId]/slot-template (หน้า รายการ slotTemplate)
+                  - ปุ่ม สร้าง slotTemplate
+                    @ work-schedule/admin/[placeId]/position/[positionId]/slot-template/new (หน้า สร้าง slotTemplate)
+                  - รายการ slotTemplate
+                  - ปุ่ม เลือก slotTemplate
+                    @ work-schedule/admin/[placeId]/position/[positionId]/slot-template/[slotTemplateId] (หน้า รายละเอียดของ slotTemplate)
+                      - แสดงเมนูให้เลือกไปต่อ (ถ้ามี)
+                        - ใช้ slotTemplate นี้เพื่อสร้าง slot (ส่งข้อมูลไปเป็น pre-fill)
+                          @ work-schedule/admin/[placeId]/position/[positionId]/slot/new
+                      - แสดงรายละเอียด (ถ้ามี)
+                      - ปุ่ม delete
+                      - ปุ่ม แก้ไข รายละเอียดของ template
+                        @ work-schedule/admin/[placeId]/position/[positionId]/slot-template/[slotTemplateId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
+              - ไม่ใช้ slotTemplate
+                @ work-schedule/admin/[placeId]/position/[positionId]/slot/new
+        - รายการ slot
+        - ปุ่ม เลือก slot
+          @ work-schedule/admin/[placeId]/position/[positionId]/slot/[slotId] (หน้า รายละเอียดของ slot)
+            - แสดงเมนูให้เลือกไปต่อ (ถ้ามี)
+            - แสดงรายละเอียด (ถ้ามี)
+            - ปุ่ม delete (มีหรือไม่มี staff)
               // - คิดกระบวนการต่อจากนั้น เช่น Notification ส่งให้ Staff (ที่ผูก personId) ที่ถูกลบออก
-          - สร้าง Slot เพิ่ม
-            - รายการ template ของ slot ของ position นั้นๆ
+            - ปุ่ม แก้ไข รายละเอียดของ slot
+              @ work-schedule/admin/[placeId]/position/[positionId]/slot/[slotId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
+    - ปุ่ม ไปหน้า รายการ staffPosition
+      @ work-schedule/admin/[placeId]/position/[positionId]/staff-position (หน้า รายการ staffPosition)
+        - ปุ่ม สร้าง staffPosition
+          @ work-schedule/admin/[placeId]/position/[positionId]/staff-position/new (หน้า สร้าง staffPosition)
+            - รายการ staff ทั้งหมด (ที่ยังไม่มี staffPosition)
+            - ปุ่ม เลือก staff เพื่อสร้าง staffPosition
+        - รายการ staffPosition
+        - ปุ่ม เลือก staffPosition
+          @ work-schedule/admin/[placeId]/position/[positionId]/staff-position/[staffPositionId] (หน้า รายละเอียดของ staffPosition)
+            - แสดงเมนูให้เลือกไปต่อ (ถ้ามี)
+            - แสดงรายละเอียด (ถ้ามี)
+            - ปุ่ม delete
+            - ปุ่ม แก้ไข รายละเอียดของ template
+              @ work-schedule/admin/[placeId]/position/[positionId]/staff-position/[staffPositionId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
+  - แสดงรายละเอียด (ถ้ามี)
+  - ปุ่ม delete
+  - ปุ่ม แก้ไข รายละเอียดของ position
+    @ work-schedule/admin/[placeId]/position/[positionId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
 
-          - รายการ Staff ของ position นั้น
-            - ปุ่ม ลบ พนักงานคนนั้นออกจาก Position นี้
-          - สร้าง Position ให้ Staff ในองค์กร Place นั้นๆ (แต่งตั้งพนักงานขององค์กร สำหรับ ตำแหน่งงาน WorkSchedulePosition นี้)
-            - โชว์รายการ Staff ของ Place ทั้งหมด (ที่ยังไม่มี position นี้)
-
-  - สร้างหมวดของตารางงาน (WorkSchedulePosition) / ประเภทของตำแหน่งงาน
-  - สร้าง slot ของประเภทของตำแหน่งงานนั้นๆ
-  - สร้าง template ของการสร้าง slot
-  - assign พนักงานที่สร้างแล้ว ให้มี role ตามที่ต้องการ
 - สร้างหน้าต่างของผู้ที่เป็น พนักงาน
 
+Step 2
 
-- หน้าต่างของผู้ที่เป็น admin
-  - เลือก จัดการตำแหน่งงานและตารางเวร
-    - สร้าง WorkSchedulePosition
-    - หน้ารายการ WorkSchedulePosition ของ placeId (พร้อมปุ่ม ลบ WorkSchedulePosition)
-      - เลือก position
-        - หน้าต่าง admin/position
-          - รายการ Slot ของ position นั้นๆ
-            - ปุ่ม ลบ Slot นั้น (มีหรือไม่มี Staff ลงก็ได้)
-              // - คิดกระบวนการต่อจากนั้น เช่น Notification ส่งให้ Staff (ที่ผูก personId) ที่ถูกลบออก
-          - สร้าง Slot เพิ่ม
-            - รายการ template ของ slot ของ position นั้นๆ
-
-          - รายการ Staff ของ position นั้น
-            - ปุ่ม ลบ พนักงานคนนั้นออกจาก Position นี้
-          - สร้าง Position ให้ Staff ในองค์กร Place นั้นๆ (แต่งตั้งพนักงานขององค์กร สำหรับ ตำแหน่งงาน WorkSchedulePosition นี้)
-            - โชว์รายการ Staff ของ Place ทั้งหมด (ที่ยังไม่มี position นี้)
-
-  - เลือก จัดการพนักงานขององค์กร
-    - หน้ารายการ Staff ของ placeId (พร้อม Position ของพนักงานคนนั้นๆ)
-    - ปุ่ม delete
-    - ปุ่ม แก้ไขรายละเอียด
-      - หน้าต่างแก้ไขรายละเอียดของ Staff
+@ work-schedule/admin/[placeId]/staff (หน้า รายการ staff)
+  - เพิ่ม รายละเอียด staffPosition ของ staff
+  - ปุ่ม เลือก staff
+    @ work-schedule/admin/[placeId]/staff/[staffId] (หน้า รายละเอียดของ staff)
+      - แสดงเมนูให้เลือกไปต่อ (ถ้ามี)
+      - แสดงรายละเอียด (ถ้ามี)
+      - ปุ่ม delete
+      - ปุ่ม แก้ไข รายละเอียดของ staff
+        @ work-schedule/admin/[placeId]/staff/[staffId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
 
 # โปรแกรมทันตกรรม
 
@@ -76,6 +113,8 @@ _________________________________________________________________________
 
 
 ######### งานค้าง (ทำให้โปรแกรมให้สมบูรณ์ขึ้น) #########
+
+- sidebar ปรับเป็นแบบเปิดปิด
 
 # โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
 - ทำ flow การสร้าง admin ให้จบ (= จบส่วนที่ควรทำจากหน้า organizations)
