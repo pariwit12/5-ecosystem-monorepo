@@ -8,6 +8,7 @@
 
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
@@ -313,61 +314,61 @@ export default function TemplateClient({
   // (จบ) จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
   // ==============================================================
 
-  // ==================
-  // ส่วนแสดงผล UI หลัก
-  // ==================
+  // ===================================================
+  // ส่วนแสดงผล UI หลัก (snippet จากใน template/page.tsx)
+  // ===================================================
 
   return (
     <>
-      {/* ===================================== */}
-      {/* Toast สำหรับ Error ที่มาพร้อมกับ URL */}
-      {/* ===================================== */}
-
-      <Suspense
-        // Suspense คือ การบอกว่าข้างในนี้อาจจะโหลดช้ากว่าส่วนอื่น ให้ไปรันโค้ดส่วนอื่นก่อนได้เลย
-        // เช่น ต้องดึงข้อมูลจาก URL เป็นต้น
-        //
-        fallback={null}
-        // fallback คือ ระหว่างโหลด ให้แสดงอะไรรอ
-        // ถ้าโค้ดข้างใน ไม่ได้ return UI อะไร ให้ใส่ {null}
-        // ถ้าโค้ดข้างใน มี return UI ให้ใส่ {skeleton} ของ โค้ดนั้น
-      >
+      <Suspense fallback={null}>
         <ToastNotifier />
       </Suspense>
 
-      {/* ========================================================================================== */}
-      {/* Main UI (children) */}
-      {/* ========================================================================================== */}
-
       <div
-        className="p-8
-      w-full 
-      max-w-6xl mx-auto flex flex-col gap-8"
+        className={cn(
+          "@container",
+
+          "w-full",
+
+          "max-w-7xl",
+
+          "mx-auto",
+
+          "flex",
+          "flex-col",
+          "gap-2 sm:gap-3",
+
+          "relative",
+
+          "px-4 sm:px-6",
+
+          "py-4 sm:py-6",
+        )}
       >
-        {/*  */}
-        {/* ============================== */}
-        {/* ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
-
         <div>
-          {/*  */}
-          {/* =================================================================== */}
-          {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
+          <div
+            className={cn(
+              "flex",
+              "flex-wrap",
+              "items-center",
+              "justify-between",
 
-          <div className="flex items-center gap-4 border-b pb-6">
-            {/*  */}
-            {/* ========================== */}
-            {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
+              "gap-2 sm:gap-3",
 
+              "border-b",
+              "pt-2 sm:pt-3",
+              "pb-4 sm:pb-6",
+            )}
+          >
             <Link
-              href={
-                //
-                `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-                //
-              }
-              className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+              href={`/template/${templateId}/server-query`}
+              className={cn(
+                "p-2",
+
+                "rounded-full",
+
+                "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
+              )}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -385,154 +386,186 @@ export default function TemplateClient({
               </svg>
             </Link>
 
-            {/* ========================== */}
-            {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
+            <div
+              className={cn(
+                "flex-1",
 
-            {/* ============================================ */}
-            {/* 🟢 ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
-            {/* ============================================ */}
+                "min-w-0",
 
-            <div className="flex-1 flex items-center justify-between">
-              {/*  */}
-              {/* ============================= */}
-              {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
+                "gap-4 sm:gap-6",
+              )}
+            >
+              <h2
+                className={cn(
+                  "text-2xl sm:text-3xl",
 
-              <div>
-                {/*  */}
-                <h2 // หัวข้อ
-                  className="text-3xl font-bold text-gray-800"
-                >
-                  {/* สร้างตำแหน่งงานใหม่ */}
-                  {/* รายการตำแหน่งงาน */}
-                </h2>
+                  "truncate",
 
-                <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
-                  className="text-gray-500 mt-1 font-mono text-sm"
-                >
-                  {/* กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ */}
-                  {/* จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ */}
-                </p>
-                {/*  */}
-              </div>
-
-              {/* ============================= */}
-              {/* 🟢 (จบ) กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
-
-              {/* หากต้องมีทั้งปุ่ม "สร้าง" และ "แก้ไข" พร้อมกัน ต้องใส่ div ครอบอีกที ไม่งั้นจะมีตัวนึงถูกดีดมาไว้ตรงกลาง */}
-
-              {/* ======================== */}
-              {/* Create Button (ขวา) */}
-              {/* ======================== */}
-
-              <Link
-                href={
-                  //
-                  `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-                  //
-                }
-                className="inline-flex items-center justify-center px-5 py-2.5 font-medium text-sm text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm transition-colors shrink-0"
+                  "font-bold text-gray-800",
+                )}
               >
-                <span>
-                  {/* 
-                    -------- ปรับตามใช้งานจริง --------
-                  */}
-                  + สร้างข้อมูลใหม่
-                  {/* 
-                    --------------------------------
-                  */}
-                </span>
-              </Link>
+                รายการตำแหน่งงาน
+              </h2>
 
-              {/* ======================== */}
-              {/* (จบ) Create Button (ขวา) */}
-              {/* ======================== */}
+              <p
+                className={cn(
+                  "text-xs sm:text-sm",
 
-              {/* ============================== */}
-              {/* 🌟 ปุ่มลิ้งไปแก้ไขข้อมูล (ขวา) */}
-              {/* ============================== */}
+                  "truncate",
 
-              <Link
-                href={
-                  //
-                  `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-                  //
-                }
-                className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  "font-mono text-gray-500",
+                )}
               >
-                {/*  */}
-                {/* ปรับตามใช้งานจริง */}
-                แก้ไขข้อมูลทั่วไป
-                {/*  */}
-              </Link>
-
-              {/* ============================== */}
-              {/* 🌟 (จบ) ปุ่มลิ้งไปแก้ไขข้อมูล (ขวา) */}
-              {/* ============================== */}
-              {/*  */}
+                กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ
+              </p>
             </div>
 
-            {/* ============================================ */}
-            {/* 🟢 (จบ) ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
-            {/* ============================================ */}
-            {/*  */}
+            <Link
+              href={`/template/${templateId}/server-query`}
+              className={cn(
+                "px-4 sm:px-5 py-2 sm:py-2.5",
+
+                "min-w-0",
+
+                "text-xs sm:text-sm",
+
+                "rounded-xl",
+
+                "font-medium text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-colors",
+              )}
+            >
+              <span className={cn("truncate")}>+ สร้างข้อมูลใหม่</span>
+            </Link>
           </div>
 
-          {/* =================================================================== */}
-          {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
+          <div
+            className={cn(
+              "flex",
+              "flex-wrap",
+              "items-center",
+              "justify-end",
 
-          {/* ====================== */}
-          {/* 🌟 แถบสถานะข้อมูล */}
-          {/* ====================== */}
+              "h-6",
 
-          <div className="flex justify-end items-center h-6 mb-2 text-xs">
-            {
-              // =================================
-              // UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
+              "text-xs",
+            )}
+          >
+            {isFetching ? (
+              <span
+                className={cn(
+                  "flex",
+                  "flex-wrap",
+                  "items-center",
 
-              isFetching ? (
-                <span className="text-gray-500 flex items-center gap-2 animate-pulse">
+                  "gap-2",
+
+                  "text-gray-500 animate-pulse",
+                )}
+              >
+                <svg
+                  className={cn(
+                    "h-3.5 w-3.5",
+
+                    "animate-spin text-blue-500",
+                  )}
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                กำลังอัปเดตข้อมูล...
+              </span>
+            ) : errorQuery ? (
+              <div
+                className={cn(
+                  "flex",
+                  "flex-wrap",
+                  "items-center",
+
+                  "gap-2",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex",
+                    "flex-wrap",
+                    "items-center",
+
+                    "gap-1.5",
+
+                    "font-medium text-red-500",
+                  )}
+                >
                   <svg
-                    className="animate-spin h-3.5 w-3.5 text-blue-500"
+                    className={cn("h-3.5 w-3.5")}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
                     <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  กำลังอัปเดตข้อมูล...
+                  อัปเดตล่าสุดไม่สำเร็จ
                 </span>
-              ) : //
 
-              // =================================
-              // (จบ) UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className={cn(
+                    "font-semibold underline",
+                    "text-blue-600 hover:text-blue-700 transition-colors",
+                    "cursor-pointer",
+                  )}
+                >
+                  ลองใหม่
+                </button>
+              </div>
+            ) : (
+              dataUpdatedAt > 0 && (
+                <div
+                  className={cn(
+                    "flex",
+                    "flex-wrap",
+                    "items-center",
 
-              // ======================
-              // UI Error Fetched
-              // ======================
+                    "gap-3",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex",
+                      "flex-wrap",
+                      "items-center",
 
-              errorQuery ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-red-500 flex items-center gap-1.5 font-medium">
+                      "gap-1.5",
+
+                      "text-gray-400",
+                    )}
+                  >
                     <svg
+                      className={cn(
+                        "h-3.5 w-3.5",
+
+                        "text-green-500",
+                      )}
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-3.5 w-3.5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -541,116 +574,54 @@ export default function TemplateClient({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    อัปเดตล่าสุดไม่สำเร็จ
+                    อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
                   </span>
+
                   <button
                     type="button"
-                    onClick={
-                      () =>
-                        //
-                        refetch() // ปรับตามใช้งานจริง
+                    onClick={() => refetch()}
+                    className={cn(
                       //
-                    }
-                    className="text-blue-600 hover:text-blue-700 font-semibold underline cursor-pointer transition-colors"
+                      "flex",
+                      "flex-wrap",
+                      "items-center",
+
+                      "gap-1",
+
+                      "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
+                    )}
+                    title="กดเพื่ออัปเดตข้อมูลใหม่"
                   >
-                    ลองใหม่
+                    <svg
+                      className={cn("h-3.5 w-3.5")}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
+                      />
+                    </svg>
+                    รีเฟรช
                   </button>
                 </div>
-              ) : (
-                //
-                // ======================
-                // (จบ) UI Error Fetched
-                // ======================
-
-                // ======================
-                // UI Fetch Success
-                // ======================
-
-                dataUpdatedAt > 0 && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 flex items-center gap-1.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3.5 w-3.5 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
-                    </span>
-
-                    {/* ปุ่มรีเฟรชข้อมูลแบบแมนนวล */}
-                    <button
-                      type="button"
-                      onClick={
-                        () =>
-                          //
-                          refetch() // ปรับตามใช้งานจริง
-                        //
-                      }
-                      className="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer transition-colors font-medium"
-                      title="กดเพื่ออัปเดตข้อมูลใหม่"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
-                        />
-                      </svg>
-                      รีเฟรช
-                    </button>
-                  </div>
-                )
-
-                // ======================
-                // (จบ) UI Fetch Success
-                // ======================
-                //
               )
-            }
+            )}
           </div>
-
-          {/* ====================== */}
-          {/* 🌟 (จบ) แถบสถานะข้อมูล */}
-          {/* ====================== */}
-          {/*  */}
         </div>
-
-        {/* ============================== */}
-        {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
-
-        {/* ============================ */}
-        {/* 🌟 เนื้อหาหลักตรงนี้ */}
-        {/* ============================ */}
-
-        {/* ============================ */}
-        {/* 🌟 (จบ) เนื้อหาหลักตรงนี้ */}
-        {/* ============================ */}
-        {/*  */}
       </div>
 
       {/* ========================================================================================== */}
       {/* (จบ) Main UI (children) */}
       {/* ========================================================================================== */}
+      {/*  */}
     </>
   );
 }
