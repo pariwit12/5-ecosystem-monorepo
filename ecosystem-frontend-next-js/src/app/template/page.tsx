@@ -166,55 +166,22 @@ export default function TemplatePage() {
       <div
         className={cn(
           //
-          "@container",
-          // @container: ให้ component นี้เป็น ref ของ cqw เช่น 1cqw คือ 1% ของขนาดของ component นี้
+          // "@container",
+          // @container: ให้ component นี้เป็น ref ของ cqw และ ของ @sm, @md, @lg เช่น 1cqw คือ 1% ของขนาดของ component นี้
 
-          "w-full", // w-full: ให้กว้าง 100% ของพื้นที่ที่มันอยู่
-
+          "w-full",
           "max-w-7xl",
 
-          // max-w- (Max Width): ล็อคความกว้างสูงสุด (วัดด้วยหน่วย rem)
-
-          // โดยอิงจากขนาดตัวอักษรตั้งต้นของเบราว์เซอร์ ซึ่งปกติ 1 rem จะเท่ากับ 16px
-
-          // 7xl = 80rem = 1280px (7xl = Standard)
-          // 6xl = 72rem = 1152px
-
-          "mx-auto", // จัดกึ่งกลางหน้าจอ
-          // mx-auto: เมื่อเราล็อคความกว้างด้วย max-w แล้ว คลาสนี้จะช่วยจัดให้กล่องอยู่ "กึ่งกลางหน้าจอ" อัตโนมัติครับ
+          "mx-auto",
 
           "flex",
-          "flex-col", // เราใช้ flex และ flex-col เพื่อจะใช้ gap ช่วยจัดหน้า (ซึ่งง่ายกว่าการเขียน mt มากๆ)
-          "gap-2 sm:gap-3", // จัดเรียงบนลงล่าง ห่างกัน 8
-          // flex flex-col gap-6: บังคับให้ลูกๆ ภายใน (Header กับ Content) เรียงต่อกันจากบนลงล่าง และมีช่องว่าง (gap-6) ห่างกันเสมอ โดยที่เราไม่ต้องไปนั่งเขียน margin-top ให้ลูกแต่ละตัวครับ
+          "flex-col",
+          "gap-2 sm:gap-3",
 
-          "relative", // เตรียมไว้สำหรับ absolute child
-          // เช่น absolute top-0 right-0 (ตัวลูกจะวัดระยะจาก component relative นี้)
-
-          // "p-8",
-
-          // "px-4 sm:px-6 lg:px-8", // ระยะขอบ ซ้าย-ขวา
-          // // px-4 sm:px-6 lg:px-8: นี่คือศาสตร์ของ Responsive Padding ครับ
-          // // จอมือถือ: ขอบซ้ายขวาเล็กๆ (px-4) เพื่อไม่ให้เสียพื้นที่เนื้อหา
-          // // จอแท็บเล็ต (sm:): ขอบใหญ่ขึ้นมาหน่อย (px-6)
-          // // จอคอมพิวเตอร์ (lg:): ขอบกว้างสวยงาม (px-8)
-
-          // ใน Tailwind CSS จะใช้ระบบที่เรียกว่า Breakpoints (จุดหักเหของขนาดหน้าจอ)
-
-          // เพื่อให้เห็นภาพรวม นี่คือขนาดหน้าจอมาตรฐานของ Tailwind เรียงจากเล็กไปใหญ่ครับ:
-
-          // (ไม่มีตัวย่อ): มือถือ (เล็กกว่า 640px)
-          // sm: (Small): มือถือแนวนอน / แท็บเล็ตขนาดเล็ก (ตั้งแต่ 640px ขึ้นไป)
-          // md: (Medium): แท็บเล็ต (ตั้งแต่ 768px ขึ้นไป)
-          // lg: (Large): แล็ปท็อป (ตั้งแต่ 1024px ขึ้นไป)
-          // xl: (Extra Large): หน้าจอเดสก์ท็อป (ตั้งแต่ 1280px ขึ้นไป)
-          // 2xl: : หน้าจอขนาดใหญ่พิเศษ (ตั้งแต่ 1536px ขึ้นไป)
+          "relative",
 
           "px-4 sm:px-6",
-
-          // "py-4 sm:py-6 lg:py-8", // ระยะขอบ บน-ล่าง
           "py-4 sm:py-6",
-
           //
         )}
       >
@@ -232,23 +199,16 @@ export default function TemplatePage() {
           <div
             className={cn(
               //
-              "flex", // display: flex
-              "flex-wrap", // ขึ้นบรรทัดใหม่หากล้นขอบ
-              "items-center", // จัด component ให้อยู่ตรงกลาง ในแนว vertical
-              "justify-between", // ดีด component (ซ้าย - กลาง - ขวา)
+              "flex",
+              "flex-wrap",
+              "items-center",
+              "justify-between",
 
-              // items-center (Cross Axis): จะทำหน้าที่จัดกึ่งกลางในแนวขวาง
-              // ซึ่งในกรณีของ flex-col มันคือการจัดกึ่งกลาง แนวนอน (Horizontal / ซ้าย-ขวา) ครับ
-              // (นี่คือเหตุผลที่ไอคอนและตัวหนังสือของคุณมาอยู่ตรงกลางการ์ดซ้าย-ขวาพอดี)
-
-              // justify-center (Main Axis): จะทำหน้าที่จัดกึ่งกลางในแนวหลัก
-              // ซึ่งในกรณีของ flex-col มันคือการจัดกึ่งกลาง แนวตั้ง (Vertical / บน-ล่าง) ครับ!
-
-              "gap-2 sm:gap-3", // ระยะระหว่าง component (ซ้าย-ขวา และ บน-ล่าง (หากเกิดการ flex-wrap))
+              "gap-2 sm:gap-3",
+              "pb-4 sm:pb-4",
 
               "border-b",
-              // "pt-2 sm:pt-3", // ระยะขอบ ด้านบน (ไปต่อกับ padding ของ div ใหญ่อีกที)
-              "pb-4 sm:pb-4", // ระยะขอบ ด้านล่าง
+              //
             )}
           >
             {/*  */}
@@ -263,20 +223,20 @@ export default function TemplatePage() {
               }
               className={cn(
                 //
-                "p-2", // p-2 (Padding): เว้นระยะพื้นที่ว่าง "ด้านใน" กล่องรอบทิศทาง (บน ล่าง ซ้าย ขวา) ขนาด 8px (0.5rem)
-                // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
+                "p-2", // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
 
-                "rounded-full", // rounded-full (Border Radius): ปรับมุมขอบให้โค้งมนแบบ 100% (รูปทรงแคปซูล)
-                // แต่เนื่องจากปุ่มนี้มีไอคอนที่มีสัดส่วนความกว้าง-ยาวเท่ากัน (จัตุรัส) และมี p-2 ล้อมรอบเท่ากัน
-                // คลาสนี้เลยเนรมิตให้ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
+                "rounded-full",
+                // rounded-full + icon (h = w) + p-2 = ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
 
                 "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
+                //
               )}
             >
               <svg
                 className={cn(
                   //
                   "h-6 w-6",
+                  //
                 )}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -303,11 +263,12 @@ export default function TemplatePage() {
             <div
               className={cn(
                 //
-                "flex-1", // ขยายเต็มพื้นที่ (แบ่งกันกับตัวอื่นที่มี flex-1 หรือ flex-auto)
+                "flex-1",
 
-                "min-w-0", // min-w-0 เพื่อเปิดทางให้กล่องลูกสามารถ "ตัดคำ" ได้
+                "min-w-0", // เปิดทางให้กล่องลูกสามารถใช้ truncate ได้
 
-                "gap-4 sm:gap-6", // ระยะระหว่าง component (ซ้าย-ขวา และ บน-ล่าง)
+                "gap-4 sm:gap-6",
+                //
               )}
             >
               {/*  */}
@@ -318,27 +279,33 @@ export default function TemplatePage() {
               <h2 // หัวข้อ
                 className={cn(
                   //
-                  "text-2xl sm:text-3xl", // ขนาด font
+                  "text-2xl sm:text-3xl",
 
-                  "truncate", // ตัดคำเป็น ... ถ้ายาวเกิน
+                  "truncate",
 
-                  "font-bold text-gray-800",
+                  "font-bold",
+                  "text-gray-800",
+                  //
                 )}
               >
-                {/* สร้างตำแหน่งงานใหม่ */}
-                รายการตำแหน่งงาน
+                {/* {dataQuery.name} */}
+                สร้าง...ใหม่
+                {/* รายการ... */}
               </h2>
 
               <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
                 className={cn(
                   //
-                  "text-xs sm:text-sm", // ขนาด font
+                  "text-xs sm:text-sm",
 
-                  "truncate", // ตัดคำเป็น ... ถ้ายาวเกิน
+                  "truncate",
 
-                  "font-mono text-gray-500",
+                  "font-mono",
+                  "text-gray-500",
+                  //
                 )}
               >
+                {/* เลือกเมนูที่ต้องการจัดการหรือเข้าถึง */}
                 กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ
                 {/* จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ */}
               </p>
@@ -373,6 +340,7 @@ export default function TemplatePage() {
                 "active:bg-blue-800",
                 "shadow-sm",
                 "transition-colors",
+                //
               )}
             >
               <svg
@@ -381,6 +349,7 @@ export default function TemplatePage() {
                   "h-6 w-6",
 
                   "sm:hidden",
+                  //
                 )}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
@@ -398,11 +367,12 @@ export default function TemplatePage() {
                   //
                   "hidden sm:block",
 
-                  "text-xs sm:text-sm", // ขนาด font
+                  "text-xs sm:text-sm",
 
-                  "truncate", // ตัดคำเป็น ... ถ้ายาวเกิน
+                  "truncate",
 
                   "font-medium",
+                  //
                 )}
               >
                 {/* 
@@ -435,11 +405,12 @@ export default function TemplatePage() {
               "flex",
               "flex-wrap",
               "items-center",
-              "justify-end", // ดีด component ให้ชิดขวา
+              "justify-end",
 
               "h-6", // fix ขนาด เพื่อให้หน้าจอไม่กระตุกเวลาเปลี่ยนสถานะ
 
               "text-xs",
+              //
             )}
           >
             {
@@ -451,21 +422,23 @@ export default function TemplatePage() {
                 <span
                   className={cn(
                     //
-                    "flex", // display: flex
+                    "flex",
                     "flex-wrap",
-                    "items-center", // จัด component ให้อยู่ตรงกลาง ในแนว vertical
+                    "items-center",
 
-                    "gap-2", // ระยะระหว่าง component
+                    "gap-2",
 
                     "text-gray-500 animate-pulse",
+                    //
                   )}
                 >
                   <svg
                     className={cn(
                       //
-                      "h-3.5 w-3.5", // fix ขนาดของโลโก้
+                      "h-3.5 w-3.5",
 
                       "animate-spin text-blue-500",
+                      //
                     )}
                     viewBox="0 0 24 24"
                   >
@@ -505,6 +478,7 @@ export default function TemplatePage() {
                     "items-center",
 
                     "gap-2",
+                    //
                   )}
                 >
                   <span
@@ -517,12 +491,14 @@ export default function TemplatePage() {
                       "gap-1.5",
 
                       "font-medium text-red-500",
+                      //
                     )}
                   >
                     <svg
                       className={cn(
                         //
-                        "h-3.5 w-3.5", // fix ขนาดของโลโก้
+                        "h-3.5 w-3.5",
+                        //
                       )}
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -552,6 +528,7 @@ export default function TemplatePage() {
                       "font-semibold underline",
                       "text-blue-600 hover:text-blue-700 transition-colors",
                       "cursor-pointer",
+                      //
                     )}
                   >
                     ลองใหม่
@@ -576,6 +553,7 @@ export default function TemplatePage() {
                       "items-center",
 
                       "gap-3",
+                      //
                     )}
                   >
                     <span
@@ -588,14 +566,16 @@ export default function TemplatePage() {
                         "gap-1.5",
 
                         "text-gray-400",
+                        //
                       )}
                     >
                       <svg
                         className={cn(
                           //
-                          "h-3.5 w-3.5", // fix ขนาดของโลโก้
+                          "h-3.5 w-3.5",
 
                           "text-green-500",
+                          //
                         )}
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -630,13 +610,15 @@ export default function TemplatePage() {
                         "gap-1",
 
                         "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
+                        //
                       )}
                       title="กดเพื่ออัปเดตข้อมูลใหม่"
                     >
                       <svg
                         className={cn(
                           //
-                          "h-3.5 w-3.5", // fix ขนาดของโลโก้
+                          "h-3.5 w-3.5",
+                          //
                         )}
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -673,6 +655,10 @@ export default function TemplatePage() {
         {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
         {/* ============================== */}
 
+        {/* ================================================== */}
+        {/* 🌟 โซนเมนูการทำงาน + พื้นที่อันตราย (Danger Zone) */}
+        {/* ================================================== */}
+
         {/* ==================================== */}
         {/* 🌟 โซนเมนูการทำงาน (การ์ด - Grid) */}
         {/* ==================================== */}
@@ -681,9 +667,10 @@ export default function TemplatePage() {
           className={cn(
             //
             "flex",
-            "flex-col", // เราใช้ flex และ flex-col เพื่อจะใช้ gap ช่วยจัดหน้า (ซึ่งง่ายกว่าการเขียน mt มากๆ)
+            "flex-col",
 
             "gap-2 sm:gap-3",
+            //
           )}
         >
           <h3
@@ -692,6 +679,7 @@ export default function TemplatePage() {
               "text-lg",
 
               "font-bold text-gray-800",
+              //
             )}
           >
             เมนูการจัดการ
@@ -701,15 +689,15 @@ export default function TemplatePage() {
             className={cn(
               //
               "grid",
-              // "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
               "grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))]",
 
               "gap-2 sm:gap-3",
+              //
             )}
           >
-            {/* ================== */}
-            {/* เมนู: สีมาตรฐาน */}
-            {/* ================== */}
+            {/* ==================================== */}
+            {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+            {/* ==================================== */}
 
             <Link
               href={
@@ -719,6 +707,120 @@ export default function TemplatePage() {
               }
               className={cn(
                 //
+                "group",
+
+                "flex",
+                "flex-col",
+
+                "items-center",
+                "text-center",
+
+                "px-4",
+                "py-6",
+
+                "relative",
+
+                "overflow-hidden",
+
+                "border-2",
+                "rounded-2xl",
+
+                "bg-blue-50/50",
+                "border-blue-100",
+
+                "cursor-pointer",
+
+                "transition-all",
+                "hover:bg-blue-50",
+                "hover:border-blue-300",
+                "hover:shadow-md",
+                //
+              )}
+            >
+              <div
+                className={cn(
+                  //
+                  "w-12 h-12",
+                  "rounded-xl",
+
+                  "flex",
+                  "items-center",
+                  "justify-center",
+
+                  "bg-blue-500",
+                  "text-white",
+
+                  "transition-transform",
+                  "group-hover:scale-110",
+
+                  "shadow-sm",
+
+                  "shrink-0",
+
+                  "mb-4",
+                  //
+                )}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h4
+                className={cn(
+                  //
+                  "text-lg",
+
+                  "font-bold",
+
+                  "text-gray-900",
+                  "group-hover:text-blue-700",
+                  "transition-colors",
+                  //
+                )}
+              >
+                ตารางคิว
+              </h4>
+              <p
+                className={cn(
+                  //
+                  "text-sm",
+
+                  "text-gray-500",
+
+                  "mt-1",
+                  //
+                )}
+              >
+                จัดการและตรวจสอบคิวงานของรายการนี้
+              </p>
+            </Link>
+
+            {/* ==================================== */}
+            {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+            {/* ==================================== */}
+
+            {/* ========================= */}
+            {/* เมนูมาตรฐาน: พนักงาน */}
+            {/* ========================= */}
+
+            <Link
+              href={
+                //
+                `/template/${templateId}/target` // ปรับตามใช้งานจริง
+                //
+              }
+              className={cn(
                 "group",
 
                 "flex",
@@ -768,12 +870,14 @@ export default function TemplatePage() {
                   "shrink-0",
 
                   "mb-4",
+                  //
                 )}
               >
                 <svg
                   className={cn(
                     //
                     "h-6 w-6",
+                    //
                   )}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -784,7 +888,7 @@ export default function TemplatePage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                   />
                 </svg>
               </div>
@@ -796,9 +900,10 @@ export default function TemplatePage() {
                   "font-bold",
 
                   "text-gray-800",
+                  //
                 )}
               >
-                แก้ไขรายละเอียด
+                พนักงาน
               </h4>
               <p
                 className={cn(
@@ -808,116 +913,16 @@ export default function TemplatePage() {
                   "text-gray-500",
 
                   "mt-1",
+                  //
                 )}
               >
-                ปรับปรุงข้อมูลทั่วไปของรายการนี้
+                จัดการและตรวจสอบข้อมูลพนักงานของ...
               </p>
             </Link>
 
-            {/* ================== */}
-            {/* (จบ) เมนู: สีมาตรฐาน */}
-            {/* ================== */}
-
-            {/* ==================================== */}
-            {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-            {/* ==================================== */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/target` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-                "group",
-                // group: นี่คือคลาสหัวหน้าแก๊งครับ!
-                // มันเป็นการประกาศให้ Tailwind รู้ว่า "ถ้ามีเมาส์มาวางทาบ (Hover) ที่กล่องแม่ตัวนี้
-                // ให้ส่งสัญญาณไปบอกกล่องลูกๆ ข้างในด้วยนะ"
-                // (สังเกตว่าด้านในจะมีไอคอนหรือข้อความที่ใช้คลาส group-hover:... รอรับคำสั่งเปลี่ยนสี หรือขยายขนาดอยู่ครับ)
-
-                "flex",
-                "flex-col",
-
-                "items-center",
-                "text-center",
-
-                "px-4",
-                "py-6",
-
-                "relative",
-                // เป็นการปักหมุดบอกตำแหน่งว่า "ถ้ามีกล่องลูกตัวไหนใช้ absolute ให้มาอิงพิกัดจากมุมของการ์ดใบนี้นะ"
-                // (ใช้เผื่อกรณีคุณอยากเอา Badge เล็กๆ ไปแปะมุมขวาบนของการ์ด)
-
-                "overflow-hidden", // overflow-hidden: แปลตรงตัวคือ "อะไรที่ล้นทะลุขอบออกไป ให้ตัดทิ้ง (ซ่อน) ไปเลย"
-                // คลาสนี้มักใส่คู่กับกล่องที่มีขอบโค้งมนครับ เพื่อป้องกันไม่ให้พื้นหลังของกล่องลูก ทะลุขอบโค้งๆ ของกล่องแม่ออกมาเป็นมุมเหลี่ยม
-
-                "border-2",
-                "rounded-2xl", // ทำมุมของกล่องให้โค้งมนระดับ 2 Extra Large (16px) ให้ความรู้สึกเป็นมิตรและทันสมัย
-
-                "bg-blue-50/50",
-                "border-blue-100",
-
-                "cursor-pointer",
-
-                "transition-all", // transition-all: เป็นสารหล่อลื่น ที่ทำให้ลูกเล่น Hover ทั้งหมด (ขอบเปลี่ยนสี, พื้นหลังสว่างขึ้น, เงาเด้งขึ้น)
-                // ไม่เกิดขึ้นแบบกระตุก แต่จะค่อยๆ "เฟดเปลี่ยนสเตตัสอย่างนุ่มนวล" ครับ
-                "hover:bg-blue-50",
-                "hover:border-blue-300",
-                "hover:shadow-md", // hover:shadow-md: พอเอาเมาส์ชี้ ให้สร้างเงาขนาดกลาง (Medium Shadow) ด้านล่างกล่อง
-                // ทำให้การ์ดดูลอยเด้งขึ้นมาชนนิ้ว
-              )}
-            >
-              <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform shrink-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h4
-                className={cn(
-                  //
-                  "text-lg",
-
-                  "font-bold",
-
-                  "text-gray-900",
-                  "group-hover:text-blue-700",
-                  "transition-colors",
-                )}
-              >
-                ดูตารางคิว
-              </h4>
-              <p
-                className={cn(
-                  //
-                  "text-sm",
-
-                  "text-gray-500",
-
-                  "mt-1",
-                )}
-              >
-                จัดการและตรวจสอบคิวงานของรายการนี้ data
-                การบอกว่าข้างในนี้อาจจะโหลดช้ากว่าส่วนอื่น
-                ทำงานเฉพาะตอนโหลดหน้าจอ
-                {/* 123456789123456789123456789-123456789 -123456 -123 -123 -456 */}
-              </p>
-            </Link>
-
-            {/* ==================================== */}
-            {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-            {/* ==================================== */}
+            {/* ========================= */}
+            {/* (จบ) เมนูมาตรฐาน: พนักงาน */}
+            {/* ========================= */}
 
             {/* ========================= */}
             {/* เมนูมาตรฐาน: รายละเอียด */}
@@ -958,6 +963,7 @@ export default function TemplatePage() {
                 "hover:bg-gray-50",
                 "hover:border-gray-300",
                 "hover:shadow-md",
+                //
               )}
             >
               <div
@@ -980,12 +986,14 @@ export default function TemplatePage() {
                   "shrink-0",
 
                   "mb-4",
+                  //
                 )}
               >
                 <svg
                   className={cn(
                     //
                     "h-6 w-6",
+                    //
                   )}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -1008,9 +1016,10 @@ export default function TemplatePage() {
                   "font-bold",
 
                   "text-gray-800",
+                  //
                 )}
               >
-                แก้ไขรายละเอียด
+                รายละเอียด
               </h4>
               <p
                 className={cn(
@@ -1020,9 +1029,10 @@ export default function TemplatePage() {
                   "text-gray-500",
 
                   "mt-1",
+                  //
                 )}
               >
-                ปรับปรุงข้อมูลทั่วไปของรายการนี้
+                จัดการรายละเอียดและข้อมูลทั่วไป
               </p>
             </Link>
 
@@ -1069,6 +1079,7 @@ export default function TemplatePage() {
                 "hover:bg-gray-50",
                 "hover:border-gray-300",
                 "hover:shadow-md",
+                //
               )}
             >
               <div
@@ -1091,12 +1102,14 @@ export default function TemplatePage() {
                   "shrink-0",
 
                   "mb-4",
+                  //
                 )}
               >
                 <svg
                   className={cn(
                     //
                     "h-6 w-6",
+                    //
                   )}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -1125,9 +1138,10 @@ export default function TemplatePage() {
                   "font-bold",
 
                   "text-gray-800",
+                  //
                 )}
               >
-                ตั้งค่าขั้นสูง
+                ตั้งค่า
               </h4>
               <p
                 className={cn(
@@ -1137,9 +1151,10 @@ export default function TemplatePage() {
                   "text-gray-500",
 
                   "mt-1",
+                  //
                 )}
               >
-                จัดการสิทธิ์และการตั้งค่าอื่นๆ
+                จัดการสิทธิ์และการตั้งค่า
               </p>
             </Link>
 
@@ -1162,6 +1177,7 @@ export default function TemplatePage() {
 
             "border-t",
             "border-gray-100",
+            //
           )}
         />
 
@@ -1176,6 +1192,7 @@ export default function TemplatePage() {
             "flex-col",
 
             "gap-2 sm:gap-3",
+            //
           )}
         >
           <h3
@@ -1189,12 +1206,14 @@ export default function TemplatePage() {
               "items-center",
 
               "gap-2",
+              //
             )}
           >
             <svg
               className={cn(
                 //
                 "h-5 w-5",
+                //
               )}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -1227,18 +1246,21 @@ export default function TemplatePage() {
               "justify-between",
 
               "gap-4",
+              //
             )}
           >
             <div
               className={cn(
                 //
                 "flex-1",
+                //
               )}
             >
               <h4
                 className={cn(
                   //
                   "text-base font-bold text-gray-900",
+                  //
                 )}
               >
                 ลบรายการนี้ออกจากระบบ
@@ -1247,6 +1269,7 @@ export default function TemplatePage() {
                 className={cn(
                   //
                   "text-sm text-gray-600 mt-1",
+                  //
                 )}
               >
                 เมื่อลบแล้ว
@@ -1283,6 +1306,7 @@ export default function TemplatePage() {
                 "hover:bg-red-700",
                 "active:bg-red-800",
                 "shadow-sm transition-colors",
+                //
               )}
             >
               <svg
@@ -1291,6 +1315,7 @@ export default function TemplatePage() {
                   "h-4 w-4",
 
                   "mr-2",
+                  //
                 )}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -1315,8 +1340,12 @@ export default function TemplatePage() {
         </div>
 
         {/* ================================================= */}
-        {/* (จบ) 🚨 พื้นที่อันตราย (Danger Zone): ลบรายการ / ข้อมูล */}
+        {/* 🚨 (จบ) พื้นที่อันตราย (Danger Zone): ลบรายการ / ข้อมูล */}
         {/* ================================================= */}
+
+        {/* ================================================== */}
+        {/* 🌟 (จบ) โซนเมนูการทำงาน + พื้นที่อันตราย (Danger Zone) */}
+        {/* ================================================== */}
 
         {/* ========================================================= */}
         {/* ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
@@ -1468,23 +1497,13 @@ export default function TemplatePage() {
         {/* ส่วนแสดงผล: การ์ด */}
         {/* ===================== */}
 
-        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6"> */}
-        {/* <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6"> */}
-        {/* <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6"> */}
-        {/* <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-5 2xl:gap-6"> */}
         <div
           className={cn(
             //
-            "grid", // display: grid
+            "grid",
             "grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))]",
 
             "gap-2 sm:gap-3",
-            // ชุดคำสั่งนี้คือการสร้าง Layout แบบตาราง (Grid) ที่ปรับเปลี่ยนตามขนาดหน้าจอ (Responsive) โดยมีความหมายทีละตัวดังนี้ครับ:
-
-            // grid: เปิดใช้งานระบบ Grid Layout (display: grid)
-
-            // grid-cols-1: กำหนดให้ตารางนี้มี 1 คอลัมน์
-            // md:grid-cols-2: เมื่อหน้าจอมีขนาดตั้งแต่ขนาดกลาง (md) ขึ้นไป ให้เปลี่ยนตารางนี้เป็น 2 คอลัมน์
 
             // grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))]: แปลว่าให้โปรแกรมจัดเองว่าจะแบ่งกี่ช่อง + ขนาดเท่าไหร่
             // auto-fill แปลว่า ถึงจะมีข้อมูลไม่ครบ ก็ให้ขนาดตามที่ควรจะเป็น
@@ -1495,8 +1514,6 @@ export default function TemplatePage() {
             // 250px (ความกว้างขั้นต่ำ): ถ้าย่อหน้าจอจนคอลัมน์แคบกว่า 250px มันจะปัดไอเทมตกไปอยู่บรรทัดใหม่ทันที
             // 1fr (ความกว้างสูงสุด): fr ย่อมาจาก fraction (สัดส่วน) หมายความว่า "ให้ใช้พื้นที่ที่เหลืออยู่ให้เต็ม" ถ้ามีพื้นที่เหลือ มันจะขยายขนาดคอลัมน์ให้กว้างขึ้นจนเต็มพื้นที่โดยอัตโนมัติ
             // min(100%,17rem) ใส่เพื่อให้เวลาหน้าจอเล็กกว่า 17rem แล้ว การ์ดไม่ทะลุไปด้านขวา
-
-            // gap-6: กำหนดช่องว่าง (ระยะห่าง) ระหว่างไอเทมในตารางทั้งแนวตั้งและแนวนอน ขนาดเท่ากับ 1.5rem หรือ 24px
 
             // ฟังก์ชัน clamp(ค่าต่ำสุด, ค่าที่ต้องการให้ยืดหยุ่น, ค่าสูงสุด) จะรับค่า 3 ตัวครับ:
             // ค่าต่ำสุด (1rem หรือ 16px): บนจอมือถือ ช่องไฟจะไม่เล็กไปกว่านี้แล้ว
@@ -1810,6 +1827,9 @@ export default function TemplatePage() {
           //
           // ปรับตามใช้งานจริง
           valueOne={"valueOne"}
+          placeTimezone=""
+          urlOnSuccess={`/template/${templateId}/success`}
+          urlOnCancel={`/template/${templateId}/cancel`}
           skipErrorCodes={[]}
           className=""
           //
@@ -1818,477 +1838,6 @@ export default function TemplatePage() {
         {/* ===================== */}
         {/* (จบ) ส่วนแสดงผล: Form */}
         {/* ===================== */}
-
-        {/* ========================= */}
-        {/* ส่วนแสดงผล MENU CARD */}
-        {/* ========================= */}
-
-        <div>
-          <h3 className="text-xl font-bold text-gray-800 mb-6">
-            เลือกเมนูที่ต้องการจัดการ
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/*  */}
-            {/* =================== */}
-            {/* 🌟 รายการ Menu */}
-            {/* =================== */}
-
-            {/* =========== */}
-            {/* เมนูที่ 1 */}
-            {/* =========== */}
-
-            <Link
-              href={`/work-schedule/admin/${templateId}/position`}
-              className="group relative flex flex-col bg-white border-2 border-transparent hover:border-purple-300 rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
-            >
-              {/* แถบสีตกแต่งด้านบน */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-purple-500 group-hover:h-2 transition-all duration-300"></div>
-
-              <div className="flex items-start gap-6">
-                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-800 group-hover:text-purple-700 transition-colors">
-                    จัดการตารางเวร
-                  </h4>
-                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                    สร้างกะการทำงาน (Slots), อนุมัติการจองเวร,
-                    และตรวจสอบตารางเวลาของพนักงานทั้งหมดในสถานที่นี้
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-8 flex items-center text-purple-600 font-medium text-sm group-hover:translate-x-2 transition-transform">
-                เปิดตำแหน่งงานและตารางเวร
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 ml-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
-              </div>
-            </Link>
-
-            {/* =========== */}
-            {/* (จบ) เมนูที่ 1 */}
-            {/* =========== */}
-
-            {/* =========== */}
-            {/* เมนูที่ 2 */}
-            {/* =========== */}
-
-            <Link
-              href={`/work-schedule/admin/${templateId}/staff`}
-              className="group relative flex flex-col bg-white border-2 border-transparent hover:border-blue-300 rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
-            >
-              {/* แถบสีตกแต่งด้านบน */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 group-hover:h-2 transition-all duration-300"></div>
-
-              <div className="flex items-start gap-6">
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-800 group-hover:text-blue-700 transition-colors">
-                    จัดการพนักงาน
-                  </h4>
-                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                    เพิ่ม/ลบรายชื่อพนักงาน, จัดการตำแหน่ง (Positions)
-                    และตั้งค่าสิทธิ์การเข้าถึงของบุคลากร
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-8 flex items-center text-blue-600 font-medium text-sm group-hover:translate-x-2 transition-transform">
-                เปิดรายชื่อพนักงาน
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 ml-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
-              </div>
-            </Link>
-
-            {/* =========== */}
-            {/* (จบ) เมนูที่ 2 */}
-            {/* =========== */}
-
-            {/* =================== */}
-            {/* 🌟 (จบ) รายการ Menu */}
-            {/* =================== */}
-            {/*  */}
-          </div>
-        </div>
-
-        {/* ========================= */}
-        {/* (จบ) ส่วนแสดงผล MENU CARD */}
-        {/* ========================= */}
-
-        {/* ============================= */}
-        {/* ส่วนแสดงผล MENU CARD (2) */}
-        {/* ============================= */}
-
-        <div>
-          {/* หัวข้อ Portal */}
-          <div className="w-full max-w-5xl text-center mt-8">
-            <h2 className="text-3xl font-bold text-gray-800">
-              แอปพลิเคชันของคุณ
-            </h2>
-            <p className="text-gray-500 mt-2">
-              เลือกโปรแกรมที่คุณต้องการใช้งานจาก Ecosystem
-            </p>
-          </div>
-
-          {/* ตะแกรง Grid โชว์โปรแกรม 3 ตัว */}
-          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* โปรแกรมที่ 1: Toothcraft */}
-            {/* ชั่วคราว: พาไปที่หน้า organizations ก่อน เพราะปกติต้องเลือกร้านก่อนเข้าแอป */}
-            {/* <Link
-            // ปรับตามใช้งานจริง
-            href="/organizations"
-            className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center"
-          >
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
-              🦷
-            </div>
-            <h3 className="text-lg font-bold text-gray-800">Toothcraft</h3>
-            <p className="text-sm text-gray-500 mt-2 mb-6">
-              ระบบบริหารจัดการคลินิกทันตกรรมครบวงจร
-            </p>
-            <button className="mt-auto px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg w-full group-hover:bg-blue-600 group-hover:text-white transition-colors">
-              เปิดใช้งาน
-            </button>
-          </Link> */}
-
-            {/* 🌟 โปรแกรมที่ 2: Work Schedule System (ของจริง!) */}
-            <Link
-              href="/work-schedule"
-              className="p-6 border border-purple-100 rounded-2xl shadow-sm bg-white hover:border-purple-300 hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
-            >
-              {/* ป้ายกำกับ New */}
-              <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
-                ใหม่
-              </div>
-              <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
-                🗓️
-              </div>
-              <h3 className="text-lg font-bold text-gray-800">Work Schedule</h3>
-              <p className="text-sm text-gray-500 mt-2 mb-6">
-                ระบบบริหารตารางการทำงานและจัดการกะ
-              </p>
-              <button className="mt-auto px-4 py-2 bg-purple-50 text-purple-600 font-medium rounded-lg w-full group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                เข้าสู่ระบบจัดเวร
-              </button>
-            </Link>
-
-            {/* โปรแกรมที่ 3: Coming Soon */}
-            <div className="p-6 border border-dashed border-gray-300 rounded-2xl bg-gray-50 flex flex-col items-center text-center opacity-70">
-              <div className="w-16 h-16 bg-gray-200 text-gray-400 rounded-2xl flex items-center justify-center mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-600">Coming Soon</h3>
-              <p className="text-sm text-gray-400 mt-2 mb-6">
-                แอปพลิเคชันใหม่กำลังอยู่ในช่วงพัฒนา
-              </p>
-              <button
-                disabled
-                className="mt-auto px-4 py-2 bg-gray-200 text-gray-500 font-medium rounded-lg w-full cursor-not-allowed"
-              >
-                เร็วๆ นี้
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ============================= */}
-        {/* (จบ) ส่วนแสดงผล MENU CARD (2) */}
-        {/* ============================= */}
-
-        {/* ==================== */}
-        {/* 🌟 Render ข้อมูล */}
-        {/* ==================== */}
-
-        {
-          //
-          templateData // ปรับตามใช้งานจริง
-            //
-            .map(
-              (
-                //
-                temp, // ปรับตามใช้งานจริง
-                //
-              ) => (
-                <div
-                  key={
-                    //
-                    temp.id // ปรับตามใช้งานจริง
-                    //
-                  }
-                  className={cn(
-                    "p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start",
-                    "relative", // 💡 สำคัญมาก: เพิ่ม relative เพื่อให้เมนู Dropdown อิงพิกัดลอยตัวจากการ์ดใบนี้
-                  )}
-                >
-                  {/* 
-                      ======================================================= 
-                      🌟 แถบด้านบนสุด: โลโก้ (ซ้าย) และ ปุ่มเมนู 3 จุด (ขวา) 
-                      ======================================================= 
-                    */}
-                  <div className="flex items-start justify-between w-full mb-4">
-                    {/*  */}
-                    {/* ============= */}
-                    {/* โลโก้ */}
-                    {/* ============= */}
-
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl shrink-0">
-                      {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
-                      {
-                        //
-                        temp.name // ปรับตามใช้งานจริง
-                          //
-                          .charAt(0)
-                          .toUpperCase()
-                      }
-                    </div>
-
-                    {/* ============= */}
-                    {/* (จบ) โลโก้ */}
-                    {/* ============= */}
-
-                    {/* ======================= */}
-                    {/* 🌟 ปุ่มตัวเลือก (Dropdown) */}
-                    {/* ======================= */}
-
-                    {/* 
-                        💡 ทริคชั่วคราว: ใส่ group/menu เอาไว้เพื่อให้ทดสอบแสดงผลได้ด้วยการเอาเมาส์ Hover 
-                        (ในการใช้งานจริง แนะนำให้ใช้ State (เช่น onClick เปิด/ปิด) หรือ Library อย่าง Radix UI / Headless UI แทนการ Hover ครับ)
-                      */}
-                    <div className="relative group/menu">
-                      {/* 🔘 ปุ่ม 3 จุด */}
-                      <button
-                        type="button"
-                        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* 
-                          📦 กล่องเมนู (Card Style Dropdown)
-                          - ลอยอยู่ด้านขวา (right-0)
-                          - มีขอบมนและเงาแยกออกจากการ์ดหลัก (rounded-xl shadow-lg)
-                        */}
-                      <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg flex flex-col overflow-hidden z-10 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all origin-top-right">
-                        {/* ตัวเลือก: รายละเอียด */}
-                        <Link
-                          href={
-                            `/template/${temp.id}/details` // Redirect ไปหน้า Details (ปรับตามจริง)
-                          }
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                          รายละเอียดข้อมูล
-                        </Link>
-
-                        {/* เส้นคั่นบางๆ แบ่งโซน */}
-                        <div className="h-px bg-gray-100 w-full" />
-
-                        {/* ตัวเลือก: ลบรายการ (สื่อความหมายด้วยสีแดง) */}
-                        <Link
-                          href={
-                            `/template/${temp.id}/delete-confirm` // Redirect ไปหน้า Confirm Delete (ปรับตามจริง)
-                          }
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 text-red-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                          ลบรายการนี้
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* ======================= */}
-                    {/* 🌟 (จบ) ปุ่มตัวเลือก */}
-                    {/* ======================= */}
-                    {/*  */}
-                  </div>
-                  {/* 
-                      ======================================================= 
-                      🌟 (จบ) แถบด้านบนสุด
-                      ======================================================= 
-                    */}
-
-                  {/* ====================== */}
-                  {/* 🌟 ชื่อเต็มของรายการ */}
-                  {/* ====================== */}
-
-                  <h3 className="text-lg font-bold text-gray-800">
-                    {
-                      //
-                      temp.name // ปรับตามใช้งานจริง
-                      //
-                    }
-                  </h3>
-
-                  {/* ====================== */}
-                  {/* 🌟 (จบ) ชื่อเต็มของรายการ */}
-                  {/* ====================== */}
-
-                  {/* ================= */}
-                  {/* 🌟 รายละเอียด */}
-                  {/* ================= */}
-
-                  <p className="text-sm text-gray-500 mt-1 mb-6">
-                    {/* 
-                        -------- ปรับตามใช้งานจริง --------
-                      */}
-                    ID:{" "}
-                    <span className="font-mono text-xs">
-                      {temp.id.slice(0, 8)}...
-                    </span>
-                    {/* 
-                        --------------------------------
-                      */}
-                  </p>
-
-                  {/* ================= */}
-                  {/* 🌟 (จบ) รายละเอียด */}
-                  {/* ================= */}
-
-                  {/* ================= */}
-                  {/* 🌟 ปุ่มกดเลือก (เปิดทำงาน/เลือกใช้) */}
-                  {/* ================= */}
-
-                  <Link
-                    href={
-                      //
-                      `/template/${temp.id}/server-query` // ปรับตามใช้งานจริง
-                      //
-                    }
-                    className="mt-auto px-4 py-2 font-medium rounded-lg w-full text-center transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  >
-                    {/* 
-                        -------- ปรับตามใช้งานจริง --------
-                      */}
-                    เลือกใช้งาน
-                    {/* 
-                        --------------------------------
-                      */}
-                  </Link>
-
-                  {/* ================= */}
-                  {/* 🌟 (จบ) ปุ่มกดเลือก */}
-                  {/* ================= */}
-                  {/*  */}
-                </div>
-              ),
-            )
-        }
-
-        {/* ==================== */}
-        {/* 🌟 (จบ) Render ข้อมูล */}
-        {/* ==================== */}
         {/*  */}
       </div>
 

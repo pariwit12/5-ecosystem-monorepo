@@ -32,3 +32,5 @@ export enum ErrorCode {
   //   VALIDATION_FAILED = 'VALIDATION_FAILED',
   //   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
 }
+
+// อย่าลืมไปเพิ่มใน frontend/constants/error-messages.ts

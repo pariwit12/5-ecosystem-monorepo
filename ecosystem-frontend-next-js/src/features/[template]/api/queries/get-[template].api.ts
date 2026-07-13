@@ -99,6 +99,8 @@ export const getTemplate = // ปรับตามใช้งานจริ�
 
       // ปรับตามใช้งานจริง
       param_uuidv7: valueToParam, // ปรับตามใช้งานจริง
+      param_uuidv7_optional: undefined, // ปรับตามใช้งานจริง
+      param_uuidv7_nullish: undefined, // ปรับตามใช้งานจริง
       //
     };
 
@@ -160,6 +162,8 @@ export const getTemplate = // ปรับตามใช้งานจริ�
       // ปรับตามใช้งานจริง
       query_string: valueToQueryOne,
       query_timezone: valueTOQueryTwo,
+      query_string_datetime_start_time: "2026-07-06T08:00:00+07:00", // ปรับตามใช้งานจริง
+      query_string_datetime_end_time: "2026-07-06T08:00:00Z", // ปรับตามใช้งานจริง
       //
     };
 

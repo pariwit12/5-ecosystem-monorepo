@@ -105,6 +105,8 @@ export const methodTemplate = // ปรับตามใช้งานจร�
 
       // ปรับตามใช้งานจริง
       param_uuidv7: valueToParam, // ปรับตามใช้งานจริง
+      param_uuidv7_optional: undefined, // ปรับตามใช้งานจริง
+      param_uuidv7_nullish: undefined, // ปรับตามใช้งานจริง
       //
     };
 
@@ -166,6 +168,10 @@ export const methodTemplate = // ปรับตามใช้งานจร�
       // ปรับตามใช้งานจริง
       body_string: valueToBodyOne, // ปรับตามใช้งานจริง
       body_timezone: valueTOBodyTwo, // ปรับตามใช้งานจริง
+      body_string_datetime_start_time: "2026-07-06T08:00:00+07:00", // ปรับตามใช้งานจริง
+      body_string_datetime_end_time: "2026-07-06T08:00:00Z", // ปรับตามใช้งานจริง
+      body_string_hh_mm_start_time: "20:30", // ปรับตามใช้งานจริง
+      body_int: 1, // ปรับตามใช้งานจริง
       //
     };
 

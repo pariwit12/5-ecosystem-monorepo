@@ -28,13 +28,20 @@ import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 import Loading from "./loading";
 import ErrorQuery from "./error";
 
-// ----------- Import Queries -----------
+// ===================
+// Import Queries
+// ===================
+
 import {
   // ปรับตามใช้งานจริง
   templateQueries,
 
   // ปรับตามใช้งานจริง
 } from "@/features/[template]/[template].queries";
+
+// ===================
+// (จบ) Import Queries
+// ===================
 
 // ==========================================
 // 🛡️ Component ดักจับ Error จาก URL
@@ -125,6 +132,7 @@ export default function TemplateClient({
   // =================================
   // 🚀 ดึงข้อมูล Query
   // =================================
+
   const {
     //
     // ปรับตามใช้งานจริง
@@ -325,6 +333,10 @@ export default function TemplateClient({
       <Suspense fallback={null}>
         <ToastNotifier />
       </Suspense>
+
+      {/* ========================================================================================== */}
+      {/* Main UI (children) */}
+      {/* ========================================================================================== */}
 
       <div
         className={cn(

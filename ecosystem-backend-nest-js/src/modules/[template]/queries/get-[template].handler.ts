@@ -238,13 +238,13 @@ export class GetTemplateHandler implements IQueryHandler<
     return {
       //
       // ปรับตามใช้งานจริง
-      response_data_string:
+      responseDataString:
         //
         // ปรับตามใช้งานจริง
         template.id, // ปรับตามใช้งานจริง
 
       // ปรับตามใช้งานจริง
-      response_data_object: {
+      responseDataObject: {
         //
         // ปรับตามใช้งานจริง
         data1:
@@ -254,7 +254,7 @@ export class GetTemplateHandler implements IQueryHandler<
       },
 
       // ปรับตามใช้งานจริง
-      response_data_array_object:
+      responseDataArrayObject:
         //
         // ปรับตามใช้งานจริง
         templates.map(

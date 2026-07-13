@@ -18,7 +18,7 @@ export class MethodTemplateHandler implements ICommandHandler<
   //
   MethodTemplateCommand, // ปรับตามใช้งานจริง
   //
-  // หากมีการคืนค่า หากไม่มีก็ลบตรงนี้ออก หรือว่า ใส่เป็น void ได้เลย
+  // หากมีการคืนค่า หากไม่มีก็ใส่เป็น void หรือว่า ลบตรงนี้ออกได้เลย
   MethodTemplateResponse // ปรับตามใช้งานจริง
 > {
   constructor(
@@ -201,13 +201,13 @@ export class MethodTemplateHandler implements ICommandHandler<
     return {
       //
       // ปรับตามจริง
-      response_data_string:
+      responseDataString:
         //
         // ปรับตามใช้งานจริง
         newTemplate.id, // ปรับตามใช้งานจริง
 
       // ปรับตามใช้งานจริง
-      response_data_object: {
+      responseDataObject: {
         //
         // ปรับตามใช้งานจริง
         data1:

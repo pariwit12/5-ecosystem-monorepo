@@ -4,6 +4,7 @@
 
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
@@ -137,7 +138,23 @@ export default function WorkScheduleAdminPositionIdClient({
       {/* Main UI (children) */}
       {/* ========================================================================================== */}
 
-      <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+      <div
+        className={cn(
+          "w-full",
+          "max-w-7xl",
+
+          "mx-auto",
+
+          "flex",
+          "flex-col",
+          "gap-2 sm:gap-3",
+
+          "relative",
+
+          "px-4 sm:px-6",
+          "py-4 sm:py-6",
+        )}
+      >
         {/*  */}
         {/* ============================== */}
         {/* ส่วนหัวข้อ + สถานะ fetching */}
@@ -149,7 +166,19 @@ export default function WorkScheduleAdminPositionIdClient({
           {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
           {/* =================================================================== */}
 
-          <div className="flex items-center gap-4 border-b pb-6">
+          <div
+            className={cn(
+              "flex",
+              "flex-wrap",
+              "items-center",
+              "justify-between",
+
+              "gap-2 sm:gap-3",
+              "pb-4 sm:pb-4",
+
+              "border-b",
+            )}
+          >
             {/*  */}
             {/* ========================== */}
             {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
@@ -190,45 +219,18 @@ export default function WorkScheduleAdminPositionIdClient({
               {/* ============================= */}
 
               <div>
-                {/*  */}
-                <h2 // หัวข้อ
-                  className="text-3xl font-bold text-gray-800"
-                >
+                <h2 className="text-3xl font-bold text-gray-800">
                   {position.name}
-                  {/* สร้างตำแหน่งงานใหม่ */}
-                  {/* รายการตำแหน่งงาน */}
                 </h2>
 
-                <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
-                  className="text-gray-500 mt-1 font-mono text-sm"
-                >
+                <p className="text-gray-500 mt-1 font-mono text-sm">
                   เลือกเมนูที่ต้องการจัดการหรือเข้าถึง
-                  {/* กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ */}
-                  {/* จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ */}
                 </p>
-                {/*  */}
               </div>
 
               {/* ============================= */}
               {/* 🟢 (จบ) กลุ่มของส่วนหัวข้อ (ซ้าย) */}
               {/* ============================= */}
-
-              {/* หากต้องมีทั้งปุ่ม "สร้าง" และ "แก้ไข" พร้อมกัน ต้องใส่ div ครอบอีกที ไม่งั้นจะมีตัวนึงถูกดีดมาไว้ตรงกลาง */}
-
-              {/* ============================== */}
-              {/* 🌟 ปุ่มลิ้งไปแก้ไขข้อมูล (ขวา) */}
-              {/* ============================== */}
-
-              <Link
-                href={`/work-schedule/admin/${placeId}/position/${positionId}/edit`}
-                className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-sm"
-              >
-                แก้ไขข้อมูล
-              </Link>
-
-              {/* ============================== */}
-              {/* 🌟 (จบ) ปุ่มลิ้งไปแก้ไขข้อมูล (ขวา) */}
-              {/* ============================== */}
               {/*  */}
             </div>
 
@@ -389,6 +391,325 @@ export default function WorkScheduleAdminPositionIdClient({
         {/* ============================ */}
         {/* 🌟 เนื้อหาหลักตรงนี้ */}
         {/* ============================ */}
+
+        {/* ==================================== */}
+        {/* 🌟 โซนเมนูการทำงาน (การ์ด - Grid) */}
+        {/* ==================================== */}
+
+        <div
+          className={cn(
+            "flex",
+            "flex-col",
+
+            "gap-2 sm:gap-3",
+          )}
+        >
+          <h3
+            className={cn(
+              "text-lg",
+
+              "font-bold text-gray-800",
+            )}
+          >
+            เมนูการจัดการ
+          </h3>
+
+          <div
+            className={cn(
+              "grid",
+              "grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))]",
+
+              "gap-2 sm:gap-3",
+            )}
+          >
+            {/* ==================================== */}
+            {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+            {/* ==================================== */}
+
+            <Link
+              href={`/work-schedule/admin/${placeId}/position/${positionId}/slot`}
+              className={cn(
+                "group",
+
+                "flex",
+                "flex-col",
+
+                "items-center",
+                "text-center",
+
+                "px-4",
+                "py-6",
+
+                "relative",
+
+                "overflow-hidden",
+
+                "border-2",
+                "rounded-2xl",
+
+                "bg-blue-50/50",
+                "border-blue-100",
+
+                "cursor-pointer",
+
+                "transition-all",
+                "hover:bg-blue-50",
+                "hover:border-blue-300",
+                "hover:shadow-md",
+              )}
+            >
+              <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h4
+                className={cn(
+                  "text-lg",
+
+                  "font-bold",
+
+                  "text-gray-900",
+                  "group-hover:text-blue-700",
+                  "transition-colors",
+                )}
+              >
+                ตารางเวร
+              </h4>
+              <p
+                className={cn(
+                  "text-sm",
+
+                  "text-gray-500",
+
+                  "mt-1",
+                )}
+              >
+                จัดการและตรวจสอบตารางเวรของ{position.name}
+              </p>
+            </Link>
+
+            {/* ==================================== */}
+            {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+            {/* ==================================== */}
+
+            {/* ========================= */}
+            {/* เมนูมาตรฐาน: แบบร่าง */}
+            {/* ========================= */}
+
+            <Link
+              href={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
+              className={cn(
+                "group",
+
+                "flex",
+                "flex-col",
+
+                "items-center",
+                "text-center",
+
+                "px-4",
+                "py-6",
+
+                "relative",
+
+                "overflow-hidden",
+
+                "border",
+                "rounded-2xl",
+
+                "bg-white",
+                "border-gray-200",
+
+                "cursor-pointer",
+
+                "transition-all",
+                "hover:bg-gray-50",
+                "hover:border-gray-300",
+                "hover:shadow-md",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-12 h-12",
+                  "rounded-xl",
+
+                  "flex",
+                  "items-center",
+                  "justify-center",
+
+                  "bg-gray-100",
+                  "text-gray-600",
+
+                  "transition-all",
+                  "group-hover:bg-white",
+                  "group-hover:shadow-sm",
+
+                  "shrink-0",
+
+                  "mb-4",
+                )}
+              >
+                <svg
+                  className={cn("h-6 w-6")}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h4
+                className={cn(
+                  "text-lg",
+
+                  "font-bold",
+
+                  "text-gray-800",
+                )}
+              >
+                แบบร่าง
+              </h4>
+              <p
+                className={cn(
+                  "text-sm",
+
+                  "text-gray-500",
+
+                  "mt-1",
+                )}
+              >
+                จัดการและตรวจสอบข้อมูลแบบร่างสำหรับตารางเวรของ{position.name}
+              </p>
+            </Link>
+
+            {/* ========================= */}
+            {/* (จบ) เมนูมาตรฐาน: แบบร่าง */}
+            {/* ========================= */}
+
+            {/* ========================= */}
+            {/* เมนูมาตรฐาน: พนักงาน */}
+            {/* ========================= */}
+
+            <Link
+              href={`/work-schedule/admin/${placeId}/position/${positionId}/staff-position`}
+              className={cn(
+                "group",
+
+                "flex",
+                "flex-col",
+
+                "items-center",
+                "text-center",
+
+                "px-4",
+                "py-6",
+
+                "relative",
+
+                "overflow-hidden",
+
+                "border",
+                "rounded-2xl",
+
+                "bg-white",
+                "border-gray-200",
+
+                "cursor-pointer",
+
+                "transition-all",
+                "hover:bg-gray-50",
+                "hover:border-gray-300",
+                "hover:shadow-md",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-12 h-12",
+                  "rounded-xl",
+
+                  "flex",
+                  "items-center",
+                  "justify-center",
+
+                  "bg-gray-100",
+                  "text-gray-600",
+
+                  "transition-all",
+                  "group-hover:bg-white",
+                  "group-hover:shadow-sm",
+
+                  "shrink-0",
+
+                  "mb-4",
+                )}
+              >
+                <svg
+                  className={cn("h-6 w-6")}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </div>
+              <h4
+                className={cn(
+                  "text-lg",
+
+                  "font-bold",
+
+                  "text-gray-800",
+                )}
+              >
+                พนักงาน
+              </h4>
+              <p
+                className={cn(
+                  "text-sm",
+
+                  "text-gray-500",
+
+                  "mt-1",
+                )}
+              >
+                จัดการและตรวจสอบข้อมูลพนักงานของ{position.name}
+              </p>
+            </Link>
+
+            {/* ========================= */}
+            {/* (จบ) เมนูมาตรฐาน: พนักงาน */}
+            {/* ========================= */}
+            {/*  */}
+          </div>
+        </div>
+
+        {/* ==================================== */}
+        {/* 🌟 (จบ) โซนเมนูการทำงาน (การ์ด - Grid) */}
+        {/* ==================================== */}
 
         {/* ============================ */}
         {/* 🌟 (จบ) เนื้อหาหลักตรงนี้ */}

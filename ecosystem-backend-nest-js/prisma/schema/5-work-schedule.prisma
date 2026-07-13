@@ -80,7 +80,7 @@ model WorkScheduleSlotTemplate {
   // 🌟 เก็บเป็น String (Wall-clock Time) เสมอ! ห้ามเก็บเป็น DateTime เด็ดขาด (โยนเรื่อง timezone ไปให้ OrganizationWorkSchedulePlace เก็บ)
   startTime      String @map("start_time") // "20:00"
   durationMinute Int    @map("duration_minute") // 720 (นาที)
-  quantity       Int    @default(1) // จำนวน Slot ที่จะสร้าง
+  quantity       Int // จำนวน Slot ที่จะสร้าง
 
   //   colorCode   String?   @map("color_code") // เอาไว้ให้หน้าบ้านระบายสีปฏิทินสวยๆ
 
