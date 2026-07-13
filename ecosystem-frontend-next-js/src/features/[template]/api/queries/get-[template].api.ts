@@ -162,8 +162,10 @@ export const getTemplate = // ปรับตามใช้งานจริ�
       // ปรับตามใช้งานจริง
       query_string: valueToQueryOne,
       query_timezone: valueTOQueryTwo,
-      query_string_datetime_start_time: "2026-07-06T08:00:00+07:00", // ปรับตามใช้งานจริง
-      query_string_datetime_end_time: "2026-07-06T08:00:00Z", // ปรับตามใช้งานจริง
+      query_string_datetime_start_time: "2026-07-06T08:00:00+07:00",
+      query_string_datetime_end_time: "2026-07-06T08:00:00Z",
+      query_string_hh_mm_start_time: "20:00",
+      query_int: 10,
       //
     };
 
