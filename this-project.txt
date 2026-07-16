@@ -21,36 +21,74 @@ Template Structure
 - UX later (the second version)
   - separately from the first version
 
-@ url/template (หน้า รายการ template)
-  - ปุ่ม สร้าง template (ด้านขวาของ Header)
-    @ url/template/new (หน้า สร้าง template)
-  - รายการ template + ปุ่ม เลือก template
-    @ url/template/[templateId] (หน้าหลัก ของ templateId)
-      - แสดงเมนูให้เลือกไปต่อ
-        - เมนู: อื่นๆ
-        - เมนู: รายละเอียด
-          @ url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId)
-            - แสดงรายละเอียด ของ templateId
-            - ปุ่ม แก้ไข รายละเอียด
-              @ url/template/[templateId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
-                - form สำหรับ แก้ไข ข้อมูล
-                - ปุ่ม ยกเลิก (redirect ไป url/template/[templateId]/detail)
-                - ปุ่ม บันทึก (redirect ไป url/template/[templateId]/detail)
-        - เมนู: ตั้งค่า
-          @ url/template/[templateId]/setting (หน้า แสดงการตั้งค่า ของ templateId)
-            - แสดงการตั้งค่า ของ templateId
-            - ปุ่ม แก้ไข การตั้งค่า
-              @ url/template/[templateId]/edit-setting หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
-                - form สำหรับ แก้ไข ข้อมูล
-                - ปุ่ม ยกเลิก (redirect ไป url/template/[templateId]/detail)
-                - ปุ่ม บันทึก (redirect ไป url/template/[templateId]/detail)
-        - เมนู: ลบ
-          @ url/template/[templateId]/delete (หน้า ยืนยันที่จะลบ templateId)
-            - แสดงรายละเอียด ของ templateId
-            - ปุ่ม ยกเลิก (redirect ไป url/template/[templateId])
-            - ปุ่ม ลบ
-              - pop-up/หน้าต่าง ยืนยันที่จะลบ (redirect ไป url/template)
+@ /url/template (หน้า รายการ template)
+  - 🔵 header back button (📍 /url )
+  - 🔵 ปุ่ม สร้าง template ใหม่ (ด้านขวาของ Header)
+    - กรณี: ไม่ต้องเลือกวิธีการสร้าง (📍 /url/template/new (หน้า สร้าง template ใหม่) )
+    - กรณี: เลือกวิธีการสร้าง (📍 /url/template/new/menu (หน้า เลือก วิธีการสร้าง (pre-fill vs empty)) )
+  - 📚 รายการ template
+    - ⚪ ปุ่ม เลือก template (📍 /url/template/[templateId] (หน้าหลัก ของ templateId) )
 
+  @ /url/template/new/menu (หน้า เลือก วิธีการสร้าง (pre-fill vs empty))
+    - 🔵 header back button (📍 /url/template (หน้า รายการ template) )
+    - แสดงเมนู function ให้เลือก
+      - 🔵 เมนู: ใช้ pre-fill data (📍 /url/template/new/pre-fill (หน้า เลือก pre-fill data ที่จะใช้) )
+      - 🔵 เมนู: ไม่ใช้ pre-fill data (📍 /url/template/new (หน้า สร้าง template ใหม่) )
+
+    @ /url/template/new/pre-fill (หน้า เลือก pre-fill data ที่จะใช้)
+      - 🔵 header back button (📍 /url/template/new/menu (หน้า เลือก วิธีการสร้าง (pre-fill vs empty)) )
+      - 📚 รายการ pre-fill
+        - ⚪ ปุ่ม เลือก pre-fill (📍 /url/template/new (หน้า สร้าง template ใหม่) )
+
+  @ /url/template/new (หน้า สร้าง template ใหม่)
+    - 🔵 header back button
+      - กรณี: ไม่ต้องเลือกวิธีการสร้าง (📍 /url/template (หน้า รายการ template) )
+      - กรณี: เลือกวิธีการสร้าง (📍 /url/template/new/menu (หน้า เลือก วิธีการสร้าง (pre-fill vs empty)) )
+    - 📝 Form สร้างพนักงานใหม่
+      - 🟢 สร้างพนักงานใหม่ (📍 /url/template (หน้า รายการ template) )
+      - 🔵 ยกเลิก
+        - กรณี: ไม่ต้องเลือกวิธีการสร้าง (📍 /url/template (หน้า รายการ template) )
+        - กรณี: เลือกวิธีการสร้าง (📍 /url/template/new/menu (หน้า เลือก วิธีการสร้าง (pre-fill vs empty)) )
+
+  @ /url/template/[templateId] (หน้าหลัก ของ templateId)
+    - 🔵 header back button (📍 /url/template (หน้า รายการ template) )
+    - แสดงเมนู function ให้เลือก
+      - 🔵 เมนู: อื่นๆ
+      - 🔵 เมนู: รายละเอียด (📍 /url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId) )
+      - 🔵 เมนู: ตั้งค่า (📍 /url/template/[templateId]/setting (หน้า แสดงการตั้งค่า ของ templateId) )
+      - 🔵 เมนู: ลบ (📍 /url/template/[templateId]/delete (หน้า ยืนยันที่จะลบ templateId) )
+
+    @ /url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId)
+      - 🔵 header back button (📍 /url/template/[templateId] (หน้าหลัก ของ templateId) )
+      - 📰 แสดงรายละเอียด ของ templateId
+      - 🔵 ปุ่ม แก้ไข รายละเอียด (📍 /url/template/[templateId]/edit (หน้า แก้ไขรายละเอียด ของ templateId) )
+          
+      @ /url/template/[templateId]/edit (หน้า แก้ไขรายละเอียด ของ templateId)
+        - 🔵 header back button (📍 /url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId) )
+        - 📝 Form สำหรับ แก้ไข ข้อมูล
+          - ทำเป็นปุ่มเปิดปิดส่วนที่จะแก้ไข (ส่งไปเฉพาะ field ที่เปิด) + ค่อยคิดเรื่อง version control
+          - 🟡 ปุ่ม บันทึก (📍 /url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId) )
+          - 🔵 ปุ่ม ยกเลิก (📍 /url/template/[templateId]/detail (หน้า แสดงรายละเอียด ของ templateId) )
+
+    @ /url/template/[templateId]/delete (หน้า ยืนยันที่จะลบ templateId)
+      - 🔵 header back button (📍 /url/template/[templateId] (หน้าหลัก ของ templateId) )
+      - 📰 แสดงรายละเอียด ของ templateId (ที่จำเป็นสำหรับการตัดสินใจ "ลบ")
+      - 👉 ปุ่ม ลบ
+        - 🔴 pop-up/หน้าต่าง ยืนยันที่จะลบ (📍 /url/template (หน้า รายการ template) )
+      - 🔵 ปุ่ม ยกเลิก (📍 /url/template/[templateId] (หน้าหลัก ของ templateId))
+
+        
+แบบร่าง ยังไม่เคยใช้จริง
+@ /url/template/[templateId]/setting (หน้า แสดงการตั้งค่า ของ templateId)
+  - 🔵 header back button (📍 /url/template/[templateId] (หน้าหลัก ของ templateId) )
+  - แสดงการตั้งค่า ของ templateId
+  - ปุ่ม แก้ไข การตั้งค่า
+    @ /url/template/[templateId]/edit-setting หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
+      - form สำหรับ แก้ไข ข้อมูล
+      - ปุ่ม ยกเลิก (redirect ไป /url/template/[templateId]/detail)
+      - ปุ่ม บันทึก (redirect ไป /url/template/[templateId]/detail)
+
+      
 _________________________________________________________________________
 
 
@@ -61,7 +99,8 @@ _________________________________________________________________________
 Step 1
 
 - ย้าย code ออกมาเป็น component ui กลาง
-  - Header
+  - card menu
+  - component UI style
 
 @ work-schedule/admin/[placeId]/position/[positionId] (หน้าหลัก ของ position)
   - แสดงเมนูให้เลือกไปต่อ
@@ -100,8 +139,6 @@ Step 1
 - สร้างหน้าต่างของผู้ที่เป็น พนักงาน
 
 Step 2
-
-- this-project-frontend-tree (for consistency)
 
 @ work-schedule/admin/[placeId]/position/[positionId] (หน้าหลัก ของ  position)
   - แสดงเมนูให้เลือกไปต่อ
@@ -158,6 +195,7 @@ _________________________________________________________________________
 
 # เปลี่ยนโครงสร้างไฟล์ฝั่ง frontend ให้เป็น format เดียวกันกับ template
 - เปลี่ยนชื่อไฟล์ key, .queries และย้ายตำแหน่ง
+- ทำ this-project-frontend-tree (for consistency)
 
 _________________________________________________________________________
 

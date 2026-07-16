@@ -8,10 +8,8 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
@@ -23,6 +21,12 @@ import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
 // ข้อความที่เตรียมไว้สำหรับ ErrorCode แต่ละประเภท
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+
+import { cn } from "@/lib/utils";
+
+// eslint-disable-next-line
+import Link from "next/link";
+import { ChildrenHeader } from "@/components/children-header";
 
 // การเรียกใช้แบบนอก {} ชื่อไม่จำเป็นต้องตรงกับในไฟล์ ./loading.tsx หรือ ./error.tsx ก็ได้ (มันจะไปเอา default มาใช้อยู่แล้ว)
 import Loading from "./loading";
@@ -282,16 +286,6 @@ export default function TemplateClient({
   // 🎯 ฟังก์ชันเฉพาะของหน้า
   // ============================
 
-  // แปลงเวลาไว้แสดงเวลา Update ล่าสุด
-  const formatLastUpdate = (timestamp: number) => {
-    if (!timestamp) return "";
-    return new Date(timestamp).toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
-
   // ============================
   // 🎯 (จบ) ฟังก์ชันเฉพาะของหน้า
   // ============================
@@ -359,277 +353,52 @@ export default function TemplateClient({
           "py-4 sm:py-6",
         )}
       >
-        <div>
-          <div
-            className={cn(
-              "flex",
-              "flex-wrap",
-              "items-center",
-              "justify-between",
+        <ChildrenHeader
+          //
+          title={
+            //
+            // ปรับตามใช้งานจริง
 
-              "gap-2 sm:gap-3",
+            // `${dataQuery.name}`
+            `รายการ...`
+            // `สร้าง...ใหม่`
+          }
+          description={
+            //
+            // ปรับตามใช้งานจริง
 
-              "border-b",
-              "pt-2 sm:pt-3",
-              "pb-4 sm:pb-6",
-            )}
-          >
-            <Link
-              href={`/template/${templateId}/server-query`}
-              className={cn(
-                "p-2",
+            // `เลือกเมนูที่ต้องการจัดการหรือเข้าถึง`
+            `กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`
+            // `จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ`
+          }
+          backHref={
+            //
+            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
+            //
+          }
+          //
 
-                "rounded-full",
+          // กรณี: ใช้ create button
+          createHref={
+            //
+            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
+            //
+          }
+          createLabel={
+            //
+            `สร้างข้อมูลใหม่ / สร้าง...ใหม่` // ปรับตามใช้งานจริง
+            //
+          }
+          // (จบ) กรณี: ใช้ create button
 
-                "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
-              )}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </Link>
-
-            <div
-              className={cn(
-                "flex-1",
-
-                "min-w-0",
-
-                "gap-4 sm:gap-6",
-              )}
-            >
-              <h2
-                className={cn(
-                  "text-2xl sm:text-3xl",
-
-                  "truncate",
-
-                  "font-bold text-gray-800",
-                )}
-              >
-                รายการตำแหน่งงาน
-              </h2>
-
-              <p
-                className={cn(
-                  "text-xs sm:text-sm",
-
-                  "truncate",
-
-                  "font-mono text-gray-500",
-                )}
-              >
-                กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ
-              </p>
-            </div>
-
-            <Link
-              href={`/template/${templateId}/server-query`}
-              className={cn(
-                "px-4 sm:px-5 py-2 sm:py-2.5",
-
-                "min-w-0",
-
-                "text-xs sm:text-sm",
-
-                "rounded-xl",
-
-                "font-medium text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-colors",
-              )}
-            >
-              <span className={cn("truncate")}>+ สร้างข้อมูลใหม่</span>
-            </Link>
-          </div>
-
-          <div
-            className={cn(
-              "flex",
-              "flex-wrap",
-              "items-center",
-              "justify-end",
-
-              "h-6",
-
-              "text-xs",
-            )}
-          >
-            {isFetching ? (
-              <span
-                className={cn(
-                  "flex",
-                  "flex-wrap",
-                  "items-center",
-
-                  "gap-2",
-
-                  "text-gray-500 animate-pulse",
-                )}
-              >
-                <svg
-                  className={cn(
-                    "h-3.5 w-3.5",
-
-                    "animate-spin text-blue-500",
-                  )}
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                กำลังอัปเดตข้อมูล...
-              </span>
-            ) : errorQuery ? (
-              <div
-                className={cn(
-                  "flex",
-                  "flex-wrap",
-                  "items-center",
-
-                  "gap-2",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex",
-                    "flex-wrap",
-                    "items-center",
-
-                    "gap-1.5",
-
-                    "font-medium text-red-500",
-                  )}
-                >
-                  <svg
-                    className={cn("h-3.5 w-3.5")}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  อัปเดตล่าสุดไม่สำเร็จ
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => refetch()}
-                  className={cn(
-                    "font-semibold underline",
-                    "text-blue-600 hover:text-blue-700 transition-colors",
-                    "cursor-pointer",
-                  )}
-                >
-                  ลองใหม่
-                </button>
-              </div>
-            ) : (
-              dataUpdatedAt > 0 && (
-                <div
-                  className={cn(
-                    "flex",
-                    "flex-wrap",
-                    "items-center",
-
-                    "gap-3",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex",
-                      "flex-wrap",
-                      "items-center",
-
-                      "gap-1.5",
-
-                      "text-gray-400",
-                    )}
-                  >
-                    <svg
-                      className={cn(
-                        "h-3.5 w-3.5",
-
-                        "text-green-500",
-                      )}
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => refetch()}
-                    className={cn(
-                      //
-                      "flex",
-                      "flex-wrap",
-                      "items-center",
-
-                      "gap-1",
-
-                      "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
-                    )}
-                    title="กดเพื่ออัปเดตข้อมูลใหม่"
-                  >
-                    <svg
-                      className={cn("h-3.5 w-3.5")}
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
-                      />
-                    </svg>
-                    รีเฟรช
-                  </button>
-                </div>
-              )
-            )}
-          </div>
-        </div>
+          // กรณี: ใช้ status bar
+          isFetching={isFetching}
+          errorQuery={errorQuery}
+          refetch={refetch}
+          dataUpdatedAt={dataUpdatedAt}
+          // (จบ) กรณี: ใช้ status bar
+          //
+        />
       </div>
 
       {/* ========================================================================================== */}

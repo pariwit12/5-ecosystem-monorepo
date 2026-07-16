@@ -1,0 +1,59 @@
+
+ความหมายสัญลักษณ์
+- 👉 = คลิก / กดปุ่ม
+- 📍 = URL
+
+- 📰 = แสดงรายละเอียด (จากการ fetch)
+- 📝 = Form
+- 📚 = List / รายการ (แบบหลายรายการ - จากการ fetch)
+
+- 🔵 = ปุ่ม Redirect ไปต่อ
+- 🟢 = ปุ่ม Create
+- 🟡 = ปุ่ม Edit
+- 🔴 = ปุ่ม Delete
+- ⚪ = ปุ่ม เลือก (ใช้คู่กับรายการจากการ fetch)
+
+
+=================================================================================
+                            Program 0: ส่วนกลาง
+=================================================================================
+
+
+P-1 หน้าหลัก - @ /
+  - (กรณี log-in Clerk ยังไม่เรียบร้อย) แสดงข้อความให้ log-in Clerk
+  - (กรณี log-in Clerk เรียบร้อย)
+    - 🔵 เข้าสู่โปรแกรม Work-Schedule (📍 /work-schedule )
+
+
+
+=================================================================================
+                            Program 1: Work-Schedule
+=================================================================================
+
+WS-1: หน้าหลัก - @ /work-schedule
+  - 🔵 header back button (📍 / )
+  - 📚 admin at placeId
+      - ⚪ เลือกตำแหน่งเพื่อเข้าใช้งาน (📍 /work-schedule/admin/[placeId] )
+  - 📚 staff at placeId
+
+WS-2: หน้าหลัก admin - @ /work-schedule/admin/[placeId]
+  - 🔵 header back button (📍 /work-schedule )
+  - 🔵 จัดการพนักงาน (📍 /work-schedule/admin/[placeId]/staff )
+  - 🔵 จัดการตารางเวร (📍 /work-schedule/admin/[placeId]/position )
+
+WS-3: หน้าจัดการพนักงาน - @ /work-schedule/admin/[placeId]/staff
+  - 🔵 header back button (📍 /work-schedule/admin/[placeId] )
+  - 🔵 สร้างพนักงาน (📍 /work-schedule/admin/[placeId]/staff/new )
+  - 📚 รายการพนักงาน
+
+WS-4: หน้าสร้างพนักงานใหม่ - @ /work-schedule/admin/[placeId]/staff/new
+  - 🔵 header back button (📍 /work-schedule/admin/[placeId]/staff )
+  - 📝 Form สร้างพนักงานใหม่
+    - 🟢 สร้างพนักงานใหม่ (📍 /work-schedule/admin/[placeId]/staff )
+    - 🔵 ยกเลิก (📍 /work-schedule/admin/[placeId]/staff )
+
+WS-5: หน้ารายการตำแหน่งงาน - @ /work-schedule/admin/[placeId]/position
+  - 🔵 header back button (📍 /work-schedule/admin/[placeId] )
+  - 🔵 header create button (📍 /work-schedule/admin/[placeId]/position/new )
+  - 📚 รายการตำแหน่งงาน
+    - ⚪ เลือกตำแหน่งงาน (📍 /work-schedule/admin/[placeId]/position/[positionId] )

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, Show, SignInButton, UserButton } from "@clerk/nextjs"; // 👈 1. นำเข้า Clerk
+import { cn } from "@/lib/utils";
+// eslint-disable-next-line
 import Sidebar from "@/components/sidebar"; // 👈 นำเข้า Sidebar
 import "./globals.css";
 import TanStackProvider from "@/provider/tan-stack-provider";
@@ -33,7 +35,24 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={cn(
+          // ===============================
+          // 🟢 1. จัดการเรื่องฟอนต์ (Fonts)
+          // ===============================
+          geistSans.variable,
+          geistMono.variable,
+          "antialiased", // ทำให้ขอบตัวหนังสือคมชัดขึ้น
+
+          // ===============================
+          // 🟢 2. โครงสร้างหลัก (Layout)
+          // ===============================
+          "h-full",
+
+          // ===============================
+          // 🟢 3. ป้องกันหน้าจอกระตุกจาก Scrollbar
+          // ===============================
+          "scrollbar-gutter-stable",
+        )}
       >
         <body className="min-h-full flex flex-col bg-gray-50">
           {/* 🌟 2. ขยับ TanStackProvider มาครอบทั้งหมดตั้งแต่ตรงนี้! */}

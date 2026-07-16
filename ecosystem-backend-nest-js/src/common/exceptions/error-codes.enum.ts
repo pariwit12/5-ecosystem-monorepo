@@ -18,6 +18,8 @@ export enum ErrorCode {
   WORK_SCHEDULE_POSITION_NOT_FOUND = 'WORK_SCHEDULE_POSITION_NOT_FOUND',
   WORK_SCHEDULE_POSITION_DELETED = 'WORK_SCHEDULE_POSITION_DELETED',
 
+  WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND = 'WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND',
+
   // ค่อยเขียนเพิ่มเติมในภายหลัง เพื่อระบุให้ละเอียดขึ้น ตอนนี้เราควรเอาเวลาไปโฟกัสที่ business logic มากกว่า
 
   //   // หมวด Auth

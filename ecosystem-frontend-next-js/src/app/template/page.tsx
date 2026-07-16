@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 
+import { ChildrenHeader } from "@/components/children-header";
+import { MenuGrid } from "@/components/menu-grid/menu-gird";
+import { MenuCard } from "@/components/menu-grid/menu-card";
+import {
+  CalendarIcon,
+  PersonIcon,
+  DetailNoteIcon,
+  DocumentTextIcon,
+  SettingIcon,
+} from "@/components/menu-grid/icon";
+
 // ----------- Import Form -----------
 import {
   // ปรับตามใช้งานจริง
@@ -104,14 +115,8 @@ await new Promise((resolve) => setTimeout(resolve, 5000));
 export default function TemplatePage() {
   //
 
-  // แปลงเวลาไว้แสดงเวลา Update ล่าสุด
-  const formatLastUpdate = (timestamp: number) => {
-    if (!timestamp) return "";
-    return new Date(timestamp).toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+  const dataQuery = {
+    name: "ชื่อ...",
   };
 
   const refetch = () => {
@@ -190,466 +195,52 @@ export default function TemplatePage() {
         {/* ส่วนหัวข้อ + สถานะ fetching */}
         {/* ============================== */}
 
-        <div>
-          {/*  */}
-          {/* =================================================================== */}
-          {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มสร้างข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
+        <ChildrenHeader
+          //
+          title={
+            //
+            // ปรับตามใช้งานจริง
 
-          <div
-            className={cn(
-              //
-              "flex",
-              "flex-wrap",
-              "items-center",
-              "justify-between",
+            `${dataQuery.name}`
+            // `รายการ...`
+            // `สร้าง...ใหม่`
+          }
+          description={
+            //
+            // ปรับตามใช้งานจริง
 
-              "gap-2 sm:gap-3",
-              "pb-4 sm:pb-4",
+            // `เลือกเมนูที่ต้องการจัดการหรือเข้าถึง`
+            `กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`
+            // `จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ`
+          }
+          backHref={
+            //
+            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
+            //
+          }
+          //
 
-              "border-b",
-              //
-            )}
-          >
-            {/*  */}
-            {/* ========================== */}
-            {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
-            <Link
-              href={
-                //
-                `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-                "p-2", // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
+          // กรณี: ใช้ create button
+          createHref={
+            //
+            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
+            //
+          }
+          createLabel={
+            //
+            `สร้างข้อมูลใหม่ / สร้าง...ใหม่` // ปรับตามใช้งานจริง
+            //
+          }
+          // (จบ) กรณี: ใช้ create button
 
-                "rounded-full",
-                // rounded-full + icon (h = w) + p-2 = ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
-
-                "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
-                //
-              )}
-            >
-              <svg
-                className={cn(
-                  //
-                  "h-6 w-6",
-                  //
-                )}
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </Link>
-
-            {/* ========================== */}
-            {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
-
-            {/* ============================================ */}
-            {/* 🟢 ส่วนหัวข้อ */}
-            {/* ============================================ */}
-
-            <div
-              className={cn(
-                //
-                "flex-1",
-
-                "min-w-0", // เปิดทางให้กล่องลูกสามารถใช้ truncate ได้
-
-                "gap-4 sm:gap-6",
-                //
-              )}
-            >
-              {/*  */}
-              {/* ============================= */}
-              {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
-              {/*  */}
-              <h2 // หัวข้อ
-                className={cn(
-                  //
-                  "text-2xl sm:text-3xl",
-
-                  "truncate",
-
-                  "font-bold",
-                  "text-gray-800",
-                  //
-                )}
-              >
-                {/* {dataQuery.name} */}
-                สร้าง...ใหม่
-                {/* รายการ... */}
-              </h2>
-
-              <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
-                className={cn(
-                  //
-                  "text-xs sm:text-sm",
-
-                  "truncate",
-
-                  "font-mono",
-                  "text-gray-500",
-                  //
-                )}
-              >
-                {/* เลือกเมนูที่ต้องการจัดการหรือเข้าถึง */}
-                กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ
-                {/* จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ */}
-              </p>
-              {/*  */}
-
-              {/* ============================= */}
-              {/* 🟢 (จบ) ส่วนหัวข้อ */}
-              {/* ============================= */}
-              {/*  */}
-            </div>
-
-            {/* ======================== */}
-            {/* Create Button (ขวา) */}
-            {/* ======================== */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-
-                // ทำให้ปุ่มหน้าตาเป็นปุ่ม
-                "p-2 sm:px-4 sm:py-2",
-                "rounded-full sm:rounded-xl",
-
-                "text-white",
-                "bg-blue-500",
-                "hover:bg-blue-700",
-                "active:bg-blue-800",
-                "shadow-sm",
-                "transition-colors",
-                //
-              )}
-            >
-              <svg
-                className={cn(
-                  //
-                  "h-6 w-6",
-
-                  "sm:hidden",
-                  //
-                )}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-
-              <span
-                className={cn(
-                  //
-                  "hidden sm:block",
-
-                  "text-xs sm:text-sm",
-
-                  "truncate",
-
-                  "font-medium",
-                  //
-                )}
-              >
-                {/* 
-                  -------- ปรับตามใช้งานจริง --------
-                */}
-                + สร้างข้อมูลใหม่ / สร้าง...ใหม่
-                {/* 
-                  --------------------------------
-                */}
-              </span>
-            </Link>
-
-            {/* ======================== */}
-            {/* (จบ) Create Button (ขวา) */}
-            {/* ======================== */}
-            {/*  */}
-          </div>
-
-          {/* =================================================================== */}
-          {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มสร้างข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
-
-          {/* ====================== */}
-          {/* 🌟 แถบสถานะข้อมูล */}
-          {/* ====================== */}
-
-          <div
-            className={cn(
-              //
-              "flex",
-              "flex-wrap",
-              "items-center",
-              "justify-end",
-
-              "h-6", // fix ขนาด เพื่อให้หน้าจอไม่กระตุกเวลาเปลี่ยนสถานะ
-
-              "text-xs",
-              //
-            )}
-          >
-            {
-              // =================================
-              // UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
-
-              isFetching ? (
-                <span
-                  className={cn(
-                    //
-                    "flex",
-                    "flex-wrap",
-                    "items-center",
-
-                    "gap-2",
-
-                    "text-gray-500 animate-pulse",
-                    //
-                  )}
-                >
-                  <svg
-                    className={cn(
-                      //
-                      "h-3.5 w-3.5",
-
-                      "animate-spin text-blue-500",
-                      //
-                    )}
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  กำลังอัปเดตข้อมูล...
-                </span>
-              ) : //
-
-              // =================================
-              // (จบ) UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
-
-              // ======================
-              // UI Error Fetched
-              // ======================
-
-              errorQuery ? (
-                <div
-                  className={cn(
-                    //
-                    "flex",
-                    "flex-wrap",
-                    "items-center",
-
-                    "gap-2",
-                    //
-                  )}
-                >
-                  <span
-                    className={cn(
-                      //
-                      "flex",
-                      "flex-wrap",
-                      "items-center",
-
-                      "gap-1.5",
-
-                      "font-medium text-red-500",
-                      //
-                    )}
-                  >
-                    <svg
-                      className={cn(
-                        //
-                        "h-3.5 w-3.5",
-                        //
-                      )}
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    อัปเดตล่าสุดไม่สำเร็จ
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={
-                      () =>
-                        //
-                        refetch() // ปรับตามใช้งานจริง
-                      //
-                    }
-                    className={cn(
-                      //
-                      "font-semibold underline",
-                      "text-blue-600 hover:text-blue-700 transition-colors",
-                      "cursor-pointer",
-                      //
-                    )}
-                  >
-                    ลองใหม่
-                  </button>
-                </div>
-              ) : (
-                //
-                // ======================
-                // (จบ) UI Error Fetched
-                // ======================
-
-                // ======================
-                // UI Fetch Success
-                // ======================
-
-                dataUpdatedAt > 0 && (
-                  <div
-                    className={cn(
-                      //
-                      "flex",
-                      "flex-wrap",
-                      "items-center",
-
-                      "gap-3",
-                      //
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        //
-                        "flex",
-                        "flex-wrap",
-                        "items-center",
-
-                        "gap-1.5",
-
-                        "text-gray-400",
-                        //
-                      )}
-                    >
-                      <svg
-                        className={cn(
-                          //
-                          "h-3.5 w-3.5",
-
-                          "text-green-500",
-                          //
-                        )}
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
-                    </span>
-
-                    {/* ปุ่มรีเฟรชข้อมูลแบบแมนนวล */}
-                    <button
-                      type="button"
-                      onClick={
-                        () =>
-                          //
-                          refetch() // ปรับตามใช้งานจริง
-                        //
-                      }
-                      className={cn(
-                        //
-                        "flex",
-                        "flex-wrap",
-                        "items-center",
-
-                        "gap-1",
-
-                        "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
-                        //
-                      )}
-                      title="กดเพื่ออัปเดตข้อมูลใหม่"
-                    >
-                      <svg
-                        className={cn(
-                          //
-                          "h-3.5 w-3.5",
-                          //
-                        )}
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
-                        />
-                      </svg>
-                      รีเฟรช
-                    </button>
-                  </div>
-                )
-
-                // ======================
-                // (จบ) UI Fetch Success
-                // ======================
-                //
-              )
-            }
-          </div>
-
-          {/* ====================== */}
-          {/* 🌟 (จบ) แถบสถานะข้อมูล */}
-          {/* ====================== */}
-          {/*  */}
-        </div>
+          // กรณี: ใช้ status bar
+          isFetching={isFetching}
+          errorQuery={errorQuery}
+          refetch={refetch}
+          dataUpdatedAt={dataUpdatedAt}
+          // (จบ) กรณี: ใช้ status bar
+          //
+        />
 
         {/* ============================== */}
         {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
@@ -663,507 +254,84 @@ export default function TemplatePage() {
         {/* 🌟 โซนเมนูการทำงาน (การ์ด - Grid) */}
         {/* ==================================== */}
 
-        <div
-          className={cn(
-            //
-            "flex",
-            "flex-col",
-
-            "gap-2 sm:gap-3",
-            //
-          )}
+        <MenuGrid
+          //
+          title={`หากไม่ต้องการให้มีแถบ title ให้ลบออกได้เลย`} // ปรับตามใช้งานจริง
+          minWidth={10} // ปรับตามใช้งานจริง
+          //
         >
-          <h3
-            className={cn(
+          {/* ==================================== */}
+          {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+          {/* ==================================== */}
+
+          <MenuCard
+            //
+            href={
               //
-              "text-lg",
-
-              "font-bold text-gray-800",
+              `/template/${templateId}/target` // ปรับตามใช้งานจริง
               //
-            )}
-          >
-            เมนูการจัดการ
-          </h3>
-
-          <div
-            className={cn(
+            }
+            style="primary" // หากเป็น standard สามารถลบ style ออกได้เลย
+            icon={
               //
-              "grid",
-              "grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))]",
-
-              "gap-2 sm:gap-3",
+              <CalendarIcon /> // ปรับตามใช้งานจริง
               //
-            )}
-          >
-            {/* ==================================== */}
-            {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-            {/* ==================================== */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/target` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-                "group",
-
-                "flex",
-                "flex-col",
-
-                "items-center",
-                "text-center",
-
-                "px-4",
-                "py-6",
-
-                "relative",
-
-                "overflow-hidden",
-
-                "border-2",
-                "rounded-2xl",
-
-                "bg-blue-50/50",
-                "border-blue-100",
-
-                "cursor-pointer",
-
-                "transition-all",
-                "hover:bg-blue-50",
-                "hover:border-blue-300",
-                "hover:shadow-md",
-                //
-              )}
-            >
-              <div
-                className={cn(
-                  //
-                  "w-12 h-12",
-                  "rounded-xl",
-
-                  "flex",
-                  "items-center",
-                  "justify-center",
-
-                  "bg-blue-500",
-                  "text-white",
-
-                  "transition-transform",
-                  "group-hover:scale-110",
-
-                  "shadow-sm",
-
-                  "shrink-0",
-
-                  "mb-4",
-                  //
-                )}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h4
-                className={cn(
-                  //
-                  "text-lg",
-
-                  "font-bold",
-
-                  "text-gray-900",
-                  "group-hover:text-blue-700",
-                  "transition-colors",
-                  //
-                )}
-              >
-                ตารางคิว
-              </h4>
-              <p
-                className={cn(
-                  //
-                  "text-sm",
-
-                  "text-gray-500",
-
-                  "mt-1",
-                  //
-                )}
-              >
-                จัดการและตรวจสอบคิวงานของรายการนี้
-              </p>
-            </Link>
-
-            {/* ==================================== */}
-            {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-            {/* ==================================== */}
-
-            {/* ========================= */}
-            {/* เมนูมาตรฐาน: พนักงาน */}
-            {/* ========================= */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/target` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                "group",
-
-                "flex",
-                "flex-col",
-
-                "items-center",
-                "text-center",
-
-                "px-4",
-                "py-6",
-
-                "relative",
-
-                "overflow-hidden",
-
-                "border",
-                "rounded-2xl",
-
-                "bg-white",
-                "border-gray-200",
-
-                "cursor-pointer",
-
-                "transition-all",
-                "hover:bg-gray-50",
-                "hover:border-gray-300",
-                "hover:shadow-md",
-              )}
-            >
-              <div
-                className={cn(
-                  //
-                  "w-12 h-12",
-                  "rounded-xl",
-
-                  "flex",
-                  "items-center",
-                  "justify-center",
-
-                  "bg-gray-100",
-                  "text-gray-600",
-
-                  "transition-all",
-                  "group-hover:bg-white",
-                  "group-hover:shadow-sm",
-
-                  "shrink-0",
-
-                  "mb-4",
-                  //
-                )}
-              >
-                <svg
-                  className={cn(
-                    //
-                    "h-6 w-6",
-                    //
-                  )}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-              </div>
-              <h4
-                className={cn(
-                  //
-                  "text-lg",
-
-                  "font-bold",
-
-                  "text-gray-800",
-                  //
-                )}
-              >
-                พนักงาน
-              </h4>
-              <p
-                className={cn(
-                  //
-                  "text-sm",
-
-                  "text-gray-500",
-
-                  "mt-1",
-                  //
-                )}
-              >
-                จัดการและตรวจสอบข้อมูลพนักงานของ...
-              </p>
-            </Link>
-
-            {/* ========================= */}
-            {/* (จบ) เมนูมาตรฐาน: พนักงาน */}
-            {/* ========================= */}
-
-            {/* ========================= */}
-            {/* เมนูมาตรฐาน: รายละเอียด */}
-            {/* ========================= */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/target` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-                "group",
-
-                "flex",
-                "flex-col",
-
-                "items-center",
-                "text-center",
-
-                "px-4",
-                "py-6",
-
-                "relative",
-
-                "overflow-hidden",
-
-                "border",
-                "rounded-2xl",
-
-                "bg-white",
-                "border-gray-200",
-
-                "cursor-pointer",
-
-                "transition-all",
-                "hover:bg-gray-50",
-                "hover:border-gray-300",
-                "hover:shadow-md",
-                //
-              )}
-            >
-              <div
-                className={cn(
-                  //
-                  "w-12 h-12",
-                  "rounded-xl",
-
-                  "flex",
-                  "items-center",
-                  "justify-center",
-
-                  "bg-gray-100",
-                  "text-gray-600",
-
-                  "transition-all",
-                  "group-hover:bg-white",
-                  "group-hover:shadow-sm",
-
-                  "shrink-0",
-
-                  "mb-4",
-                  //
-                )}
-              >
-                <svg
-                  className={cn(
-                    //
-                    "h-6 w-6",
-                    //
-                  )}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </div>
-              <h4
-                className={cn(
-                  //
-                  "text-lg",
-
-                  "font-bold",
-
-                  "text-gray-800",
-                  //
-                )}
-              >
-                รายละเอียด
-              </h4>
-              <p
-                className={cn(
-                  //
-                  "text-sm",
-
-                  "text-gray-500",
-
-                  "mt-1",
-                  //
-                )}
-              >
-                จัดการรายละเอียดและข้อมูลทั่วไป
-              </p>
-            </Link>
-
-            {/* ========================= */}
-            {/* (จบ) เมนูมาตรฐาน: รายละเอียด */}
-            {/* ========================= */}
-
-            {/* ===================== */}
-            {/* เมนูมาตรฐาน: ตั้งค่า */}
-            {/* ===================== */}
-
-            <Link
-              href={
-                //
-                `/template/${templateId}/target` // ปรับตามใช้งานจริง
-                //
-              }
-              className={cn(
-                //
-                "group",
-
-                "flex",
-                "flex-col",
-
-                "items-center",
-                "text-center",
-
-                "px-4",
-                "py-6",
-
-                "relative",
-
-                "overflow-hidden",
-
-                "border",
-                "rounded-2xl",
-
-                "bg-white",
-                "border-gray-200",
-
-                "cursor-pointer",
-
-                "transition-all",
-                "hover:bg-gray-50",
-                "hover:border-gray-300",
-                "hover:shadow-md",
-                //
-              )}
-            >
-              <div
-                className={cn(
-                  //
-                  "w-12 h-12",
-                  "rounded-xl",
-
-                  "flex",
-                  "items-center",
-                  "justify-center",
-
-                  "bg-gray-100",
-                  "text-gray-600",
-
-                  "transition-all",
-                  "group-hover:bg-white",
-                  "group-hover:shadow-sm",
-
-                  "shrink-0",
-
-                  "mb-4",
-                  //
-                )}
-              >
-                <svg
-                  className={cn(
-                    //
-                    "h-6 w-6",
-                    //
-                  )}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </div>
-              <h4
-                className={cn(
-                  //
-                  "text-lg",
-
-                  "font-bold",
-
-                  "text-gray-800",
-                  //
-                )}
-              >
-                ตั้งค่า
-              </h4>
-              <p
-                className={cn(
-                  //
-                  "text-sm",
-
-                  "text-gray-500",
-
-                  "mt-1",
-                  //
-                )}
-              >
-                จัดการสิทธิ์และการตั้งค่า
-              </p>
-            </Link>
-
-            {/* ===================== */}
-            {/* (จบ) เมนูมาตรฐาน: ตั้งค่า */}
-            {/* ===================== */}
-            {/*  */}
-          </div>
-        </div>
+            }
+            title={
+              //
+              `ตารางคิว` // ปรับตามใช้งานจริง
+              //
+            }
+            description={
+              // สามารถลบ description ออกได้
+              //
+              `จัดการและตรวจสอบคิวงานของรายการนี้` // ปรับตามใช้งานจริง
+              //
+            }
+            //
+          />
+
+          {/* ==================================== */}
+          {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
+          {/* ==================================== */}
+
+          {/* ========================= */}
+          {/* เมนู: สีมาตรฐาน */}
+          {/* ========================= */}
+
+          <MenuCard
+            href={`/`}
+            icon={<PersonIcon />}
+            title={`PersonIcon`}
+            description={`ผู้ใช้, พนักงาน, ลูกค้า, ประชาชน`}
+          />
+
+          <MenuCard
+            href={`/`}
+            icon={<DetailNoteIcon />}
+            title={`DetailNoteIcon`}
+            description={`รายละเอียด, การจดบันทึก, จด Note`}
+          />
+
+          <MenuCard
+            href={`/`}
+            icon={<DocumentTextIcon />}
+            title={`DocumentTextIcon`}
+            description={`รายละเอียด, การจดบันทึก, จด Note`}
+          />
+
+          <MenuCard
+            href={`/`}
+            icon={<SettingIcon />}
+            title={`SettingIcon`}
+            description={`การตั้งค่า, การแก้ไขตั้งค่า, การแก้ไขรายละเอียด`}
+          />
+
+          {/* ========================= */}
+          {/* (จบ) เมนู: สีมาตรฐาน */}
+          {/* ========================= */}
+          {/*  */}
+        </MenuGrid>
 
         {/* ==================================== */}
         {/* 🌟 (จบ) โซนเมนูการทำงาน (การ์ด - Grid) */}

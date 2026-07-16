@@ -34,6 +34,12 @@ import {
 // =========================
 
 import {
+  GetWorkScheduleSlotTemplateByIdQuery,
+  GetWorkScheduleSlotTemplateByIdResponse,
+  GetWorkScheduleSlotTemplateByIdDtoParam,
+} from './queries/get-work-schedule-slot-template-by-id.query';
+
+import {
   GetWorkScheduleSlotTemplatesByPositionIdQuery,
   GetWorkScheduleSlotTemplatesByPositionIdResponse,
   GetWorkScheduleSlotTemplatesByPositionIdDtoParam,
@@ -45,10 +51,7 @@ import {
 
 @Controller('api/work-schedule/slot-template')
 export class WorkScheduleSlotTemplateController {
-  //
   constructor(
-    //
-    // ปรับตามใช้งานจริง
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
   ) {}
@@ -80,6 +83,22 @@ export class WorkScheduleSlotTemplateController {
   // ========================================================================================
   // Query
   // ========================================================================================
+
+  // ==========================================
+  // [GET] Business Logic
+  // ==========================================
+
+  @Get('by-id/:work_schedule_slot_template_id')
+  @UseGuards(ClerkAuthGuard)
+  async getWorkScheduleSlotTemplateById(
+    @Param() param: GetWorkScheduleSlotTemplateByIdDtoParam,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.queryBus.execute<
+      GetWorkScheduleSlotTemplateByIdQuery,
+      GetWorkScheduleSlotTemplateByIdResponse
+    >(new GetWorkScheduleSlotTemplateByIdQuery(clerkUser.sub, param));
+  }
 
   // ==========================================
   // [GET] Business Logic

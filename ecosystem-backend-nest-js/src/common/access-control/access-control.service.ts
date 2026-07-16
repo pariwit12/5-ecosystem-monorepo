@@ -278,6 +278,110 @@ export class AccessControlService {
   // 🌟 (จบ) ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
   // =================================================================
 
+  // =================================================================
+  // 🌟 ตรวจสอบ WorkScheduleSlotTemplateId + สิทธิ WorkScheduleAdmin
+  // =================================================================
+
+  async verifyWorkScheduleSlotTemplateIdByWorkScheduleAdmin(
+    clerkId: string,
+    slotTemplateId: string,
+  ) {
+    const workScheduleSlotTemplate =
+      await this.prisma.workScheduleSlotTemplate.findUnique({
+        where: { id: slotTemplateId },
+        select: {
+          workSchedulePosition: {
+            select: {
+              deletedAt: true,
+              organizationWorkSchedulePlace: {
+                select: {
+                  id: true,
+                  deletedAt: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    // 1
+    if (!workScheduleSlotTemplate) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND,
+        'WorkScheduleSlotTemplateId นี้ไม่มีในตาราง WorkScheduleSlotTemplate',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2
+    if (workScheduleSlotTemplate.workSchedulePosition.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
+        'WorkSchedulePositionId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    // 3
+    if (
+      workScheduleSlotTemplate.workSchedulePosition
+        .organizationWorkSchedulePlace.deletedAt !== null
+    ) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+        'OrganizationWorkSchedulePlaceId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const person = await this.prisma.person.findUnique({
+      where: { clerkId: clerkId },
+      select: {
+        id: true,
+        workScheduleAdmins: {
+          where: {
+            organizationWorkSchedulePlaceId:
+              workScheduleSlotTemplate.workSchedulePosition
+                .organizationWorkSchedulePlace.id,
+            deletedAt: null,
+          },
+          select: {
+            deletedAt: true,
+          },
+        },
+      },
+    });
+
+    // 4
+    if (!person) {
+      throw new AppException(
+        ErrorCode.PERSON_NOT_FOUND,
+        'ClerkId นี้ไม่มีในตาราง Person',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 5
+    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+      throw new AppException(
+        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
+        'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return {
+      personId: person.id,
+      organizationWorkSchedulePlaceId:
+        workScheduleSlotTemplate.workSchedulePosition
+          .organizationWorkSchedulePlace.id,
+    };
+  }
+
+  // =================================================================
+  // 🌟 (จบ) ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
+  // =================================================================
+
   // =====================================================================================
   // (จบ) โปรแกรม Work-Schedule
   // =====================================================================================

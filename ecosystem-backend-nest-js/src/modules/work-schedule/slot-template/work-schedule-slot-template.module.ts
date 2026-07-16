@@ -25,6 +25,7 @@ import { CreateWorkScheduleSlotTemplateHandler } from './commands/create-work-sc
 // Import Handler (Query)
 // ===========================
 
+import { GetWorkScheduleSlotTemplateByIdHandler } from './queries/get-work-schedule-slot-template-by-id.handler';
 import { GetWorkScheduleSlotTemplatesByPositionIdHandler } from './queries/get-work-schedule-slot-templates-by-position-id.handler';
 
 // ===========================
@@ -37,7 +38,10 @@ import { GetWorkScheduleSlotTemplatesByPositionIdHandler } from './queries/get-w
 
 // มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
 const CommandHandlers = [CreateWorkScheduleSlotTemplateHandler];
-const QueryHandlers = [GetWorkScheduleSlotTemplatesByPositionIdHandler];
+const QueryHandlers = [
+  GetWorkScheduleSlotTemplateByIdHandler,
+  GetWorkScheduleSlotTemplatesByPositionIdHandler,
+];
 
 // ===================================================================
 // (จบ) จุดลงทะเบียน Handler
