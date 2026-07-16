@@ -48,13 +48,22 @@ export default function RootLayout({
           // ===============================
           "h-full",
 
+          "overflow-y-auto", // ควรใช้ + คนใช้เยอะที่สุด
+          // "overflow-y-scroll", // เปิด scroll bar ไว้ตลอด ป้องกันปัญหาพื้นหลังไม่ต่อกัน
+
           // ===============================
-          // 🟢 3. ป้องกันหน้าจอกระตุกจาก Scrollbar
+          // 🟢 3. ป้องกันหน้าจอกระตุกจาก Scrollbar (กรณีใช้ overflow-y-auto)
           // ===============================
           "scrollbar-gutter-stable",
+
+          // ความฉลาดของ scrollbar-gutter: stable:
+          // เมื่อเราใส่คำสั่งนี้ลงไป เบราว์เซอร์จะทำการตรวจสอบ OS ของผู้ใช้ก่อนครับ
+          // 💻 ถ้าผู้ใช้เปิดบน Windows (Classic): เบราว์เซอร์จะจองพื้นที่ 15px ไว้ให้ เพื่อไม่ให้หน้ากระตุกเวลาเนื้อหายาวขึ้น
+          // 📱 ถ้าผู้ใช้เปิดบนมือถือ หรือ Mac (Overlay): เบราว์เซอร์จะรู้ทันทีว่า Scrollbar รุ่นนี้มันลอยทับเนื้อหาได้อยู่แล้ว
+          // // มันจึง ระงับการจองพื้นที่ (จอง 0px) ทำให้มือถือหน้าจอเล็กๆ ของคุณไม่เสียพื้นที่สีขาวไปฟรีๆ แม้แต่พิกเซลเดียวครับ!
         )}
       >
-        <body className="min-h-full flex flex-col bg-gray-50">
+        <body className={cn("min-h-full flex flex-col bg-gray-50")}>
           {/* 🌟 2. ขยับ TanStackProvider มาครอบทั้งหมดตั้งแต่ตรงนี้! */}
           {/* เพื่อให้ Header และ Sidebar สามารถใช้ useQuery ดึง API ได้ด้วย */}
           <TanStackProvider>
@@ -90,7 +99,12 @@ export default function RootLayout({
               </div>
             </header>
             {/* 🌟 พื้นที่ด้านล่าง (แบ่งซ้าย-ขวา) 🌟 */}
-            <div className="flex flex-1 overflow-hidden">
+            <div
+              className={cn(
+                //
+                "flex flex-1 overflow-hidden",
+              )}
+            >
               {/* ซ้าย: Sidebar (โชว์เฉพาะตอนล็อกอินแล้ว) */}
               <Show when="signed-in">
                 {/*  */}
@@ -99,7 +113,12 @@ export default function RootLayout({
               </Show>
 
               {/* ขวา: พื้นที่เนื้อหาหลัก (children) */}
-              <main className="flex-1 overflow-y-auto">
+              <main
+                className={cn(
+                  //
+                  "flex-1",
+                )}
+              >
                 {/* 🌟 เนื้อหาหลักของแต่ละหน้าจะถูกนำมาแทรกตรงนี้ 🌟 */}
                 {children}
               </main>

@@ -147,3 +147,30 @@ export function SettingIcon({ className, ...props }: IconProp) {
     </svg>
   );
 }
+
+export function PlusIcon({ className, ...props }: IconProp) {
+  return (
+    <svg
+      // กฏของ React, JS คือ ใครอยู่ล่างสุดชนะ
+      className={cn(
+        //
+        "h-6 w-6", // default
+
+        className,
+        //
+      )}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      {...props}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.5v15m7.5-7.5h-15"
+      />
+    </svg>
+  );
+}

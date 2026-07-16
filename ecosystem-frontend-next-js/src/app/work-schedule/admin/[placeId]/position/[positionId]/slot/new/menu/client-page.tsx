@@ -6,17 +6,10 @@
 
 import { cn } from "@/lib/utils";
 
-import Link from "next/link";
 import { ChildrenHeader } from "@/components/children-header";
 import { MenuGrid } from "@/components/menu-grid/menu-gird";
 import { MenuCard } from "@/components/menu-grid/menu-card";
-import {
-  CalendarIcon,
-  PersonIcon,
-  DetailNoteIcon,
-  DocumentTextIcon,
-  SettingIcon,
-} from "@/components/menu-grid/icon";
+import { PlusIcon } from "@/components/menu-grid/icon";
 
 // ==========================================
 // 🖥️ Component หลัก
@@ -78,73 +71,23 @@ export default function WorkScheduleAdminPositionSlotNewMenuClient({
           minWidth={10} // ปรับตามใช้งานจริง
           //
         >
-          {/* ==================================== */}
-          {/* เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-          {/* ==================================== */}
-
           <MenuCard
             //
             href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/pre-fill`}
-            style="primary" // หากเป็น standard สามารถลบ style ออกได้เลย
-            icon={
-              //
-              <CalendarIcon /> // ปรับตามใช้งานจริง
-              //
-            }
-            title={
-              //
-              `ตารางคิว` // ปรับตามใช้งานจริง
-              //
-            }
-            description={
-              // สามารถลบ description ออกได้
-              //
-              `จัดการและตรวจสอบคิวงานของรายการนี้` // ปรับตามใช้งานจริง
-              //
-            }
+            icon={<PlusIcon />}
+            title={`ใช้แบบร่าง`}
+            description={`ใช้ข้อมูลแบบร่างที่เตรียมไว้แล้วมาช่วยในการสร้าง`}
             //
           />
 
-          {/* ==================================== */}
-          {/* (จบ) เมนู: สีหลัก (เน้น หรือ ใช้งานบ่อยสุด) */}
-          {/* ==================================== */}
-
-          {/* ========================= */}
-          {/* เมนู: สีมาตรฐาน */}
-          {/* ========================= */}
-
           <MenuCard
-            href={`/`}
-            icon={<PersonIcon />}
-            title={`PersonIcon`}
-            description={`ผู้ใช้, พนักงาน, ลูกค้า, ประชาชน`}
+            //
+            href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new`}
+            icon={<PlusIcon />}
+            title={`ไม่ใช้แบบร่าง`}
+            description={`ต้องการกำหนดรายละเอียดเอง โดยไม่ใช้แบบร่าง`}
+            //
           />
-
-          <MenuCard
-            href={`/`}
-            icon={<DetailNoteIcon />}
-            title={`DetailNoteIcon`}
-            description={`รายละเอียด, การจดบันทึก, จด Note`}
-          />
-
-          <MenuCard
-            href={`/`}
-            icon={<DocumentTextIcon />}
-            title={`DocumentTextIcon`}
-            description={`รายละเอียด, การจดบันทึก, จด Note`}
-          />
-
-          <MenuCard
-            href={`/`}
-            icon={<SettingIcon />}
-            title={`SettingIcon`}
-            description={`การตั้งค่า, การแก้ไขตั้งค่า, การแก้ไขรายละเอียด`}
-          />
-
-          {/* ========================= */}
-          {/* (จบ) เมนู: สีมาตรฐาน */}
-          {/* ========================= */}
-          {/*  */}
         </MenuGrid>
 
         {/* ==================================== */}

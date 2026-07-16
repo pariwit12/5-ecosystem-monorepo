@@ -21,6 +21,7 @@ import {
   DetailNoteIcon,
   DocumentTextIcon,
   SettingIcon,
+  PlusIcon,
 } from "@/components/menu-grid/icon";
 
 // ----------- Import Form -----------
@@ -325,6 +326,13 @@ export default function TemplatePage() {
             icon={<SettingIcon />}
             title={`SettingIcon`}
             description={`การตั้งค่า, การแก้ไขตั้งค่า, การแก้ไขรายละเอียด`}
+          />
+
+          <MenuCard
+            href={`/`}
+            icon={<PlusIcon />}
+            title={`PlusIcon`}
+            description={`การสร้างข้อมูลใหม่, การเพิ่มค่า`}
           />
 
           {/* ========================= */}
