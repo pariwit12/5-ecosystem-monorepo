@@ -101,6 +101,8 @@ Step 1
 - ตรวจสอบ UI calendar
 - เคลียร์ code + ทำ template สำหรับ calendar กับ createMany ให้เรียบร้อย
 
+- จัดการ UI หน้าต่างแสดงรายการ slot
+
 - ย้าย code ออกมาเป็น component ui กลาง
   - card menu
   - component UI style

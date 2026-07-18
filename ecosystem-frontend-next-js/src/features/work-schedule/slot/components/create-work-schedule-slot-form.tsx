@@ -451,33 +451,56 @@ export const CreateWorkScheduleSlotForm = ({
           control={control}
           name="dates"
           render={({ field }) => (
-            <Calendar
-              mode="multiple" // สั่งให้เลือกได้หลายวัน
-              selected={field.value} // ค่าจาก Form
-              // onSelect={field.onChange} // ส่งค่ากลับไป Form
-              // 🌟 แก้ไขตรง onSelect เพื่อล็อคหน้าจอไม่ให้เด้ง
-              onSelect={(selectedDates) => {
-                // 1. จำตำแหน่ง Scroll ปัจจุบันของหน้าจอไว้
-                const currentScrollY = window.scrollY;
+            // 🌟 ครอบด้วย div และดักจับจังหวะที่นิ้วเริ่มจิ้ม (onPointerDown)
+            // เพื่อสั่งเบราว์เซอร์ว่า "ไม่ต้องเตะโฟกัสออกจาก Input ตัวเดิมชั่วคราว"
+            // ทำให้คีย์บอร์ดไม่หุบลงมาขัดจังหวะ และหน้าจอจะไม่ขยับเลยแม้แต่พิกเซลเดียวครับ
 
-                // 2. อัปเดตค่าวันที่ให้ React Hook Form ตามปกติ
-                field.onChange(selectedDates);
-
-                // 3. บังคับหน้าจอกลับมาที่เดิมทันที (behavior: 'instant' จะทำให้ไม่เห็นอาการกระตุก)
-                requestAnimationFrame(() => {
-                  window.scrollTo({
-                    top: currentScrollY,
-                    behavior: "instant",
-                  });
-                });
+            <div
+              className="w-full max-w-150"
+              onPointerDown={(e) => {
+                const target = e.target as HTMLElement;
+                // ถ้าจุดที่นิ้วจิ้มโดน เป็นปุ่มในปฏิทิน ให้บล็อกการเปลี่ยนสถานะโฟกัสของเบราว์เซอร์ไว้
+                if (target.closest(".rdp") || target.tagName === "BUTTON") {
+                  e.preventDefault();
+                }
               }}
-              disabled={isPending}
-              className="bg-white rounded-md border shadow-sm
-                max-w-150
-                portrait:w-full
-                landscape:w-[100vh] 
-              "
-            />
+            >
+              <Calendar
+                mode="multiple"
+                selected={field.value}
+                onSelect={field.onChange} // ใช้ของเดิมตามปกติได้เลย ไม่ต้องใส่ window.scrollTo แล้ว
+                disabled={isPending}
+                className="bg-white rounded-md border shadow-sm w-full portrait:w-full landscape:w-[100vh]"
+              />
+            </div>
+
+            // <Calendar
+            //   mode="multiple" // สั่งให้เลือกได้หลายวัน
+            //   selected={field.value} // ค่าจาก Form
+            //   // onSelect={field.onChange} // ส่งค่ากลับไป Form
+            //   // 🌟 แก้ไขตรง onSelect เพื่อล็อคหน้าจอไม่ให้เด้ง
+            //   onSelect={(selectedDates) => {
+            //     // 1. จำตำแหน่ง Scroll ปัจจุบันของหน้าจอไว้
+            //     const currentScrollY = window.scrollY;
+
+            //     // 2. อัปเดตค่าวันที่ให้ React Hook Form ตามปกติ
+            //     field.onChange(selectedDates);
+
+            //     // 3. บังคับหน้าจอกลับมาที่เดิมทันที (behavior: 'instant' จะทำให้ไม่เห็นอาการกระตุก)
+            //     requestAnimationFrame(() => {
+            //       window.scrollTo({
+            //         top: currentScrollY,
+            //         behavior: "instant",
+            //       });
+            //     });
+            //   }}
+            //   disabled={isPending}
+            //   className="bg-white rounded-md border shadow-sm
+            //     max-w-150
+            //     portrait:w-full
+            //     landscape:w-[100vh]
+            //   "
+            // />
           )}
         />
         {errors.dates && (
