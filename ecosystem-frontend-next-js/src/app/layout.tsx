@@ -70,7 +70,7 @@ export default function RootLayout({
             <OfflineBanner />
             {/* 🌟 OfflineBanner วางไว้บนสุด มันจะคอยเฝ้ามองแอปเราตลอดเวลา */}
             {/* --- Header --- */}
-            <header className="bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+            <header className="bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-50">
               <div className="text-xl font-bold text-blue-700">
                 Pariwit Ecosystem
               </div>
