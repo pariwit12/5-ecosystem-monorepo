@@ -26,11 +26,30 @@ import { cn } from "@/lib/utils";
 
 // eslint-disable-next-line
 import Link from "next/link";
-import { ChildrenHeader } from "@/components/children-header";
 
 // การเรียกใช้แบบนอก {} ชื่อไม่จำเป็นต้องตรงกับในไฟล์ ./loading.tsx หรือ ./error.tsx ก็ได้ (มันจะไปเอา default มาใช้อยู่แล้ว)
 import Loading from "./loading";
 import ErrorQuery from "./error";
+
+import { ChildrenHeader } from "@/components/children-header";
+// eslint-disable-next-line
+import { MenuGrid } from "@/components/menu-grid/menu-gird";
+// eslint-disable-next-line
+import { MenuCard } from "@/components/menu-grid/menu-card";
+import {
+  // eslint-disable-next-line
+  CalendarIcon,
+  // eslint-disable-next-line
+  PersonIcon,
+  // eslint-disable-next-line
+  DetailNoteIcon,
+  // eslint-disable-next-line
+  DocumentTextIcon,
+  // eslint-disable-next-line
+  SettingIcon,
+  // eslint-disable-next-line
+  PlusIcon,
+} from "@/components/menu-grid/icon";
 
 // ===================
 // Import Queries
@@ -123,11 +142,14 @@ export default function TemplateClient({
   //
   // ปรับตามใช้งานจริง
   templateId,
+  // eslint-disable-next-line
+  templateQueryId,
   //
 }: {
   //
   // ปรับตามใช้งานจริง
   templateId: string;
+  templateQueryId?: string;
   //
 }) {
   const router = useRouter();
@@ -186,9 +208,15 @@ export default function TemplateClient({
     //
     // เช็คว่า 1. มี Error และ 2. เป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
 
-    if (errorQuery && isAxiosError(errorQuery)) {
+    if (
+      // ปรับตามใช้งานจริง
+      errorQuery &&
+      isAxiosError(
+        errorQuery, // ปรับตามใช้งานจริง
+      )
+    ) {
       //
-      // ปรับตามใช้งานจริง (จาก Backend)
+      // ปรับตามใช้งานจริง
       const errorCode = errorQuery.response?.data?.errorCode;
 
       // ปลายทาง: URL-1
@@ -218,13 +246,23 @@ export default function TemplateClient({
     // Error จากการ fetching ที่ผ่านตรวจสอบ redirect แล้ว
     // =================================================
 
-    if (errorQuery && dataQuery !== undefined) {
+    if (
+      // ปรับตามใช้งานจริง
+      errorQuery &&
+      //
+      // ปรับตามใช้งานจริง
+      dataQuery !== undefined
+    ) {
       toast.error(
         "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
       );
     }
     //
-  }, [errorQuery, router, dataQuery]);
+  }, [
+    errorQuery, // ปรับตามใช้งานจริง
+    router,
+    dataQuery, // ปรับตามใช้งานจริง
+  ]);
 
   // ===============================================
   // 🌟 (จบ) ดักจับ Error (จาก Query) แล้ว Redirect

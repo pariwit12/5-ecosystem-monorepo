@@ -50,9 +50,6 @@ export class GetWorkScheduleSlotTemplatesByPositionIdHandler implements IQueryHa
       select: {
         id: true,
         name: true,
-        startTime: true,
-        durationMinute: true,
-        quantity: true,
       },
       orderBy: [{ id: 'asc' }],
     });
@@ -73,9 +70,6 @@ export class GetWorkScheduleSlotTemplatesByPositionIdHandler implements IQueryHa
       slotTemplates: slotTemplates.map((st) => ({
         id: st.id,
         name: st.name,
-        startTime: st.startTime,
-        durationMinute: st.durationMinute,
-        quantity: st.quantity,
       })),
     };
 

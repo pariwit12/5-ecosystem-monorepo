@@ -4,13 +4,15 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { toast } from "sonner";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+
+import { cn } from "@/lib/utils";
+
+import Link from "next/link";
 
 import { ChildrenHeader } from "@/components/children-header";
 import { MenuGrid } from "@/components/menu-grid/menu-gird";
@@ -655,7 +657,9 @@ export default function TemplatePage() {
             //
             templateData.length === 0 && ( // ปรับตามใช้งานจริง
               //
-              <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
+              <div className="py-6 text-sm text-center text-gray-500">
+                ไม่พบข้อมูล
+              </div>
             )
           }
 

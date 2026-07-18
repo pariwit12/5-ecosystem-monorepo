@@ -332,8 +332,8 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
             className="text-sm font-bold text-gray-700"
           >
             {/*  */}
-            ชื่อ... {/* ปรับตามใช้งานจริง */}
-            <span className="text-red-500">*</span> {/* ปรับตามใช้งานจริง */}
+            {/* ปรับตามใช้งานจริง */}
+            ชื่อ... <span className="text-red-500">*</span>
             {/*  */}
           </label>
 
@@ -391,8 +391,8 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
             className="text-sm font-bold text-gray-700"
           >
             {/*  */}
-            เขตเวลา (Timezone) {/* ปรับตามใข้งานจริง */}
-            <span className="text-red-500">*</span> {/* ปรับตามใข้งานจริง */}
+            {/* ปรับตามใข้งานจริง */}
+            เขตเวลา (Timezone) <span className="text-red-500">*</span>
             {/*  */}
           </label>
 
@@ -477,10 +477,7 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
           >
             {/*  */}
             {/* ปรับตามใข้งานจริง */}
-            เวลาเริ่มต้น
-            {/*  */}
-            {/* ปรับตามใข้งานจริง */}
-            <span className="text-red-500">*</span>
+            เวลาเริ่มต้น <span className="text-red-500">*</span>
             {/*  */}
           </label>
 
@@ -527,10 +524,7 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
           >
             {/*  */}
             {/* ปรับตามใข้งานจริง */}
-            เวลาสิ้นสุด
-            {/*  */}
-            {/* ปรับตามใข้งานจริง */}
-            <span className="text-red-500">*</span>
+            เวลาสิ้นสุด <span className="text-red-500">*</span>
             {/*  */}
           </label>
 
@@ -586,10 +580,7 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
           >
             {/*  */}
             {/* ปรับตามใข้งานจริง */}
-            เวลา...
-            {/*  */}
-            {/* ปรับตามใข้งานจริง */}
-            <span className="text-red-500">*</span>
+            เวลา... <span className="text-red-500">*</span>
             {/*  */}
           </label>
 
@@ -645,10 +636,7 @@ export const MethodTemplateForm = // ปรับตามใช้งานจ�
           >
             {/*  */}
             {/* ปรับตามใข้งานจริง */}
-            ปริมาณ... / ระยะ... (หน่วย)
-            {/*  */}
-            {/* ปรับตามใข้งานจริง */}
-            <span className="text-red-500">*</span>
+            ปริมาณ... / ระยะ... (หน่วย) <span className="text-red-500">*</span>
             {/*  */}
           </label>
 

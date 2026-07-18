@@ -225,48 +225,24 @@ export const CreateWorkScheduleSlotTemplateForm = ({
       {/* =============== */}
 
       <div className="flex flex-col gap-2">
-        <label
-          //
-          htmlFor="start_time"
-          //
-          className="text-sm font-bold text-gray-700"
-        >
+        <label htmlFor="start_time" className="text-sm font-bold text-gray-700">
           เวลาเริ่มงาน
           <span className="text-red-500">*</span>
         </label>
         <input
-          //
           id="start_time"
-          //
           type="time"
-          //
-          {...register(
-            //
-            "start_time",
-            //
-          )}
+          {...register("start_time")}
           disabled={isPending}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
-            //
             errors.start_time
-              ? //
-                "border-red-300 focus:ring-red-100 focus:border-red-500"
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
               : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
           }`}
         />
-        {
-          //
-          errors.start_time && (
-            //
-            <p className="text-sm text-red-500">
-              {
-                //
-                errors.start_time.message
-                //
-              }
-            </p>
-          )
-        }
+        {errors.start_time && (
+          <p className="text-sm text-red-500">{errors.start_time.message}</p>
+        )}
       </div>
 
       {/* =============== */}
@@ -279,9 +255,7 @@ export const CreateWorkScheduleSlotTemplateForm = ({
 
       <div className="flex flex-col gap-2">
         <label
-          //
           htmlFor="duration_minute"
-          //
           className="text-sm font-bold text-gray-700"
         >
           ระยะเวลา (นาที)
@@ -289,48 +263,30 @@ export const CreateWorkScheduleSlotTemplateForm = ({
         </label>
 
         <input
-          //
           id="duration_minute"
-          //
           type="number"
-          //
           min="1"
-          //
           {...register(
-            //
             "duration_minute",
-            //
+
             {
               valueAsNumber: true,
             },
-            //
           )}
-          //
           placeholder="กรุณาระบุระยะเวลา"
-          //
           disabled={isPending}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
-            //
             errors.duration_minute
-              ? //
-                "border-red-300 focus:ring-red-100 focus:border-red-500"
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
               : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
           }`}
         />
 
-        {
-          //
-          errors.duration_minute && (
-            //
-            <p className="text-sm text-red-500">
-              {
-                //
-                errors.duration_minute.message
-                //
-              }
-            </p>
-          )
-        }
+        {errors.duration_minute && (
+          <p className="text-sm text-red-500">
+            {errors.duration_minute.message}
+          </p>
+        )}
       </div>
 
       {/* ================= */}
@@ -363,59 +319,34 @@ export const CreateWorkScheduleSlotTemplateForm = ({
       {/* ================= */}
 
       <div className="flex flex-col gap-2">
-        <label
-          //
-          htmlFor="quantity"
-          //
-          className="text-sm font-bold text-gray-700"
-        >
+        <label htmlFor="quantity" className="text-sm font-bold text-gray-700">
           จำนวนที่จะสร้าง (หน่วย)
           <span className="text-red-500">*</span>
         </label>
 
         <input
-          //
           id="quantity"
-          //
           type="number"
-          //
           min="1"
-          //
           {...register(
-            //
             "quantity",
-            //
+
             {
               valueAsNumber: true,
             },
-            //
           )}
-          //
           placeholder="กรุณาระบุจำนวนที่จะสร้าง"
-          //
           disabled={isPending}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
-            //
             errors.quantity
-              ? //
-                "border-red-300 focus:ring-red-100 focus:border-red-500"
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
               : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
           }`}
         />
 
-        {
-          //
-          errors.quantity && (
-            //
-            <p className="text-sm text-red-500">
-              {
-                //
-                errors.quantity.message
-                //
-              }
-            </p>
-          )
-        }
+        {errors.quantity && (
+          <p className="text-sm text-red-500">{errors.quantity.message}</p>
+        )}
       </div>
 
       {/* ================= */}
@@ -458,14 +389,7 @@ export const CreateWorkScheduleSlotTemplateForm = ({
           disabled={isPending}
           className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {
-            isPending
-              ? //
-                "กำลังบันทึก..."
-              : //
-                "บันทึกข้อมูล"
-            //
-          }
+          {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
         </button>
 
         {/* ==================== */}

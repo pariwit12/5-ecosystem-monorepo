@@ -46,17 +46,26 @@ const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
 
 // ปรับตามใช้งานจริง
 export default async function TemplatePage({
+  //
+  // ปรับตามใช้งานจริง
   params,
+  searcjParams,
+  // เปลี่ยนชื่อไม่ได้ Next.js กำหนดมาว่าต้องเป็น params และ searchParams เท่านั้น
 }: {
+  //
+  // ปรับตามใช้งานจริง
   params: Promise<{
     //
     // ปรับตามใช้งานจริง
     templateId: string;
   }>;
+  searcjParams: Promise<{
+    [key: string]: string | string[] | undefined; // type ของค่าที่รับมาผ่าน query ที่จะเกิดขึ้นได้
+  }>;
 }) {
   //
   // ==========================================
-  // ตรวจสอบ URL
+  // ตรวจสอบ URL (param)
   // ==========================================
 
   // ฝั่ง Server จะใช้ await params;
@@ -97,7 +106,42 @@ export default async function TemplatePage({
   }
 
   // ==========================================
-  // (จบ) ตรวจสอบ URL
+  // (จบ) ตรวจสอบ URL (param)
+  // ==========================================
+
+  // ==========================================
+  // ตรวจสอบ URL (query)
+  // ==========================================
+
+  const resolvedSearchParams = await searcjParams;
+
+  // ปรับตามใช้งานจริง
+  const templateQueryId =
+    typeof (
+      resolvedSearchParams.templateQueryId // ปรับตามใช้งานจริง
+    ) === "string"
+      ? resolvedSearchParams.templateQueryId // ปรับตามใช้งานจริง
+      : undefined;
+  // หากเป็น string[] เช่น ?templateQueryId=abc&templateQueryId=def ให้ถือซะว่าเหมือน undefined
+
+  // ปรับตามใช้งานจริง
+  if (
+    //
+    // ปรับตามใช้งานจริง
+    templateQueryId !== undefined &&
+    //
+    !uuidV7Regex // ปรับตามใช้งานจริง
+      .test(
+        templateQueryId, // ปรับตามใช้งานจริง
+      )
+  ) {
+    redirect(
+      `/template/${templateId}/templateQuery?error=invalid_template_query_id`, // ปรับตามใช้งานจริง
+    );
+  }
+
+  // ==========================================
+  // (จบ) ตรวจสอบ URL (query)
   // ==========================================
 
   // =============================
@@ -181,6 +225,7 @@ export default async function TemplatePage({
         //
         // ปรับตามใช้งานจริง
         templateId={templateId} // ปรับตามใช้งานจริง
+        templateQueryId={templateQueryId} // ปรับตามใช้งานจริง
         //
       />
     </HydrationBoundary>

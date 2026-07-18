@@ -56,7 +56,7 @@ export const CreateWorkScheduleSlotTemplateDtoBodySchema = z.object({
     .int({
       message: 'จำนวนตำแหน่งต้องเป็น จำนวนเต็มบวก เท่านั้น',
     })
-    .min(1, 'จำนวนตำแหน่งต้องไม่ต่ำกว่า 1 นาที'),
+    .min(1, 'จำนวนตำแหน่งต้องไม่ต่ำกว่า 1'),
 });
 export class CreateWorkScheduleSlotTemplateDtoBody extends createZodDto(
   CreateWorkScheduleSlotTemplateDtoBodySchema,

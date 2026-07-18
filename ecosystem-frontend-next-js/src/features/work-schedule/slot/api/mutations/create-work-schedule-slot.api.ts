@@ -50,9 +50,11 @@ export const createWorkScheduleSlot = async (
   // To Body
   // =============
 
-  name: string,
-  actualStartTime: string,
-  actualEndTime: string,
+  slots: {
+    name: string;
+    actual_start_time: string;
+    actual_end_time: string;
+  }[],
 
   // =============
   // (จบ) To Body
@@ -120,9 +122,7 @@ export const createWorkScheduleSlot = async (
   // ==============================================
 
   const bodyData: CreateWorkScheduleSlotDtoBody = {
-    name: name,
-    actual_start_time: actualStartTime,
-    actual_end_time: actualEndTime,
+    slots: slots,
   };
 
   // ==============================================

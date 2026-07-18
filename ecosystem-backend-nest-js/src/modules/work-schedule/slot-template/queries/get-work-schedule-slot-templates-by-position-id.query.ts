@@ -42,9 +42,6 @@ export interface GetWorkScheduleSlotTemplatesByPositionIdResponse {
   slotTemplates: {
     id: string;
     name: string;
-    startTime: string;
-    durationMinute: number;
-    quantity: number;
   }[];
 }
 

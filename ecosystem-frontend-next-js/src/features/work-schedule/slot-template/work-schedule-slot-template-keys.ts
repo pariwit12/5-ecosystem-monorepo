@@ -10,4 +10,10 @@ export const workScheduleSlotTemplateKeys = {
       "by-position-id",
       positionId,
     ] as const,
+
+  details: (userId: string) =>
+    [...workScheduleSlotTemplateKeys.all(userId), "detail"] as const,
+
+  detail: (userId: string, id: string) =>
+    [...workScheduleSlotTemplateKeys.details(userId), id] as const,
 };

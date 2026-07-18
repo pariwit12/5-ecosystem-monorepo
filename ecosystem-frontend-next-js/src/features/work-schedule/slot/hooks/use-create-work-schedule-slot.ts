@@ -12,28 +12,21 @@ export const useCreateWorkScheduleSlot = () => {
   return useMutation({
     mutationFn: async ({
       positionId,
-      name,
-      actualStartTime,
-      actualEndTime,
+      slots,
       skipErrorCodes,
     }: {
       positionId: string;
-      name: string;
-      actualStartTime: string;
-      actualEndTime: string;
+      slots: {
+        name: string;
+        actual_start_time: string;
+        actual_end_time: string;
+      }[];
       skipErrorCodes?: string[];
     }) => {
       const token = await getToken();
       if (!token) throw new Error("Authentication token is missing");
 
-      return createWorkScheduleSlot(
-        positionId,
-        name,
-        actualStartTime,
-        actualEndTime,
-        token,
-        skipErrorCodes,
-      );
+      return createWorkScheduleSlot(positionId, slots, token, skipErrorCodes);
     },
 
     onSuccess: (_, variables) => {

@@ -23,18 +23,18 @@ export class CreateWorkScheduleSlotDtoParam extends createZodDto(
 // DTO ขาเข้า (Body)
 // ==========================================
 
-export const CreateWorkScheduleSlotDtoBodySchema = z
+export const CreateWorkScheduleSlotSchema = z
   .object({
     name: z
       .string({
-        message: 'ชื่อ Slot ต้องเป็น string เท่านั้น',
+        message: 'ชื่อต้องเป็น type: string เท่านั้น',
       })
       .trim()
       .min(1, 'กรุณาระบุชื่อ Slot (ห้ามเป็นค่าว่าง)'),
 
     actual_start_time: z
       .string({
-        message: 'actualStartTime ต้องเป็น string เท่านั้น',
+        message: 'actualStartTime ต้องเป็น type: string เท่านั้น',
       })
       .datetime({
         offset: true,
@@ -44,7 +44,7 @@ export const CreateWorkScheduleSlotDtoBodySchema = z
 
     actual_end_time: z
       .string({
-        message: 'actualEndTime ต้องเป็น string เท่านั้น',
+        message: 'actualEndTime ต้องเป็น type: string เท่านั้น',
       })
       .datetime({
         offset: true,
@@ -60,6 +60,11 @@ export const CreateWorkScheduleSlotDtoBodySchema = z
       path: ['actual_end_time'],
     },
   );
+export const CreateWorkScheduleSlotDtoBodySchema = z.object({
+  slots: z
+    .array(CreateWorkScheduleSlotSchema)
+    .min(1, 'ต้องส่งข้อมูล Slot มาอย่างน้อย 1 รายการ'), // บังคับว่าห้ามส่ง Array เปล่าๆ มา
+});
 export class CreateWorkScheduleSlotDtoBody extends createZodDto(
   CreateWorkScheduleSlotDtoBodySchema,
 ) {}
@@ -83,5 +88,3 @@ export class CreateWorkScheduleSlotCommand {
 // ==========================
 // 🌟 (จบ) "หน้าตาข้อมูล" ขาเข้า
 // ==========================
-
-// อย่าลืมไปลงทะเบียน ใน method-[template].handler.ts

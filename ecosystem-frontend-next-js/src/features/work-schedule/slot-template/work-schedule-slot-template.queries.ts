@@ -6,6 +6,7 @@ import { workScheduleSlotTemplateKeys } from "./work-schedule-slot-template-keys
 // ---------- Import Function (.api) ----------
 // ============================================
 
+import { getWorkScheduleSlotTemplateById } from "./api/queries/get-work-schedule-slot-template-by-id.api";
 import { getWorkScheduleSlotTemplatesByPositionId } from "./api/queries/get-work-schedule-slot-templates-by-position-id.api";
 
 // ============================================
@@ -47,6 +48,37 @@ export const workScheduleSlotTemplateQueries = {
       staleTime: 60 * 1000,
 
       enabled: !!userId && !!positionId,
+    }),
+
+  // 2
+  queryGetWorkScheduleSlotTemplateById: (
+    slotTemplateId: string,
+
+    userId: string | null | undefined,
+    getToken: () => Promise<string | null>,
+
+    skipErrorCodes?: string[],
+  ) =>
+    queryOptions({
+      queryKey: workScheduleSlotTemplateKeys.detail(
+        userId ?? "",
+        slotTemplateId,
+      ),
+
+      queryFn: async () => {
+        const token = await getToken();
+        if (!token) throw new Error("Authentication token is missing");
+
+        return getWorkScheduleSlotTemplateById(
+          slotTemplateId,
+          token,
+          skipErrorCodes,
+        );
+      },
+
+      staleTime: 60 * 1000,
+
+      enabled: !!userId && !!slotTemplateId,
     }),
 
   // ===========================================
