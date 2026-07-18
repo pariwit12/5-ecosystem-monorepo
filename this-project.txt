@@ -98,8 +98,8 @@ _________________________________________________________________________
 
 Step 1
 
-- เคลียร์ code หน้า new
-- ทำ template สำหรับ calendar กับ createMany ให้เรียบร้อย
+- ตรวจสอบ UI calendar
+- เคลียร์ code + ทำ template สำหรับ calendar กับ createMany ให้เรียบร้อย
 
 - ย้าย code ออกมาเป็น component ui กลาง
   - card menu
