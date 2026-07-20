@@ -111,6 +111,52 @@ export class MethodTemplateDtoParam // ปรับตามใช้งาน�
 // DTO ขาเข้า (Body)
 // ==========================================
 
+// Example of ObjectArray
+export const ObjectOfArraySchema = z
+  .object({
+    name: z
+      .string({
+        message: 'ชื่อต้องเป็น type: string เท่านั้น',
+      })
+      .trim()
+      .min(1, 'กรุณาระบุชื่อ Slot (ห้ามเป็นค่าว่าง)'),
+
+    actual_start_time: z
+      .string({
+        message: 'actualStartTime ต้องเป็น type: string เท่านั้น',
+      })
+      .datetime({
+        offset: true,
+
+        message: 'actualStartTime ต้องอยู่ในรูปแบบ ISO 8601',
+      }),
+
+    actual_end_time: z
+      .string({
+        message: 'actualEndTime ต้องเป็น type: string เท่านั้น',
+      })
+      .datetime({
+        offset: true,
+
+        message: 'actualEndTime ต้องอยู่ในรูปแบบ ISO 8601',
+      }),
+  })
+  .refine(
+    (data) => new Date(data.actual_start_time) < new Date(data.actual_end_time),
+    {
+      message: 'actualEndTime ต้องมากกว่า actualStartTime เสมอ',
+
+      path: ['actual_end_time'],
+    },
+  );
+export const ArrayDtoBodySchema = z.object({
+  slots: z
+    .array(ObjectOfArraySchema)
+    .min(1, 'ต้องส่งข้อมูล Slot มาอย่างน้อย 1 รายการ'), // บังคับว่าห้ามส่ง Array เปล่าๆ มา
+});
+export class ArrayDtoBody extends createZodDto(ArrayDtoBodySchema) {}
+// (จบ) Example of ObjectArray
+
 export const MethodTemplateDtoBodySchema = // ปรับตามใช้งานจริง
   z
     .object({
@@ -133,7 +179,7 @@ export const MethodTemplateDtoBodySchema = // ปรับตามใช้ง�
 
         // ปรับตามใช้งานจริง
         .string({
-          message: 'ชื่อ timezone ต้องเป็น string เท่านั้น', // ปรับตามใช้งานจริง
+          message: 'ชื่อ timezone ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
         })
         .trim()
         .refine(
@@ -215,6 +261,11 @@ export const MethodTemplateDtoBodySchema = // ปรับตามใช้ง�
           1440, // ปรับตามใช้งานจริง
           '... ต้องไม่เกิน 24 ชั่วโมง', // ปรับตามใช้งานจริง
         ),
+
+      // ปรับตามใช้งานจริง
+      body_array: z
+        .array(ObjectOfArraySchema) // ปรับตามใช้งานจริง
+        .min(1, 'ต้องส่งข้อมูล Slot มาอย่างน้อย 1 รายการ'), // บังคับว่าห้ามส่ง Array เปล่าๆ มา
     })
 
     // ตรวจสอบความถูกต้องของช่วงเวลา (เช่น Start < End เสมอ)

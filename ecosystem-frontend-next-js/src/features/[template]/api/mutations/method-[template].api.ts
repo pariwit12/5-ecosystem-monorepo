@@ -66,6 +66,11 @@ export const methodTemplate = // ปรับตามใช้งานจร�
     // ปรับตามใช้งานจริง
     valueToBodyOne: string,
     valueTOBodyTwo: string,
+    slots: {
+      name: string;
+      actual_start_time: string;
+      actual_end_time: string;
+    }[],
 
     // =============
     // (จบ) To Body
@@ -172,6 +177,7 @@ export const methodTemplate = // ปรับตามใช้งานจร�
       body_string_datetime_end_time: "2026-07-06T08:00:00Z", // ปรับตามใช้งานจริง
       body_string_hh_mm_start_time: "20:30", // ปรับตามใช้งานจริง
       body_int: 1, // ปรับตามใช้งานจริง
+      body_array: slots, // ปรับตามใช้งานจริง
       //
     };
 

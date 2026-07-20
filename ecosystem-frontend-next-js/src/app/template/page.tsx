@@ -145,6 +145,12 @@ export default function TemplatePage() {
   ];
   const templateId = "123";
 
+  const slotTemplate = {
+    name: "prefillName",
+    startTime: "20:00",
+    durationMinute: 123,
+  };
+
   // ==================
   // ส่วนแสดงผล UI หลัก
   // ==================
@@ -1008,6 +1014,9 @@ export default function TemplatePage() {
           // ปรับตามใช้งานจริง
           valueOne={"valueOne"}
           placeTimezone=""
+          prefillName={slotTemplate?.name}
+          prefillStartTime={slotTemplate?.startTime}
+          prefillDurationMinute={slotTemplate?.durationMinute}
           urlOnSuccess={`/template/${templateId}/success`}
           urlOnCancel={`/template/${templateId}/cancel`}
           skipErrorCodes={[]}

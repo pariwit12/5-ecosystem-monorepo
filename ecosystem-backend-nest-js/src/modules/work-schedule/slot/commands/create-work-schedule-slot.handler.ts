@@ -35,10 +35,9 @@ export class CreateWorkScheduleSlotHandler implements ICommandHandler<
     // =====================================================================
 
     // ============================
-    // Create (Batch)
+    // CreateMany (Batch)
     // ============================
 
-    // 🌟 1. ประกอบร่างข้อมูล Array ให้พร้อมสำหรับ Prisma
     const slotsToInsert = body.slots.map((slot) => ({
       workSchedulePositionId: param.work_schedule_position_id,
       name: slot.name,
@@ -46,17 +45,12 @@ export class CreateWorkScheduleSlotHandler implements ICommandHandler<
       actualEndTime: slot.actual_end_time,
     }));
 
-    // 🌟 2. ใช้ createMany ยิงเข้า Database ในคราวเดียว (เร็วและไม่เปลือง Connection)
     await this.prisma.workScheduleSlot.createMany({
       data: slotsToInsert,
-      // skipDuplicates: false, // ถ้าอยากให้มันข้ามตัวที่ซ้ำกัน (ต้องมี @@unique index รองรับ) สามารถเปิดใช้ได้ครับ
     });
 
-    // หมายเหตุ: createMany จะไม่สามารถ select { id: true } กลับมาได้เหมือน create ปกติ
-    // แต่มันมักจะไม่เป็นปัญหาเพราะ API นี้เป็น Command (CQRS) ที่ return void อยู่แล้วครับ
-
     // ============================
-    // (จบ) Create (Batch)
+    // (จบ) CreateMany (Batch)
     // ============================
 
     // =====================================================================

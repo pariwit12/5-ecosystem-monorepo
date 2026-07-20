@@ -33,6 +33,11 @@ export default async function WorkScheduleAdminPositionSlotNewPage({
     [key: string]: string | string[] | undefined;
   }>;
 }) {
+  //
+  // ==========================================
+  // ตรวจสอบ URL (param)
+  // ==========================================
+
   const resolvedParams = await params;
 
   const placeId = resolvedParams.placeId;
@@ -46,6 +51,10 @@ export default async function WorkScheduleAdminPositionSlotNewPage({
   if (!uuidV7Regex.test(positionId)) {
     redirect(`/work-schedule/admin/${placeId}/position?error=invalid_id`);
   }
+
+  // ==========================================
+  // (จบ) ตรวจสอบ URL (param)
+  // ==========================================
 
   // ==========================================
   // ตรวจสอบ URL (query)

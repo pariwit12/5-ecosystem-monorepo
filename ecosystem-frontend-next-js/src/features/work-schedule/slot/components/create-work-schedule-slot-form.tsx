@@ -11,9 +11,9 @@ import { useCreateWorkScheduleSlot } from "../hooks/use-create-work-schedule-slo
 
 import { Calendar } from "@/components/ui/calendar";
 
-// ===============================================================
-// 🌟 สร้าง Schema + Type สำหรับ Form (อาจไม่เหมือน Backend DTO)
-// ===============================================================
+// =================================================================
+// 🌟 สร้าง Schema + Type สำหรับ Form (กรณีไม่เหมือน Backend DTO)
+// =================================================================
 
 const CreateWorkScheduleSlotFrontendFormSchema = z.object({
   name: z
@@ -64,9 +64,9 @@ type CreateWorkScheduleSlotFrontendForm = z.infer<
   typeof CreateWorkScheduleSlotFrontendFormSchema
 >;
 
-// ===============================================================
-// 🌟 (จบ) สร้าง Schema + Type สำหรับ Form (อาจไม่เหมือน Backend DTO)
-// ===============================================================
+// =================================================================
+// 🌟 (จบ) สร้าง Schema + Type สำหรับ Form (กรณีไม่เหมือน Backend DTO)
+// =================================================================
 
 // ==========================================
 // 🌟 Main
@@ -303,123 +303,6 @@ export const CreateWorkScheduleSlotForm = ({
                 landscape:w-[100vh] 
               "
             />
-
-            // // 🌟 ครอบด้วย div และดักจับจังหวะที่นิ้วเริ่มจิ้ม (onPointerDown)
-            // // เพื่อสั่งเบราว์เซอร์ว่า "ไม่ต้องเตะโฟกัสออกจาก Input ตัวเดิมชั่วคราว"
-            // // ทำให้คีย์บอร์ดไม่หุบลงมาขัดจังหวะ และหน้าจอจะไม่ขยับเลยแม้แต่พิกเซลเดียวครับ
-
-            // <div
-            //   className="w-full max-w-150"
-            //   // onPointerDown={(e) => {
-            //   //   const target = e.target as HTMLElement;
-            //   //   // ถ้าจุดที่นิ้วจิ้มโดน เป็นปุ่มในปฏิทิน ให้บล็อกการเปลี่ยนสถานะโฟกัสของเบราว์เซอร์ไว้
-            //   //   if (target.closest(".rdp") || target.tagName === "BUTTON") {
-            //   //     e.preventDefault();
-            //   //   }
-            //   // }}
-            //   // // 🛡️ ชั้นที่ 1: เคลียร์คีย์บอร์ด (ลดปัญหา Layout Shift)
-            //   // onTouchStart={() => {
-            //   //   // ถ้าผู้ใช้เพิ่งพิมพ์ช่องอื่นเสร็จ (คีย์บอร์ดเปิดอยู่) แล้วเอานิ้วมาแตะปฏิทิน
-            //   //   // ให้สั่งเคลียร์ Focus (หุบคีย์บอร์ด) ทันที ก่อนที่ปฏิทินจะเริ่มทำงาน
-            //   //   const activeEl = document.activeElement;
-            //   //   if (
-            //   //     activeEl instanceof HTMLInputElement ||
-            //   //     activeEl instanceof HTMLTextAreaElement
-            //   //   ) {
-            //   //     activeEl.blur();
-            //   //   }
-            //   // }}
-            //   // // 🛡️ ชั้นที่ 2: ป้องกันการดึง Focus จากเมาส์/การสัมผัสเบื้องต้น
-            //   // onMouseDown={(e) => {
-            //   //   // การใช้ preventDefault ใน onMouseDown จะช่วยห้ามไม่ให้ปุ่มดึง Focus
-            //   //   // ข้อดีคือ "มันไม่ขัดขวางการทำงานของ onClick" ปฏิทินจึงยังกดได้ปกติ
-            //   //   e.preventDefault();
-            //   // }}
-            //   // // 🛡️ ชั้นที่ 3: ดักจับและทำลาย Focus อัตโนมัติ (ไม้ตายสำหรับ iOS PWA)
-            //   // onFocusCapture={(e) => {
-            //   //   const target = e.target as HTMLElement;
-            //   //   // ห้องสมุด react-day-picker มักจะแอบเขียนโค้ดสั่ง .focus() อัตโนมัติเวลาเรากดเลือกวัน
-            //   //   // ซึ่งตัวนี้แหละคือ "ตัวการหลัก" ที่ทำให้ iOS PWA ตกใจแล้วเลื่อนหน้าจอ
-            //   //   // เราจึงใช้ onFocusCapture ดักจับว่า "ถ้าปุ่มในปฏิทินกำลังจะโดน Focus ให้เตะมันออกทันที"
-            //   //   if (target.tagName === "BUTTON" || target.closest(".rdp")) {
-            //   //     target.blur(); // เตะ focus ออกก่อนที่ iOS Safari จะทันได้เลื่อนหน้าจอ!
-            //   //   }
-            //   // }}
-            // >
-            //   <Calendar
-            //     mode="multiple"
-            //     selected={field.value}
-            //     onSelect={field.onChange} // ใช้ของเดิมตามปกติได้เลย ไม่ต้องใส่ window.scrollTo แล้ว
-            //     disabled={isPending}
-            //     className="bg-white rounded-md border shadow-sm w-full portrait:w-full landscape:w-[100vh]"
-            //   />
-            // </div>
-
-            // /*
-            //     🌟 เทคนิคที่ 1: ดักจับการแตะใน PWA เพื่อเคลียร์คีย์บอร์ดที่ค้างอยู่ด้านบนออกก่อน
-            //     ช่วยป้องกันไม่ให้หน้าจอเด้งจากการที่คีย์บอร์ดมือถือหุบตัวกะทันหันครับ
-            //   */
-
-            // <div
-            //   className="w-full max-w-150"
-            //   onTouchStart={() => {
-            //     if (document.activeElement instanceof HTMLElement) {
-            //       document.activeElement.blur();
-            //     }
-            //   }}
-            // >
-            //   <Calendar
-            //     mode="multiple"
-            //     selected={field.value}
-            //     onSelect={field.onChange}
-            //     disabled={isPending}
-            //     className="bg-white rounded-md border shadow-sm
-            //         w-full portrait:w-full landscape:w-[100vh]
-            //       "
-            //     /*
-            //         🌟 เทคนิคที่ 2: เปลี่ยนจาก <button> เป็น <div> (ตรงตามที่คุณคิดไว้เลย)
-            //         วิธีนี้จะทำลายกลไก Auto-Focus Scroll ของ iOS Safari ทิ้งไปเลย
-            //         เพราะมันจะมองว่าปฏิทินนี้เป็น Layout ปกติ ไม่ใช่ปุ่มกดในฟอร์มครับ
-            //       */
-            //     components={{
-            //       Button: ({ type, ...props }) => (
-            //         <div
-            //           {...props}
-            //           role="button" // ใส่เพื่อให้ยังเข้าถึงได้ตามหลัก Accessibility
-            //           className={`${props.className} cursor-pointer`}
-            //         />
-            //       ),
-            //     }}
-            //   />
-            // </div>
-
-            // <Calendar
-            //   mode="multiple" // สั่งให้เลือกได้หลายวัน
-            //   selected={field.value} // ค่าจาก Form
-            //   // onSelect={field.onChange} // ส่งค่ากลับไป Form
-            //   // 🌟 แก้ไขตรง onSelect เพื่อล็อคหน้าจอไม่ให้เด้ง
-            //   onSelect={(selectedDates) => {
-            //     // 1. จำตำแหน่ง Scroll ปัจจุบันของหน้าจอไว้
-            //     const currentScrollY = window.scrollY;
-
-            //     // 2. อัปเดตค่าวันที่ให้ React Hook Form ตามปกติ
-            //     field.onChange(selectedDates);
-
-            //     // 3. บังคับหน้าจอกลับมาที่เดิมทันที (behavior: 'instant' จะทำให้ไม่เห็นอาการกระตุก)
-            //     requestAnimationFrame(() => {
-            //       window.scrollTo({
-            //         top: currentScrollY,
-            //         behavior: "instant",
-            //       });
-            //     });
-            //   }}
-            //   disabled={isPending}
-            //   className="bg-white rounded-md border shadow-sm
-            //     max-w-150
-            //     portrait:w-full
-            //     landscape:w-[100vh]
-            //   "
-            // />
           )}
         />
         {errors.dates && (

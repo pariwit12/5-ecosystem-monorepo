@@ -58,6 +58,7 @@ export default async function TemplatePage({
     //
     // ปรับตามใช้งานจริง
     templateId: string;
+    anotherId: string;
   }>;
   searcjParams: Promise<{
     [key: string]: string | string[] | undefined; // type ของค่าที่รับมาผ่าน query ที่จะเกิดขึ้นได้
@@ -72,6 +73,8 @@ export default async function TemplatePage({
   // ฝั่ง Client จะใช้ use(params);
 
   const resolvedParams = await params;
+
+  // var: 1 (From Param)
 
   // ปรับตามใช้งานจริง
   const templateId = resolvedParams.templateId; // ปรับตามใช้งานจริง
@@ -105,6 +108,25 @@ export default async function TemplatePage({
     // ประสบการณ์ผู้ใช้ (UX): หากเอามาใช้ทำหน้าที่ดักจับผู้ใช้ผิดๆ (เช่น เอาไปใส่ใน useEffect แบบตอนแรก) ผู้ใช้จะต้องรอให้หน้าจอวาดโครงสร้างเสร็จก่อนแวบนึง พอ React ทำงานถึงจะโดนเตะออก ทำให้เกิดอาการ "หน้าจอกระพริบ (UI Flash)" ให้เห็นครับ
   }
 
+  // var: 2 (From Param)
+
+  // ปรับตามใช้งานจริง
+  const anotherId = resolvedParams.anotherId; // ปรับตามใช้งานจริง
+
+  // ปรับตามใช้งานจริง
+  if (
+    !uuidV7Regex // ปรับตามใช้งานจริง
+      .test(
+        anotherId, // ปรับตามใช้งานจริง
+      )
+  ) {
+    redirect(
+      //
+      // ปรับตามใช้งานจริง
+      `/${anotherId}/template?error=invalid_id`, // ปรับตามใช้งานจริง
+    );
+  }
+
   // ==========================================
   // (จบ) ตรวจสอบ URL (param)
   // ==========================================
@@ -114,6 +136,8 @@ export default async function TemplatePage({
   // ==========================================
 
   const resolvedSearchParams = await searcjParams;
+
+  // var: 1 (From Query)
 
   // ปรับตามใช้งานจริง
   const templateQueryId =

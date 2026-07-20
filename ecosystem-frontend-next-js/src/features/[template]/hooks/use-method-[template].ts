@@ -31,6 +31,7 @@ export const useMethodTemplate = // ปรับตามใช้งานจ�
         valueOne,
         valueTwo,
         valueThree,
+        slots,
         skipErrorCodes,
         //
       }: {
@@ -39,6 +40,11 @@ export const useMethodTemplate = // ปรับตามใช้งานจ�
         valueOne: string;
         valueTwo: string;
         valueThree: string;
+        slots: {
+          name: string;
+          actual_start_time: string;
+          actual_end_time: string;
+        }[];
         skipErrorCodes?: string[];
         //
       }) => {
@@ -54,6 +60,7 @@ export const useMethodTemplate = // ปรับตามใช้งานจ�
           valueOne,
           valueTwo,
           valueThree,
+          slots,
           token,
           skipErrorCodes,
           //
