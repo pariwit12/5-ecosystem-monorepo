@@ -6,6 +6,7 @@ import { WorkSchedulePositionModule } from './position/work-schedule-position.mo
 import { WorkScheduleSlotModule } from './slot/work-schedule-slot.module';
 import { WorkScheduleSlotTemplateModule } from './slot-template/work-schedule-slot-template.module';
 import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
+import { WorkScheduleStaffPositionModule } from './staff-position/work-schedule-staff-position.module';
 
 // 🌟 ไม่ต้องใส่ PrismaModule หรือ PrismaService แล้ว เพราะมันเป็น Global (ตั้งไว้ใน prisma.module.ts)
 @Module({
@@ -17,6 +18,7 @@ import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
     WorkScheduleSlotModule,
     WorkScheduleSlotTemplateModule,
     WorkScheduleStaffModule,
+    WorkScheduleStaffPositionModule,
   ],
   controllers: [],
   providers: [],

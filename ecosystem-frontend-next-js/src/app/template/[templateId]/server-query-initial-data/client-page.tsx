@@ -22,6 +22,12 @@ import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 // ข้อความที่เตรียมไว้สำหรับ ErrorCode แต่ละประเภท
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 
+// ErrorCode จากแต่ละ AccessControl
+import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
+
+// Redirect From ErrorQuery
+import { useEffectRedirectFromErrorQuery } from "@/hooks/use-effect-redirect-from-error-query";
+
 import { cn } from "@/lib/utils";
 
 // eslint-disable-next-line
@@ -168,6 +174,7 @@ export default function TemplateClient({
   initialData: GetTemplateResponse; // ปรับตามใช้งานจริง
   //
 }) {
+  // eslint-disable-next-line
   const router = useRouter();
   const { getToken, userId: clientUserId, isLoaded } = useAuth();
 
@@ -206,12 +213,7 @@ export default function TemplateClient({
         getToken,
 
         // ปรับตามใช้งานจริง
-        [
-          // ปรับตามใช้งานจริง
-          ErrorCode.ORGANIZATION_NOT_FOUND,
-          ErrorCode.ORGANIZATION_DELETED,
-          ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-        ],
+        AccessControlErrorCode.verifyOrganizationAccess, // ปรับตามใช้งานจริง
       ),
 
     // ใส่ initialData ที่ได้จาก Server Component
@@ -228,65 +230,18 @@ export default function TemplateClient({
   // 🌟 ดักจับ Error (จาก Query) แล้ว Redirect
   // ===============================================
 
-  useEffect(() => {
+  // ปรับตามใช้งานจริง
+  useEffectRedirectFromErrorQuery
     //
-    // เช็คว่า 1. มี Error และ 2. เป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
-
-    if (
-      // ปรับตามใช้งานจริง
-      errorQuery &&
-      isAxiosError(
-        errorQuery, // ปรับตามใช้งานจริง
-      )
-    ) {
+    // ปรับตามใช้งานจริง
+    .ErrorCodeVerifyWorkSchedulePositionByWorkScheduleAdmin({
       //
+
       // ปรับตามใช้งานจริง
-      const errorCode = errorQuery.response?.data?.errorCode;
-
-      // ปลายทาง: URL-1
-      if (
-        [
-          //
-          // ปรับตามใช้งานจริง
-          ErrorCode.ORGANIZATION_NOT_FOUND,
-          ErrorCode.ORGANIZATION_DELETED,
-          ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-          //
-        ].includes(errorCode)
-      ) {
-        //
-        // ปรับตามใช้งานจริง
-        router.push(
-          //
-          // ปรับตามใช้งานจริง
-          `/template?error=${errorCode}`,
-        );
-
-        return;
-      }
-    }
-
-    // =================================================
-    // Error จากการ fetching ที่ผ่านตรวจสอบ redirect แล้ว
-    // =================================================
-
-    if (
-      // ปรับตามใช้งานจริง
-      errorQuery &&
-      //
-      // ปรับตามใช้งานจริง
-      dataQuery !== undefined
-    ) {
-      toast.error(
-        "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
-      );
-    }
-    //
-  }, [
-    errorQuery, // ปรับตามใช้งานจริง
-    router,
-    dataQuery, // ปรับตามใช้งานจริง
-  ]);
+      errorQuery: errorQuery,
+      dataQuery: dataQuery,
+      placeId: "placeId",
+    });
 
   // ===============================================
   // 🌟 (จบ) ดักจับ Error (จาก Query) แล้ว Redirect
@@ -317,13 +272,9 @@ export default function TemplateClient({
     errorQuery &&
     dataQuery === undefined &&
     isAxiosError(errorQuery) &&
-    [
-      // ปรับตามใช้งานจริง
-      ErrorCode.ORGANIZATION_NOT_FOUND,
-      ErrorCode.ORGANIZATION_DELETED,
-      ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
-      //
-    ].includes(errorQuery.response?.data?.errorCode)
+    // ปรับตามใช้งานจริง
+    AccessControlErrorCode.verifyOrganizationAccess // ปรับตามใช้งานจริง
+      .includes(errorQuery.response?.data?.errorCode)
   ) {
     return <Loading />;
   }

@@ -45,7 +45,7 @@ export const templateQueries = {
     getToken: () => Promise<string | null>,
 
     // ปรับตามใช้งานจริง
-    skipErrorCodes?: string[],
+    skipErrorCodes?: readonly string[],
     //
   ) =>
     queryOptions({

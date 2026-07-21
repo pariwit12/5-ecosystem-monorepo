@@ -37,11 +37,12 @@ export default async function WorkScheduleAdminPositionSlotTemplatePage({
   const resolvedParams = await params;
 
   const placeId = resolvedParams.placeId;
-  const positionId = resolvedParams.positionId;
 
   if (!uuidV7Regex.test(placeId)) {
     redirect("/work-schedule?error=invalid_id");
   }
+
+  const positionId = resolvedParams.positionId;
 
   if (!uuidV7Regex.test(positionId)) {
     redirect(`/work-schedule/admin/${placeId}/position?error=invalid_id`);

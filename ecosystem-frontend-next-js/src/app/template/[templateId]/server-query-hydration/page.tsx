@@ -16,6 +16,9 @@ import {
 } from "@tanstack/react-query";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
+// ErrorCode จากแต่ละ AccessControl
+import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
+
 // ปรับตามใช้งานจริง
 import TemplateClient from "./client-page";
 
@@ -199,7 +202,7 @@ export default async function TemplatePage({
           getToken, // ส่ง getToken ของฝั่ง Server เข้าไปได้เลย เพราะ signature ตรงกัน (Promise<string | null>)
 
           // ปรับตามใช้งานจริง
-          [],
+          AccessControlErrorCode.verifyOrganizationAccess, // ปรับตามใช้งานจริง
           //
         ),
     );

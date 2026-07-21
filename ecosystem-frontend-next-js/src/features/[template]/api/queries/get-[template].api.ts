@@ -75,7 +75,7 @@ export const getTemplate = // ปรับตามใช้งานจริ�
 
     // ปรับตามใช้งานจริง
     token: string,
-    skipErrorCodes?: string[],
+    skipErrorCodes?: readonly string[],
 
     // =========
     // (จบ) อื่นๆ

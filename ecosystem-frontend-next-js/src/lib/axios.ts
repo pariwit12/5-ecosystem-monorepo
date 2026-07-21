@@ -6,7 +6,7 @@ import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 // 🌟 สอนให้ TypeScript รู้จัก Config พิเศษของเรา
 declare module "axios" {
   export interface AxiosRequestConfig {
-    skipErrorCodes?: string[];
+    skipErrorCodes?: readonly string[];
     retryCount?: number; // เอาไว้นับจำนวนครั้งที่ Retry
   }
 }

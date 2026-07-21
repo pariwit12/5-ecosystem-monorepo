@@ -12,6 +12,7 @@ export class AccessControlService {
   // 👤 ด่านตรวจสอบ Person
   // ==========================================
 
+  // 1
   async verifyPerson(clerkId: string) {
     const person = await this.prisma.person.findUnique({
       where: { clerkId },
@@ -39,6 +40,7 @@ export class AccessControlService {
   // 🏢 ด่านตรวจสอบ Organization + สิทธิ PersonOrganizationAffiliation
   // =====================================================================
 
+  // 2
   async verifyOrganizationAccess(clerkId: string, organizationId: string) {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
@@ -116,6 +118,7 @@ export class AccessControlService {
   // 🏢 ด่านตรวจสอบ WorkSchedulePlace + สิทธิ WorkScheduleAdmin
   // ==============================================================
 
+  // 3
   async verifyWorkScheduleAdminAccess(clerkId: string, placeId: string) {
     const organizationWorkSchedulePlace =
       await this.prisma.organizationWorkSchedulePlace.findUnique({
@@ -187,6 +190,7 @@ export class AccessControlService {
   // 🌟 ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
   // =================================================================
 
+  // 4
   async verifyWorkSchedulePositionByWorkScheduleAdmin(
     clerkId: string,
     positionId: string,
@@ -282,6 +286,7 @@ export class AccessControlService {
   // 🌟 ตรวจสอบ WorkScheduleSlotTemplateId + สิทธิ WorkScheduleAdmin
   // =================================================================
 
+  // 5
   async verifyWorkScheduleSlotTemplateIdByWorkScheduleAdmin(
     clerkId: string,
     slotTemplateId: string,

@@ -98,13 +98,9 @@ _________________________________________________________________________
 
 Step 1
 
-- เคลียร์ code + ทำ template สำหรับ calendar กับ createMany ให้เรียบร้อย
-
 - จัดการ UI หน้าต่างแสดงรายการ slot
 
-- ย้าย code ออกมาเป็น component ui กลาง
-  - card menu
-  - component UI style
+- สร้างไฟล์รวม ErrorCode ของ accessControl แต่ละประเภท + รายการ redirect
 
 @ work-schedule/admin/[placeId]/position/[positionId] (หน้าหลัก ของ position)
   - แสดงเมนูให้เลือกไปต่อ
@@ -196,6 +192,9 @@ _________________________________________________________________________
 
 
 ######### งานค้าง (เพื่อความเรียบร้อยของโค้ด) #########
+
+# ย้าย code ออกมาเป็น component ui กลาง
+- component UI style
 
 # เปลี่ยนโครงสร้างไฟล์ฝั่ง frontend ให้เป็น format เดียวกันกับ template
 - เปลี่ยนชื่อไฟล์ key, .queries และย้ายตำแหน่ง

@@ -5,10 +5,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+import { DateTime } from "luxon";
 
 import { cn } from "@/lib/utils";
 
@@ -149,6 +150,197 @@ export default function TemplatePage() {
     name: "prefillName",
     startTime: "20:00",
     durationMinute: 123,
+  };
+
+  // สำหรับตารางแบบ Timeline View หรือ Gantt Chart View
+
+  // 1. จำลองข้อมูลพนักงานและกะงานใน 1 วัน
+  const scheduleData = [
+    {
+      employeeId: "1",
+      name: "พนักงาน A",
+      shifts: [
+        {
+          id: "s1",
+          name: "เวรเช้า",
+          start: "08:00",
+          end: "16:00",
+          color: "bg-blue-500",
+        },
+      ],
+    },
+    {
+      employeeId: "2",
+      name: "พนักงาน B",
+      shifts: [
+        {
+          id: "s2",
+          name: "เวรบ่าย",
+          start: "12:00",
+          end: "20:00",
+          color: "bg-orange-500",
+        },
+      ],
+    },
+    {
+      employeeId: "3",
+      name: "พนักงาน C",
+      shifts: [
+        {
+          id: "s3",
+          name: "เวรดึก",
+          start: "20:00",
+          end: "04:00",
+          color: "bg-purple-500",
+          isOvernight: true,
+        },
+        {
+          id: "s4",
+          name: "โอทีเช้า",
+          start: "08:00",
+          end: "12:00",
+          color: "bg-green-500",
+        },
+      ],
+    },
+  ];
+
+  // 2. ฟังก์ชันแปลง "HH:mm" เป็น จำนวนนาทีรวม (0 - 1440)
+  const timeToMinutes = (timeString: string) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // 3. ฟังก์ชันคำนวณตำแหน่ง % บนหน้าจอ
+  const getShiftStyle = (start: string, end: string, isOvernight = false) => {
+    const startMins = timeToMinutes(start);
+    let endMins = timeToMinutes(end);
+
+    if (isOvernight) endMins += 24 * 60; // ถ้าข้ามวัน ให้บวกไปอีก 1440 นาที
+
+    const totalMinutesInDay = 24 * 60;
+
+    // ตำแหน่งจากซ้ายสุด
+    const leftPercent = (startMins / totalMinutesInDay) * 100;
+    // ความกว้างของกล่อง
+    const widthPercent = ((endMins - startMins) / totalMinutesInDay) * 100;
+
+    return {
+      left: `${leftPercent}%`,
+      width: `${widthPercent}%`,
+    };
+  };
+
+  // 4. สร้างแกนเวลา (Header) เช่น 00:00, 04:00, 08:00 ... 20:00
+  const timeHeaders = Array.from(
+    { length: 7 },
+    (_, i) => `${String(i * 4).padStart(2, "0")}:00`,
+  );
+
+  // 1. จำลองข้อมูล (ใช้ ISO String แบบเดียวกับ Backend ของคุณ)
+  const mockData = [
+    {
+      employeeId: "1",
+      name: "หมอ A",
+      shifts: [
+        {
+          id: "s1",
+          name: "ตรวจปกติ",
+          start: "2026-07-20T08:00:00",
+          end: "2026-07-20T16:00:00",
+          color: "bg-blue-500",
+        },
+        {
+          id: "s2",
+          name: "ตรวจปกติ",
+          start: "2026-07-22T08:00:00",
+          end: "2026-07-22T16:00:00",
+          color: "bg-blue-500",
+        },
+      ],
+    },
+    {
+      employeeId: "2",
+      name: "ผู้ช่วย B",
+      shifts: [
+        {
+          id: "s3",
+          name: "เวรบ่าย",
+          start: "2026-07-20T12:00:00",
+          end: "2026-07-20T20:00:00",
+          color: "bg-orange-500",
+        },
+        {
+          id: "s4",
+          name: "เวรดึก (ข้ามวัน)",
+          start: "2026-07-21T20:00:00",
+          end: "2026-07-22T04:00:00",
+          color: "bg-purple-500",
+        },
+      ],
+    },
+  ];
+
+  // 🌟 State สำหรับเก็บช่วงวันที่เริ่มต้นและสิ้นสุด
+  const [startDate, setStartDate] = useState<string>(
+    DateTime.now().toFormat("yyyy-MM-dd"), // ค่าเริ่มต้น: วันนี้
+  );
+  const [endDate, setEndDate] = useState<string>(
+    DateTime.now().plus({ days: 6 }).toFormat("yyyy-MM-dd"), // ค่าเริ่มต้น: +6 วัน (รวมเป็น 7 วัน)
+  );
+
+  // ==========================================
+  // 🌟 Logic คำนวณช่วงเวลา (Memoized เพื่อประสิทธิภาพ)
+  // ==========================================
+  const { rangeStartDt, rangeEndDt, totalRangeMinutes, daysInHeader } =
+    useMemo(() => {
+      // กำหนดเวลาให้เริ่ม 00:00:00 และจบ 23:59:59 ของช่วงที่เลือก
+      const start = DateTime.fromISO(startDate).startOf("day");
+      const end = DateTime.fromISO(endDate).endOf("day");
+
+      // หาจำนวนนาทีทั้งหมดในช่วงเวลานี้ (ตัวหารหลักของเรา)
+      const totalMins = end.diff(start, "minutes").minutes;
+
+      // สร้าง Array ของวันที่เพื่อใช้แสดงบน Header (เช่น 20, 21, 22...)
+      const days = [];
+      let current = start;
+      while (current <= end) {
+        days.push(current);
+        current = current.plus({ days: 1 });
+      }
+
+      return {
+        rangeStartDt: start,
+        rangeEndDt: end,
+        totalRangeMinutes: totalMins,
+        daysInHeader: days,
+      };
+    }, [startDate, endDate]);
+
+  // ==========================================
+  // 🌟 Function คำนวณ % ตำแหน่งและความกว้าง
+  // ==========================================
+  const getShiftStyleVerTwo = (startIso: string, endIso: string) => {
+    const shiftStart = DateTime.fromISO(startIso);
+    const shiftEnd = DateTime.fromISO(endIso);
+
+    // ถ้ากะงานอยู่นอกช่วงเวลาที่เรากำลังดู ให้ซ่อนไปเลย
+    if (shiftEnd <= rangeStartDt || shiftStart >= rangeEndDt) {
+      return { display: "none" };
+    }
+
+    // ตัดส่วนที่ล้นออก (เช่น กะเริ่มก่อนวันที่เราดู ให้เริ่มจากขอบซ้ายสุดพอดี)
+    const clampedStart = DateTime.max(shiftStart, rangeStartDt);
+    const clampedEnd = DateTime.min(shiftEnd, rangeEndDt);
+
+    // หานาทีที่ห่างจากจุดเริ่มต้น และระยะเวลาของกะงาน
+    const offsetMins = clampedStart.diff(rangeStartDt, "minutes").minutes;
+    const durationMins = clampedEnd.diff(clampedStart, "minutes").minutes;
+
+    return {
+      left: `${(offsetMins / totalRangeMinutes) * 100}%`,
+      width: `${(durationMins / totalRangeMinutes) * 100}%`,
+    };
   };
 
   // ==================
@@ -1027,7 +1219,197 @@ export default function TemplatePage() {
         {/* ===================== */}
         {/* (จบ) ส่วนแสดงผล: Form */}
         {/* ===================== */}
+
+        <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* 🌟 Header: แถบแสดงเวลา */}
+          <div className="flex border-b border-gray-200 bg-gray-50">
+            <div className="w-32 shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
+              พนักงาน
+            </div>
+            <div className="flex-1 relative h-12">
+              {/* วางตัวเลขเวลาตามตำแหน่ง % */}
+              {timeHeaders.map((time, index) => (
+                <div
+                  key={time}
+                  className="absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-500 -translate-x-1/2"
+                  style={{ left: `${((index * 4 * 60) / (24 * 60)) * 100}%` }}
+                >
+                  {time}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 🌟 Body: รายชื่อพนักงาน และ กล่องเวลา (Shifts) */}
+          <div className="flex flex-col">
+            {scheduleData.map((emp) => (
+              <div
+                key={emp.employeeId}
+                className="flex border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
+              >
+                {/* ซ้าย: ชื่อพนักงาน */}
+                <div className="w-32 shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
+                  {emp.name}
+                </div>
+
+                {/* ขวา: พื้นที่ Timeline ของคนๆ นั้น */}
+                <div className="flex-1 relative min-h-15 py-2">
+                  {/* ตีเส้นจางๆ เป็นไกด์ไลน์ (ทำหรือไม่ทำก็ได้ ตามที่คุณบอกว่าไม่อยากให้เป็นคอลัมน์ชัดๆ) */}
+                  <div className="absolute inset-0 flex justify-between pointer-events-none px-0">
+                    {timeHeaders.map((_, i) => (
+                      <div key={i} className="h-full w-px bg-gray-100" />
+                    ))}
+                  </div>
+
+                  {/* วาดกล่องกะงาน */}
+                  {emp.shifts.map((shift) => (
+                    <div
+                      key={shift.id}
+                      className={`absolute top-2 bottom-2 rounded-lg shadow-sm text-white text-xs px-2 py-1 flex items-center overflow-hidden truncate transition-transform hover:scale-[1.02] cursor-pointer ${shift.color}`}
+                      style={getShiftStyle(
+                        shift.start,
+                        shift.end,
+                        shift.isOvernight,
+                      )}
+                      title={`${shift.name} (${shift.start} - ${shift.end})`}
+                    >
+                      <span className="font-semibold truncate">
+                        {shift.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         {/*  */}
+      </div>
+
+      <div className="flex flex-col gap-4 p-4">
+        {/* 🟢 เครื่องมือเลือกช่วงเวลา */}
+        <div className="flex items-end gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-gray-700">
+              เริ่มวันที่
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-gray-700">ถึงวันที่</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* ปุ่มลัด (Presets) */}
+          <div className="flex gap-2 ml-4">
+            <button
+              onClick={() => {
+                setStartDate(DateTime.now().toFormat("yyyy-MM-dd"));
+                setEndDate(
+                  DateTime.now().plus({ days: 6 }).toFormat("yyyy-MM-dd"),
+                );
+              }}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
+            >
+              7 วัน
+            </button>
+            <button
+              onClick={() => {
+                const now = DateTime.now();
+                setStartDate(now.startOf("month").toFormat("yyyy-MM-dd"));
+                setEndDate(now.endOf("month").toFormat("yyyy-MM-dd"));
+              }}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
+            >
+              เดือนนี้ (1 เดือน)
+            </button>
+          </div>
+        </div>
+
+        {/* 🟢 พื้นที่ Timeline */}
+        <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+          {/* กำหนด min-w ให้กว้างพอสำหรับดูหลายๆ วัน ถ้าจอมันแคบกว่านี้มันจะเกิด Scroll Bar แนวนอน */}
+          <div className="min-w-250 lg:min-w-full flex flex-col">
+            {/* Header: แถบแสดงวันที่ */}
+            <div className="flex border-b border-gray-200 bg-gray-50">
+              <div className="w-40 shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
+                พนักงาน
+              </div>
+              <div className="flex-1 relative flex">
+                {/* แบ่งความกว้างตามจำนวนวันเท่าๆ กัน */}
+                {daysInHeader.map((date) => (
+                  <div
+                    key={date.toISO()}
+                    className="flex-1 border-r border-gray-200 last:border-r-0 p-2 text-center text-sm font-semibold text-gray-600"
+                  >
+                    {date.toFormat("dd MMM")}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Body: รายชื่อพนักงาน และ กล่องเวลา */}
+            {mockData.map((emp) => (
+              <div
+                key={emp.employeeId}
+                className="flex border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
+              >
+                {/* ชื่อพนักงาน */}
+                <div className="w-40 shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
+                  {emp.name}
+                </div>
+
+                {/* พื้นที่ Timeline */}
+                <div className="flex-1 relative min-h-16">
+                  {/* เส้นไกด์ไลน์แบ่งวัน (พื้นหลัง) */}
+                  <div className="absolute inset-0 flex pointer-events-none">
+                    {daysInHeader.map((date) => (
+                      <div
+                        key={`bg-${date.toISO()}`}
+                        className="flex-1 border-r border-gray-100 last:border-r-0"
+                      />
+                    ))}
+                  </div>
+
+                  {/* วาดกล่องกะงาน */}
+                  {emp.shifts.map((shift) => {
+                    const style = getShiftStyleVerTwo(shift.start, shift.end);
+
+                    // ถ้า display เป็น none ให้ข้ามการ render ไปเลย
+                    if (style.display === "none") return null;
+
+                    return (
+                      <div
+                        key={shift.id}
+                        className={`absolute top-2 bottom-2 rounded-md shadow-sm text-white text-xs px-2 py-1 flex flex-col justify-center overflow-hidden transition-transform hover:scale-[1.02] hover:z-10 cursor-pointer ${shift.color}`}
+                        style={style}
+                        title={`${shift.name}\n${DateTime.fromISO(shift.start).toFormat("dd/MM HH:mm")} - ${DateTime.fromISO(shift.end).toFormat("dd/MM HH:mm")}`}
+                      >
+                        <span className="font-semibold truncate">
+                          {shift.name}
+                        </span>
+                        <span className="text-[10px] opacity-80 truncate hidden sm:block">
+                          {DateTime.fromISO(shift.start).toFormat("HH:mm")} -{" "}
+                          {DateTime.fromISO(shift.end).toFormat("HH:mm")}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ========================================================================================== */}
