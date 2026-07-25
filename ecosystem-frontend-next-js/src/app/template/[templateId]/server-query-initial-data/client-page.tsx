@@ -66,7 +66,7 @@ import {
   templateQueries,
 
   // ปรับตามใช้งานจริง
-} from "@/features/[template]/[template].queries";
+} from "@/features/[program]/[feature]/[program]-[feature].queries";
 
 // ===================
 // (จบ) Import Queries

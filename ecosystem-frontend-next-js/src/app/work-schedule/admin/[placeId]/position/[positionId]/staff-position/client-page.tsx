@@ -52,7 +52,7 @@ export default function WorkScheduleAdminPositionStaffPositionClient({
     refetch,
     dataUpdatedAt,
   } = useQuery(
-    workScheduleStaffPositionQueries.queryGetWorkScheduleStaffPositionsByPositionId(
+    workScheduleStaffPositionQueries.queryGetStaffPositionsByPositionId(
       positionId,
 
       userId,
@@ -217,7 +217,7 @@ export default function WorkScheduleAdminPositionStaffPositionClient({
         <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
           {staffPositions.map((sp) => (
             <div
-              key={sp.workScheduleStaffId}
+              key={sp.staffId}
               className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-gray-50/50 transition-colors"
             >
               {/*  */}
@@ -265,7 +265,7 @@ export default function WorkScheduleAdminPositionStaffPositionClient({
                     {/* 
                             -------- ปรับตามใช้งานจริง --------
                           */}
-                    ID: {sp.workScheduleStaffId.slice(0, 8)}...
+                    ID: {sp.staffId.slice(0, 8)}...
                     {/* 
                             --------------------------------
                           */}

@@ -1,4 +1,4 @@
-// 1. สร้างสถานที่ทำงาน
+// 1. สถานที่ทำงาน
 model OrganizationWorkSchedulePlace {
   id             String       @id @default(uuid(7)) @db.Uuid
   organizationId String       @map("organization_id") @db.Uuid
@@ -53,6 +53,27 @@ model WorkScheduleAdmin {
   @@map("work_schedule_admin")
 }
 
+// 7. สร้างพนักงานของ OrganizationWorkSchedulePlace
+model WorkScheduleStaff {
+  id                              String                        @id @default(uuid(7)) @db.Uuid
+  organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
+  organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
+  // เผื่อผูก User จะขอผูกบัญชีกับโปรแกรม Work-Schedule ของ OrganizationWorkSchedulePlace
+  personId                        String?                       @map("person_id") @db.Uuid
+  person                          Person?                       @relation(fields: [personId], references: [id], onDelete: Restrict)
+  deletedAt                       DateTime?                     @map("deleted_at")
+
+  name String // ชื่อพนักงาน (สำหรับ OrganizationWorkSchedulePlace)
+
+  workScheduleStaffPositions WorkScheduleStaffPosition[]
+
+  @@unique([organizationWorkSchedulePlaceId, personId])
+  // 🌟 2. เราไม่ต้องมี @@index ของ organizationWorkSchedulePlaceId แล้ว เพราะตัว unique ข้างบนจัดการให้แล้ว
+  // @@index([organizationWorkSchedulePlaceId])
+  @@index([personId])
+  @@map("work_schedule_staff")
+}
+
 // 4. สร้างตำแหน่งงานต่างๆ
 model WorkSchedulePosition {
   id                              String                        @id @default(uuid(7)) @db.Uuid
@@ -68,6 +89,21 @@ model WorkSchedulePosition {
 
   @@index([organizationWorkSchedulePlaceId])
   @@map("work_schedule_position")
+}
+
+// 8. สร้างตำแหน่งให้ Staff เพื่อจะนำไปใช้ลง Slot ได้ตรงตำแหน่งตัวเอง
+model WorkScheduleStaffPosition {
+  workScheduleStaffId    String               @map("work_schedule_staff_id") @db.Uuid
+  workScheduleStaff      WorkScheduleStaff    @relation(fields: [workScheduleStaffId], references: [id], onDelete: Restrict)
+  workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
+  workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
+  deletedAt              DateTime?            @map("deleted_at")
+
+  workScheduleSlots WorkScheduleSlot[]
+
+  @@id([workScheduleStaffId, workSchedulePositionId]) // ป้องกันไม่ให้แอดพนักงานคนเดิมซ้ำในตำแหน่งเดิม
+  @@index([workSchedulePositionId])
+  @@map("work_schedule_staff_position")
 }
 
 // 5. สร้าง Template ให้ Admin ใช้สร้าง Slot ง่ายๆ
@@ -110,40 +146,4 @@ model WorkScheduleSlot {
   @@index([workSchedulePositionId, actualStartTime])
   @@index([workScheduleStaffId, actualStartTime])
   @@map("work_schedule_slot")
-}
-
-// 7. สร้างพนักงานของ OrganizationWorkSchedulePlace
-model WorkScheduleStaff {
-  id                              String                        @id @default(uuid(7)) @db.Uuid
-  organizationWorkSchedulePlaceId String                        @map("organization_work_schedule_place_id") @db.Uuid
-  organizationWorkSchedulePlace   OrganizationWorkSchedulePlace @relation(fields: [organizationWorkSchedulePlaceId], references: [id], onDelete: Restrict)
-  // เผื่อผูก User จะขอผูกบัญชีกับโปรแกรม Work-Schedule ของ OrganizationWorkSchedulePlace
-  personId                        String?                       @map("person_id") @db.Uuid
-  person                          Person?                       @relation(fields: [personId], references: [id], onDelete: Restrict)
-  deletedAt                       DateTime?                     @map("deleted_at")
-
-  name String // ชื่อพนักงาน (สำหรับ OrganizationWorkSchedulePlace)
-
-  workScheduleStaffPositions WorkScheduleStaffPosition[]
-
-  @@unique([organizationWorkSchedulePlaceId, personId])
-  // 🌟 2. เราไม่ต้องมี @@index ของ organizationWorkSchedulePlaceId แล้ว เพราะตัว unique ข้างบนจัดการให้แล้ว
-  // @@index([organizationWorkSchedulePlaceId])
-  @@index([personId])
-  @@map("work_schedule_staff")
-}
-
-// 8. สร้างตำแหน่งให้ Staff เพื่อจะนำไปใช้ลง Slot ได้ตรงตำแหน่งตัวเอง
-model WorkScheduleStaffPosition {
-  workScheduleStaffId    String               @map("work_schedule_staff_id") @db.Uuid
-  workScheduleStaff      WorkScheduleStaff    @relation(fields: [workScheduleStaffId], references: [id], onDelete: Restrict)
-  workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
-  workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
-  deletedAt              DateTime?            @map("deleted_at")
-
-  workScheduleSlots WorkScheduleSlot[]
-
-  @@id([workScheduleStaffId, workSchedulePositionId]) // ป้องกันไม่ให้แอดพนักงานคนเดิมซ้ำในตำแหน่งเดิม
-  @@index([workSchedulePositionId])
-  @@map("work_schedule_staff_position")
 }

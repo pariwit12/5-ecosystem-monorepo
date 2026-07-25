@@ -10,4 +10,16 @@ export const workScheduleStaffPositionKeys = {
       "by-position-id",
       positionId,
     ] as const,
+
+  availableStaffLists: (userId: string) =>
+    [
+      ...workScheduleStaffPositionKeys.all(userId),
+      "available-staff-list",
+    ] as const,
+
+  availableStaffListsByPositionId: (userId: string, positionId: string) => [
+    ...workScheduleStaffPositionKeys.availableStaffLists(userId),
+    "by-position-id",
+    positionId,
+  ],
 };

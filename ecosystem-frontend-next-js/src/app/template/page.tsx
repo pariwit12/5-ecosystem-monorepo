@@ -30,10 +30,10 @@ import {
 // ----------- Import Form -----------
 import {
   // ปรับตามใช้งานจริง
-  MethodTemplateForm,
+  MethodManyAvailableOtherProgramOtherFeatureForm,
 
   // ปรับตามใช้งานจริง
-} from "@/features/[template]/components/method-[template]-form";
+} from "@/features/[program]/[feature]/components/[method-many]-[available_null]-[other-program_null]-[other-feature_null]-form";
 
 // ==========================================
 // 🛡️ Component ดักจับ Error จาก URL
@@ -1201,7 +1201,7 @@ export default function TemplatePage() {
         {/* ส่วนแสดงผล: Form */}
         {/* ===================== */}
 
-        <MethodTemplateForm
+        <MethodManyAvailableOtherProgramOtherFeatureForm
           //
           // ปรับตามใช้งานจริง
           valueOne={"valueOne"}
@@ -1212,8 +1212,6 @@ export default function TemplatePage() {
           urlOnSuccess={`/template/${templateId}/success`}
           urlOnCancel={`/template/${templateId}/cancel`}
           skipErrorCodes={[]}
-          className=""
-          //
         />
 
         {/* ===================== */}

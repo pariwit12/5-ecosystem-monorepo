@@ -5,9 +5,6 @@ import { workScheduleStaffKeys } from "./work-schedule-staff-keys";
 import { getWorkScheduleStaffByPlaceId } from "./api/queries/get-work-schedule-staff-by-place-id.api";
 
 export const workScheduleStaffQueries = {
-  // ผูก queryKey กับ API
-  // ไม่ใช่ไฟล์ hooks แต่ทำหน้าที่คล้ายๆ (จึงต้องรับ getToken และ userId เข้ามา เรียกเองไม่ได้)
-
   // 1
   listsByPlaceId: (
     userId: string | null | undefined,

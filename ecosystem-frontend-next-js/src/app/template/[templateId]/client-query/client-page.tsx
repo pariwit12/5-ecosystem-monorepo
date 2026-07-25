@@ -63,10 +63,10 @@ import {
 
 import {
   // ปรับตามใช้งานจริง
-  templateQueries,
+  programFeatureQueries,
 
   // ปรับตามใช้งานจริง
-} from "@/features/[template]/[template].queries";
+} from "@/features/[program]/[feature]/[program]-[feature].queries";
 
 // ===================
 // (จบ) Import Queries
@@ -177,10 +177,10 @@ export default function TemplateClient({
   } = useQuery(
     //
     // ปรับตามใช้งานจริง
-    templateQueries
+    programFeatureQueries
 
       // ปรับตามใช้งานจริง
-      .queryGetTemplate(
+      .queryGetAvailableOtherProgramFeatures(
         //
         // ปรับตามใช้งานจริง
         "string1",

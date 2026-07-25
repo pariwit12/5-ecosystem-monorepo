@@ -8,8 +8,18 @@
 # งานแก้ของเก่า ไว้ค่อยแก้ตอนมีปัญหาก็พอ ไม่ต้องไล่กลับไปทำให้เนี้ยบทุกไฟล์ตั้งแต่ต้น
   - เน้นปรับปรุง template ให้ดีขึ้นเรื่อยๆ แล้วเวลาต้องกลับไปแก้ก็จะได้ใช้แค่ template ไปเทียบ
 
+
+- สิทธิ + ข้อมูลที่ส่งต่อ + Redirect กลับไปหน้าที่ถูกต้อง
+- 
+
 _________________________________________________________________________
 
+
+1. Get + Create
+2. Edit
+3. Delete
+4. Subscribtion / Income
+5. Storage Cleansing (Protocol + Automatic-System)
 
 ลำดับการขยายฟังก์ชันใหม่
 - Backend
@@ -98,71 +108,15 @@ _________________________________________________________________________
 
 Step 1
 
+- สร้าง DB สำหรับ min และ max
+
 - จัดการ UI หน้าต่างแสดงรายการ slot
-
-- สร้างไฟล์รวม ErrorCode ของ accessControl แต่ละประเภท + รายการ redirect
-
-@ work-schedule/admin/[placeId]/position/[positionId] (หน้าหลัก ของ position)
-  - แสดงเมนูให้เลือกไปต่อ
-    - เมนู: ตารางเวร (ไปหน้า รายการ Slot)
-      @ work-schedule/admin/[placeId]/position/[positionId]/slot (หน้า รายการ slot)
-        - ปุ่ม สร้าง slot
-          @ work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu
-            - แสดงเมนูให้เลือก
-              - เมน: ใช้ slotTemplate
-                @ work-schedule/admin/[placeId]/position/[positionId]/slot/new/slot-template (หน้า เลือกรายการ slotTemplate เพื่อใช้สร้าง slot)
-                  - รายการ slotTemplate + ปุ่ม เลือก slotTemplate เพื่อใช้สร้าง slot
-                    @ work-schedule/admin/[placeId]/position/[positionId]/slot/new (หน้า สร้าง slot)
-                      - ...
-              - เมนู: ไม่ใช้ slotTemplate
-                @ work-schedule/admin/[placeId]/position/[positionId]/slot/new (หน้า สร้าง slot)
-                  - ...
-        - รายการ slot + ปุ่ม เลือก slot
-          @ work-schedule/admin/[placeId]/position/[positionId]/slot/[slotId] (หน้า รายละเอียดของ slot)
-            - ...
-    - เมนู: แบบร่างตารางเวร (ไปหน้า รายการ slotTemplate)
-      @ work-schedule/admin/[placeId]/position/[positionId]/slot-template (หน้า รายการ slotTemplate)    
-        - ปุ่ม สร้าง slotTemplate (ด้านขวาของ Header)
-          @ work-schedule/admin/[placeId]/position/[positionId]/slot-template/new (หน้า สร้าง slotTemplate)
-        - รายการ slotTemplate + ปุ่ม เลือก slotTemplate
-          @ work-schedule/admin/[placeId]/position/[positionId]/slot-template/[slotTemplateId] (หน้าหลัก ของ slotTemplateId)
-            - ...
-    - เมนู: พนักงานในตำแหน่ง (ไปหน้า รายการ staffPosition)
-      @ work-schedule/admin/[placeId]/position/[positionId]/staff-position (หน้า รายการ staffPosition)
-        - ปุ่ม สร้าง staffPosition
-          @ work-schedule/admin/[placeId]/position/[positionId]/staff-position/new (หน้า สร้าง staffPosition)
-            - รายการ staff ทั้งหมด (ที่ยังไม่มี staffPosition) + ปุ่ม เลือก staff เพื่อสร้าง staffPosition
-        - รายการ staffPosition + ปุ่ม เลือก staffPosition
-          @ work-schedule/admin/[placeId]/position/[positionId]/staff-position/[staffPositionId] (หน้าหลัก ของ staffPosition)
-            - ...
 
 - สร้างหน้าต่างของผู้ที่เป็น พนักงาน
 
 Step 2
 
-@ work-schedule/admin/[placeId]/position/[positionId] (หน้าหลัก ของ  position)
-  - แสดงเมนูให้เลือกไปต่อ
-    - เมนู: รายละเอียด
-      @ work-schedule/admin/[placeId]/position/[positionId]/detail (หน้า แสดงรายละเอียด ของ positionId)
-        - แสดงรายละเอียด ของ positionId
-        - ปุ่ม แก้ไข รายละเอียด
-          @ work-schedule/admin/[placeId]/position/[positionId]/edit หรือ จะทำเป็นแก้ไขเป็นส่วนๆ หรือ ค่อยคิดเรื่อง version control
-            - form สำหรับ แก้ไข ข้อมูล
-            - ปุ่ม ยกเลิก (redirect ไป work-schedule/admin/[placeId]/position/[positionId]/detail)
-            - ปุ่ม บันทึก (redirect ไป work-schedule/admin/[placeId]/position/[positionId]/detail)
-    - เมนู: ลบ
-      @ work-schedule/admin/[placeId]/position/[positionId]/delete (หน้า ยืนยันที่จะลบ positionId)
-        - แสดงรายละเอียด ของ positionId
-        - ปุ่ม ยกเลิก (redirect ไป work-schedule/admin/[placeId]/position/[positionId])
-        - ปุ่ม ลบ
-          - pop-up/หน้าต่าง ยืนยันที่จะลบ (redirect ไป work-schedule/admin/[placeId]/position)
-
-@ work-schedule/admin/[placeId]/staff (หน้า รายการ staff)
-  - รายการ staff
-    - เพิ่ม รายละเอียด staffPosition ของ staff
-    - ปุ่ม เลือก staff
-      @ work-schedule/admin/[placeId]/staff/[staffId] (หน้า รายละเอียดของ staff)
-        - ...
+- เก็บรายละเอียด เติมฟังก์ชันที่ยังขาดไปให้ครบ
 
 # โปรแกรม Task-manager
 

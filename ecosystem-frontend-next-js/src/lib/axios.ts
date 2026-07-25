@@ -38,10 +38,11 @@ apiClient.interceptors.response.use(
     // 🌟 2. เพิ่มเงื่อนไข isGetMethod เข้าไปใน if
     // 🌟 ระบบ Auto-Retry (กรณี Timeout หรือเน็ตหลุด)
     // ถ้า Error เป็น Timeout และยัง Retry ไม่เกิน 2 ครั้ง
+    config.retryCount = 0; // ปิด auto-retry ไปก่อน
     if (
       isGetMethod &&
       isNetworkOrTimeout &&
-      (!config.retryCount || config.retryCount < 2)
+      (!config.retryCount || config.retryCount < 0)
     ) {
       config.retryCount = (config.retryCount || 0) + 1;
       console.warn(
@@ -69,7 +70,7 @@ apiClient.interceptors.response.use(
       const errorCode = backendData?.errorCode;
 
       // ==========================================
-      // 🛡️ โซนเช็คสิทธิ์การข้าม Global Error Modal
+      // 🛡️ โซนพวกที่ข้าม Global Error Modal
       // ==========================================
 
       // 🛑 กฎเหล็ก: ปล่อย VALIDATION_ERROR ทะลุไปให้ React Hook Form จัดการ
@@ -85,8 +86,32 @@ apiClient.interceptors.response.use(
       }
 
       // ==========================================
-      // 🛡️ สิ้นสุดโซนเช็คสิทธิ์การข้าม
+      // 🛡️ (จบ) โซนพวกที่ข้าม Global Error Modal
       // ==========================================
+
+      // !!!! การ redirect ต้องมีหน้าตั้งต้นเป็นองค์ประกอบ เพื่อระบุปลายทาง เพราะฉะนั้น Code ส่วนนี้ควรไปอยู่ในหน้า Client
+
+      // // 🚀 2. โซนตรวจสอบการ Redirect (ทำเฉพาะ GET Method เท่านั้น!)
+
+      // if (isGetMethod && errorCode) {
+      //   const redirectUrl = getRedirectUrlByErrorCode(errorCode, config);
+
+      //   if (redirectUrl) {
+      //     if (typeof window !== "undefined") {
+      //       //
+      //       // แบบเก่า (รอตรวจสอบว่าแบบใหม่จะป้องกันการกระพริบได้จริงหรือไม่)
+      //       // window.location.href = redirectUrl; // สั่ง Redirect ทันที
+
+      //       // 🌟 ทริคกันกระพริบ: ยิง Event บอกให้ Next.js Router พาไป โดยไม่ต้องเปลี่ยนหน้าแบบ Hard Refresh
+      //       window.dispatchEvent(
+      //         new CustomEvent("app:redirect", { detail: redirectUrl }),
+      //       );
+      //     }
+      //     return Promise.reject(error); // ยุติ ไม่เปิด Modal
+      //   }
+      // }
+
+      // // ====================================================================
 
       const title = `เกิดข้อผิดพลาด`;
       const displayMessage =

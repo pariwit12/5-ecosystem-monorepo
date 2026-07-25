@@ -10,8 +10,6 @@ import WorkScheduleAdminPositionStaffPositionClient from "./client-page";
 // สร้างฟังก์ชัน สำหรับตรวจสอบ URL
 // ==========================================
 
-// 🌟 สร้าง Regex ตรวจสอบ UUID (วางไว้นอก Component เพื่อไม่ให้ถูกสร้างใหม่ทุกรอบ)
-
 const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
   /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

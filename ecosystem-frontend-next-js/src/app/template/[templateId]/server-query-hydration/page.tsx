@@ -28,7 +28,7 @@ import {
   templateQueries,
 
   // ปรับตามใช้งานจริง
-} from "@/features/[template]/[template].queries";
+} from "@/features/[program]/[feature]/[program]-[feature].queries";
 
 // ==========================================
 // สร้างฟังก์ชัน สำหรับตรวจสอบ URL

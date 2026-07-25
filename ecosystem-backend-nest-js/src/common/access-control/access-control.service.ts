@@ -1,6 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-
 import { AppException } from '../exceptions/app.exception';
 import { ErrorCode } from '../exceptions/error-codes.enum';
 
@@ -8,11 +7,8 @@ import { ErrorCode } from '../exceptions/error-codes.enum';
 export class AccessControlService {
   constructor(private prisma: PrismaService) {}
 
-  // ==========================================
-  // 👤 ด่านตรวจสอบ Person
-  // ==========================================
-
   // 1
+  // - ตรวจ clerkId -> Person
   async verifyPerson(clerkId: string) {
     const person = await this.prisma.person.findUnique({
       where: { clerkId },
@@ -21,6 +17,7 @@ export class AccessControlService {
       },
     });
 
+    // 1
     if (!person) {
       throw new AppException(
         ErrorCode.PERSON_NOT_FOUND,
@@ -32,15 +29,9 @@ export class AccessControlService {
     return { personId: person.id };
   }
 
-  // ==========================================
-  // 👤 (จบ) ด่านตรวจสอบ Person
-  // ==========================================
-
-  // =====================================================================
-  // 🏢 ด่านตรวจสอบ Organization + สิทธิ PersonOrganizationAffiliation
-  // =====================================================================
-
   // 2
+  // - ตรวจ organizationId -> Organization
+  // - ตรวจ clerkId -> PersonOrganizationAffiliation (organizationId)
   async verifyOrganizationAccess(clerkId: string, organizationId: string) {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
@@ -49,7 +40,7 @@ export class AccessControlService {
       },
     });
 
-    // 1. เช็คตัวตน
+    // 1
     if (!organization) {
       throw new AppException(
         ErrorCode.ORGANIZATION_NOT_FOUND,
@@ -58,7 +49,7 @@ export class AccessControlService {
       );
     }
 
-    // 2. เช็คว่าองค์กรโดนลบไปหรือยัง
+    // 2
     if (organization.deletedAt !== null) {
       throw new AppException(
         ErrorCode.ORGANIZATION_DELETED,
@@ -74,13 +65,14 @@ export class AccessControlService {
         personOrganizationAffiliations: {
           where: { organizationId: organizationId },
           select: {
+            // รอเปลี่ยน (หากอนาคตมีการใช้ deletedAt)
             organizationId: true,
           },
         },
       },
     });
 
-    // 1. เช็คตัวตน
+    // 3
     if (!person) {
       throw new AppException(
         ErrorCode.PERSON_NOT_FOUND,
@@ -89,7 +81,7 @@ export class AccessControlService {
       );
     }
 
-    // 2. เช็คความสัมพันธ์กับองค์กร
+    // 4
     if (
       !person.personOrganizationAffiliations ||
       person.personOrganizationAffiliations.length === 0
@@ -106,19 +98,13 @@ export class AccessControlService {
     };
   }
 
-  // =====================================================================
-  // 🏢 (จบ) ด่านตรวจสอบ Organization + สิทธิ PersonOrganizationAffiliation
-  // =====================================================================
-
-  // =====================================================================================
-  // โปรแกรม Work-Schedule
-  // =====================================================================================
-
-  // ==============================================================
-  // 🏢 ด่านตรวจสอบ WorkSchedulePlace + สิทธิ WorkScheduleAdmin
-  // ==============================================================
+  // ===========================
+  // โปรแกรม: Work-Schedule
+  // ===========================
 
   // 3
+  // - ตรวจ placeId -> OrganizationWorkSchedulePlace
+  // - ตรวจ clerkId -> WorkScheduleAdmin (organizationWorkSchedulePlaceId)
   async verifyWorkScheduleAdminAccess(clerkId: string, placeId: string) {
     const organizationWorkSchedulePlace =
       await this.prisma.organizationWorkSchedulePlace.findUnique({
@@ -182,15 +168,9 @@ export class AccessControlService {
     };
   }
 
-  // ==============================================================
-  // 🏢 (จบ) ด่านตรวจสอบ WorkSchedulePlace + สิทธิ WorkScheduleAdmin
-  // ==============================================================
-
-  // =================================================================
-  // 🌟 ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
-  // =================================================================
-
   // 4
+  // - ตรวจ positionId -> OrganizationWorkSchedulePlace
+  // - ตรวจ clerkId -> WorkScheduleAdmin (organizationWorkSchedulePlaceId)
   async verifyWorkSchedulePositionByWorkScheduleAdmin(
     clerkId: string,
     positionId: string,
@@ -278,15 +258,9 @@ export class AccessControlService {
     };
   }
 
-  // =================================================================
-  // 🌟 (จบ) ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
-  // =================================================================
-
-  // =================================================================
-  // 🌟 ตรวจสอบ WorkScheduleSlotTemplateId + สิทธิ WorkScheduleAdmin
-  // =================================================================
-
   // 5
+  // - ตรวจ slotTemplateId -> OrganizationWorkSchedulePlace
+  // - ตรวจ clerkId -> WorkScheduleAdmin (organizationWorkSchedulePlaceId)
   async verifyWorkScheduleSlotTemplateIdByWorkScheduleAdmin(
     clerkId: string,
     slotTemplateId: string,
@@ -297,6 +271,7 @@ export class AccessControlService {
         select: {
           workSchedulePosition: {
             select: {
+              id: true,
               deletedAt: true,
               organizationWorkSchedulePlace: {
                 select: {
@@ -380,15 +355,11 @@ export class AccessControlService {
       organizationWorkSchedulePlaceId:
         workScheduleSlotTemplate.workSchedulePosition
           .organizationWorkSchedulePlace.id,
+      workSchedulePositionId: workScheduleSlotTemplate.workSchedulePosition.id,
     };
   }
 
-  // =================================================================
-  // 🌟 (จบ) ด่านตรวจสอบ WorkSchedulePosition + สิทธิ WorkScheduleAdmin
-  // =================================================================
-
-  // =====================================================================================
-  // (จบ) โปรแกรม Work-Schedule
-  // =====================================================================================
-  //
+  // ===========================
+  // (จบ) โปรแกรม: Work-Schedule
+  // ===========================
 }

@@ -1,26 +1,13 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
-// =======================
-// Import Controller
-// =======================
-
 import { WorkScheduleStaffPositionController } from './work-schedule-staff-position.controller';
-
-// =======================
-// (จบ) Import Controller
-// =======================
 
 // ============================
 // Import Handler (Method)
 // ============================
 
-import {
-  // ปรับตามใช้งานจริง
-  MethodTemplateHandler,
-
-  // ปรับตามใช้งานจริง
-} from './commands/method-[template].handler';
+import { CreateManyHandler } from './commands/create-many.handler';
 
 // ============================
 // (จบ) Import Handler (Method)
@@ -30,7 +17,8 @@ import {
 // Import Handler (Query)
 // ===========================
 
-import { GetWorkScheduleStaffPositionsByPositionIdHandler } from './queries/get-work-schedule-staff-positions-by-position-id.handler';
+import { GetAvailableStaffsByPositionIdHandler } from './queries/get-available-staffs-by-position-id.handler';
+import { GetStaffPositionsByPositionIdHandler } from './queries/get-staff-positions-by-position-id.handler';
 
 // ===========================
 // (จบ) Import Handler (Query)
@@ -40,20 +28,16 @@ import { GetWorkScheduleStaffPositionsByPositionIdHandler } from './queries/get-
 // จุดลงทะเบียน Handler
 // ===================================================================
 
-// มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
-const CommandHandlers = [
-  // ปรับตามใช้งานจริง
-  MethodTemplateHandler, // ปรับตามใช้งานจริง
+const CommandHandlers = [CreateManyHandler];
+
+const QueryHandlers = [
+  GetAvailableStaffsByPositionIdHandler,
+  GetStaffPositionsByPositionIdHandler,
 ];
-const QueryHandlers = [GetWorkScheduleStaffPositionsByPositionIdHandler];
 
 // ===================================================================
 // (จบ) จุดลงทะเบียน Handler
 // ===================================================================
-
-// ==========
-// Main
-// ==========
 
 // 🌟 ไม่ต้องใส่ PrismaModule หรือ PrismaService แล้ว เพราะมันเป็น Global (ตั้งไว้ใน prisma.module.ts)
 
@@ -63,7 +47,3 @@ const QueryHandlers = [GetWorkScheduleStaffPositionsByPositionIdHandler];
   providers: [...CommandHandlers, ...QueryHandlers],
 })
 export class WorkScheduleStaffPositionModule {}
-
-// ==========
-// (จบ) Main
-// ==========
