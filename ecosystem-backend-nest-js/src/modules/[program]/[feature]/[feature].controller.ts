@@ -67,7 +67,8 @@ import {
 // ========================
 
 @Controller(
-  'api/template', // ปรับตามใช้งานจริง
+  // ปรับตามใช้งานจริง
+  'api/program/feature',
 )
 
 // ปรับตามใช้งานจริง
@@ -95,7 +96,7 @@ export class FeatureController {
   @UseGuards(ClerkAuthGuard)
 
   // ปรับตามใช้งานจริง
-  async methodTemplate(
+  async methodManyAvailableOtherProgramOtherFeature(
     //
     // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง)
     // ดังนั้นให้ไล่เป็น
@@ -153,13 +154,13 @@ export class FeatureController {
   // มันจะเก็บข้อมูลเข้ากระเป๋าไปจัดลำดับการทำงาน (Lifecycle) ของมันเองอยู่ดีครับ
 
   // ปรับตามใช้งานจริง
-  @Get('by-param1-id-and-param2-id/:param1_id/:param2_id')
+  @Get('by-param1-id-param2-id/:param1_id/:param2_id')
 
   // ปรับตามใช้งานจริง (ซ้ายทำงานก่อน)
   @UseGuards(ClerkAuthGuard)
 
   // ปรับตามใช้งานจริง
-  async getTemplate(
+  async getAvailableOtherProgramFeatures(
     //
     // ตรวจข้อมูลตามลำดับ (ซ้ายไปขวา, บนลงล่าง)
     // ดังนั้นให้ไล่เป็น

@@ -4,17 +4,12 @@
 
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, Suspense, useState, useMemo } from "react";
-import { toast } from "sonner";
-import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
-import { DateTime } from "luxon";
+import { useState, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
+import { DateTime } from "luxon";
 
 import Link from "next/link";
-
 import { ChildrenHeader } from "@/components/children-header";
 import { MenuGrid } from "@/components/menu-grid/menu-gird";
 import { MenuCard } from "@/components/menu-grid/menu-card";
@@ -26,7 +21,6 @@ import {
   SettingIcon,
   PlusIcon,
 } from "@/components/menu-grid/icon";
-
 // ----------- Import Form -----------
 import {
   // ปรับตามใช้งานจริง
@@ -34,73 +28,8 @@ import {
 
   // ปรับตามใช้งานจริง
 } from "@/features/[program]/[feature]/components/[method-many]-[available_null]-[other-program_null]-[other-feature_null]-form";
-
-// ==========================================
-// 🛡️ Component ดักจับ Error จาก URL
-// ==========================================
-
-function ToastNotifier() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const errorCode = searchParams.get(
-      // ปรับตามใช้งานจริง
-      "error",
-    );
-
-    // ปรับตามใช้งานจริง
-    if (!errorCode) return; // ถ้าไม่มี error ใน URL ก็ไม่ต้องทำอะไรเลย
-
-    // ปรับตามใช้งานจริง
-    if (errorCode === "invalid_id") {
-      //
-      // ปรับตามใช้งานจริง
-      toast.error(
-        //
-        // ปรับตามใช้งานจริง
-        "รหัสองค์กรไม่ถูกต้อง",
-      );
-
-      // ปรับตามใช้งานจริง
-    } else if (
-      //
-      // ปรับตามใช้งานจริง
-      errorCode === ErrorCode.ORGANIZATION_NOT_FOUND ||
-      errorCode === ErrorCode.ORGANIZATION_DELETED ||
-      errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
-    ) {
-      // ปรับตามใช้งานจริง
-      const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
-
-      // ปรับตามใช้งานจริง
-      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
-        description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
-      });
-    }
-
-    // ลบ ?error=... ออกจาก URL โดยคงพาทปัจจุบันไว้ (เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า)
-    window.history.replaceState(
-      null,
-      "",
-      window.location.pathname, // URL ที่จะแทนที่
-    );
-
-    // วิธีการใช้งาน window.location
-
-    // สมมติว่า URL เต็มๆ บนหน้าจอของผู้ใช้ตอนนี้คือ: https://www.yourdomain.com/template/123?error=invalid_id
-    // window.location.origin   จะได้ค่าเป็น https://www.yourdomain.com (ส่วนโดเมนหลัก)
-    // window.location.pathname จะได้ค่าเป็น /template/123 (ส่วนเส้นทางหน้าเว็บ) 👈 พระเอกของเราอยู่ตรงนี้ครับ!
-    // window.location.search   จะได้ค่าเป็น ?error=invalid_id (ส่วน Query Parameters ทั้งหมด)
-    // window.location.hash     จะได้ค่าเป็น #section1 (ถ้ามีการกระโดดไปตามจุดต่างๆ ของหน้า)
-    //
-  }, [searchParams]);
-
-  return null; // ไม่ต้องแสดงผล UI อะไรออกมา
-}
-
-// ==========================================
-// 🛡️ (จบ) Component ดักจับ Error จาก URL
-// ==========================================
+import { DateRangePicker } from "@/components/date-range-picker/date-range-picker";
+import { DateTimeRangePicker } from "@/components/input/datetime-input";
 
 // ===========================================
 // ⏱️ ส่วนทดสอบ Loading: หน่วงเวลา 5 วินาที
@@ -112,16 +41,12 @@ await new Promise((resolve) => setTimeout(resolve, 5000));
 // ⏱️ (จบ) ส่วนทดสอบ Loading: หน่วงเวลา 5 วินาที
 // ===========================================
 
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-
-export default function TemplatePage() {
+export default function Page() {
   //
 
-  const dataQuery = {
-    name: "ชื่อ...",
-  };
+  // const dataQuery = {
+  //   name: "ชื่อ...",
+  // };
 
   const refetch = () => {
     return;
@@ -139,10 +64,6 @@ export default function TemplatePage() {
     { id: "UUID2", name: "test2" },
     { id: "UUID3", name: "test3" },
     { id: "UUID4", name: "test4" },
-    // {
-    //   id: "UUID5",
-    //   name: "test5-123456789-123456789-123456789-123456789-123456789",
-    // },
   ];
   const templateId = "123";
 
@@ -281,6 +202,26 @@ export default function TemplatePage() {
     },
   ];
 
+  // const schedules = [
+  //   {
+  //     id: "123",
+  //     startTime: "2026-01-01T08:00:00Z",
+  //     endTime: "2026-01-01T18:00:00Z",
+  //     min: 2,
+  //     max: 5,
+  //   },
+  //   {
+  //     id: "1234",
+  //     startTime: "2026-01-01T08:00:00Z",
+  //     endTime: "2026Z",
+  //     min: 2,
+  //     max: 5,
+  //   },
+  // ];
+
+  const [startDateTime, setStartDateTime] = useState<string>("");
+  const [endDateTime, setEndDateTime] = useState<string>("");
+
   // 🌟 State สำหรับเก็บช่วงวันที่เริ่มต้นและสิ้นสุด
   const [startDate, setStartDate] = useState<string>(
     DateTime.now().toFormat("yyyy-MM-dd"), // ค่าเริ่มต้น: วันนี้
@@ -349,22 +290,6 @@ export default function TemplatePage() {
 
   return (
     <>
-      {/* ===================================== */}
-      {/* Toast สำหรับ Error ที่มาพร้อมกับ URL */}
-      {/* ===================================== */}
-
-      <Suspense
-        // Suspense คือ การบอกว่าข้างในนี้อาจจะโหลดช้ากว่าส่วนอื่น ให้ไปรันโค้ดส่วนอื่นก่อนได้เลย
-        // เช่น ต้องดึงข้อมูลจาก URL เป็นต้น
-        //
-        fallback={null}
-        // fallback คือ ระหว่างโหลด ให้แสดงอะไรรอ
-        // ถ้าโค้ดข้างใน ไม่ได้ return UI อะไร ให้ใส่ {null}
-        // ถ้าโค้ดข้างใน มี return UI ให้ใส่ {skeleton} ของ โค้ดนั้น
-      >
-        <ToastNotifier />
-      </Suspense>
-
       {/* ========================================================================================== */}
       {/* Main UI (children) */}
       {/* ========================================================================================== */}
@@ -397,13 +322,12 @@ export default function TemplatePage() {
         {/* ============================== */}
 
         <ChildrenHeader
-          //
           title={
             //
             // ปรับตามใช้งานจริง
 
-            `${dataQuery.name}`
-            // `รายการ...`
+            // `${dataQuery.name}`
+            `รายการ...`
             // `สร้าง...ใหม่`
           }
           description={
@@ -415,22 +339,19 @@ export default function TemplatePage() {
             // `จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ`
           }
           backHref={
-            //
-            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-            //
+            // ปรับตามใช้งานจริง
+            `/template/${templateId}/server-query`
           }
           //
 
           // กรณี: ใช้ create button
           createHref={
-            //
-            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-            //
+            // ปรับตามใช้งานจริง
+            `/template/${templateId}/server-query`
           }
           createLabel={
-            //
-            `สร้างข้อมูลใหม่ / สร้าง...ใหม่` // ปรับตามใช้งานจริง
-            //
+            // ปรับตามใช้งานจริง
+            `สร้างข้อมูลใหม่ / สร้าง...ใหม่`
           }
           // (จบ) กรณี: ใช้ create button
 
@@ -440,7 +361,6 @@ export default function TemplatePage() {
           refetch={refetch}
           dataUpdatedAt={dataUpdatedAt}
           // (จบ) กรณี: ใช้ status bar
-          //
         />
 
         {/* ============================== */}
@@ -1183,7 +1103,7 @@ export default function TemplatePage() {
             //
             templateData.length === 0 && ( // ปรับตามใช้งานจริง
               //
-              <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
+              <div className="py-6 text-center text-gray-500">ไม่พบข้อมูล</div>
             )
           }
 
@@ -1221,7 +1141,7 @@ export default function TemplatePage() {
         <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* 🌟 Header: แถบแสดงเวลา */}
           <div className="flex border-b border-gray-200 bg-gray-50">
-            <div className="w-32 shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
+            <div className="shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
               พนักงาน
             </div>
             <div className="flex-1 relative h-12">
@@ -1246,7 +1166,7 @@ export default function TemplatePage() {
                 className="flex border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
               >
                 {/* ซ้าย: ชื่อพนักงาน */}
-                <div className="w-32 shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
+                <div className="shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
                   {emp.name}
                 </div>
 
@@ -1281,66 +1201,29 @@ export default function TemplatePage() {
             ))}
           </div>
         </div>
-        {/*  */}
-      </div>
 
-      <div className="flex flex-col gap-4 p-4">
-        {/* 🟢 เครื่องมือเลือกช่วงเวลา */}
-        <div className="flex items-end gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">
-              เริ่มวันที่
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">ถึงวันที่</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <DateTimeRangePicker
+          startDateTime={startDateTime}
+          endDateTime={endDateTime}
+          onStartChange={setStartDateTime}
+          onEndChange={setEndDateTime}
+          isSubmitting={false}
+        />
 
-          {/* ปุ่มลัด (Presets) */}
-          <div className="flex gap-2 ml-4">
-            <button
-              onClick={() => {
-                setStartDate(DateTime.now().toFormat("yyyy-MM-dd"));
-                setEndDate(
-                  DateTime.now().plus({ days: 6 }).toFormat("yyyy-MM-dd"),
-                );
-              }}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
-            >
-              7 วัน
-            </button>
-            <button
-              onClick={() => {
-                const now = DateTime.now();
-                setStartDate(now.startOf("month").toFormat("yyyy-MM-dd"));
-                setEndDate(now.endOf("month").toFormat("yyyy-MM-dd"));
-              }}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
-            >
-              เดือนนี้ (1 เดือน)
-            </button>
-          </div>
-        </div>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+        />
 
         {/* 🟢 พื้นที่ Timeline */}
         <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
           {/* กำหนด min-w ให้กว้างพอสำหรับดูหลายๆ วัน ถ้าจอมันแคบกว่านี้มันจะเกิด Scroll Bar แนวนอน */}
-          <div className="min-w-250 lg:min-w-full flex flex-col">
+          <div className="lg:min-w-full flex flex-col">
             {/* Header: แถบแสดงวันที่ */}
             <div className="flex border-b border-gray-200 bg-gray-50">
-              <div className="w-40 shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
+              <div className="shrink-0 p-4 font-bold text-gray-700 border-r border-gray-200">
                 พนักงาน
               </div>
               <div className="flex-1 relative flex">
@@ -1363,7 +1246,7 @@ export default function TemplatePage() {
                 className="flex border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
               >
                 {/* ชื่อพนักงาน */}
-                <div className="w-40 shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
+                <div className="shrink-0 p-4 text-sm font-medium text-gray-800 border-r border-gray-200 bg-white">
                   {emp.name}
                 </div>
 
@@ -1408,6 +1291,7 @@ export default function TemplatePage() {
             ))}
           </div>
         </div>
+        {/*  */}
       </div>
 
       {/* ========================================================================================== */}

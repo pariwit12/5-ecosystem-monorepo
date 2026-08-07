@@ -47,11 +47,15 @@ import {
 // ====================================================
 
 const CommandHandlers = [
-  MethodManyAvailableOtherProgramOtherFeatureHandler, // ปรับตามใช้งานจริง
+  //
+  // ปรับตามใช้งานจริง
+  MethodManyAvailableOtherProgramOtherFeatureHandler,
 ];
 
 const QueryHandlers = [
-  GetAvailableOtherProgramFeaturesHandler, // ปรับตามใช้งานจริง
+  //
+  // ปรับตามใช้งานจริง
+  GetAvailableOtherProgramFeaturesHandler,
 ];
 
 // ====================================================
@@ -65,7 +69,8 @@ const QueryHandlers = [
 @Module({
   imports: [CqrsModule],
   controllers: [
-    FeatureController, // ปรับตามใช้งานจริง
+    // ปรับตามใช้งานจริง
+    FeatureController,
   ],
   providers: [...CommandHandlers, ...QueryHandlers],
 })

@@ -83,9 +83,11 @@ model WorkSchedulePosition {
 
   name String // เช่น "พยาบาล วอร์ดอายุรกรรมชั้น 4"
 
-  workScheduleSlotTemplates  WorkScheduleSlotTemplate[]
-  workScheduleSlots          WorkScheduleSlot[]
+  workScheduleMinMaxs        WorkScheduleMinMax[]
   workScheduleStaffPositions WorkScheduleStaffPosition[]
+  slotTypes                  WorkScheduleSlotType[]
+  workScheduleSlotTemplates  WorkScheduleSlotTemplate[]
+  slots                      WorkScheduleSlot[]
 
   @@index([organizationWorkSchedulePlaceId])
   @@map("work_schedule_position")
@@ -99,11 +101,42 @@ model WorkScheduleStaffPosition {
   workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
   deletedAt              DateTime?            @map("deleted_at")
 
-  workScheduleSlots WorkScheduleSlot[]
+  slots WorkScheduleSlot[]
 
   @@id([workScheduleStaffId, workSchedulePositionId]) // ป้องกันไม่ให้แอดพนักงานคนเดิมซ้ำในตำแหน่งเดิม
   @@index([workSchedulePositionId])
   @@map("work_schedule_staff_position")
+}
+
+// 9. กำหนดจำนวนพนักงานขั้นต่ำ / สูงสุด
+model WorkScheduleMinMax {
+  id                     String               @id @default(uuid(7)) @db.Uuid
+  workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
+  workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
+
+  min       Int? // ค่า >= 0 (ควร Validate ระดับ Code ก่อน Save)
+  max       Int? // ค่า >= 0 (ควร Validate ระดับ Code ก่อน Save)
+  startTime DateTime @map("start_time") @db.Timestamptz
+  endTime   DateTime @map("end_time") @db.Timestamptz
+
+  // Index สำหรับเพิ่มความเร็วเวลา Query หาช่วงเวลาที่คาบเกี่ยวกัน (Overlap)
+  @@index([workSchedulePositionId, startTime, endTime])
+  @@map("work_schedule_min_max")
+}
+
+// Tag Slot: เพื่อใช้สำหรับการนับเวรแต่ละประเภท, แสดงผล หรือ ระบบ auto ในการจัดตารางเวร
+model WorkScheduleSlotType {
+  id         String               @id @default(uuid(7)) @db.Uuid
+  positionId String               @map("position_id") @db.Uuid
+  position   WorkSchedulePosition @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  deletedAt  DateTime?            @map("deleted_at")
+
+  name String // เช่น "เวรเช้า (M)", "เวรบ่าย (A)", "เวรดึก (N)", "กะเปิดร้าน"
+
+  slotTemplates WorkScheduleSlotTemplate[]
+  slots         WorkScheduleSlot[]
+
+  @@map("work_schedule_slot_type")
 }
 
 // 5. สร้าง Template ให้ Admin ใช้สร้าง Slot ง่ายๆ
@@ -111,12 +144,12 @@ model WorkScheduleSlotTemplate {
   id                     String               @id @default(uuid(7)) @db.Uuid
   workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
   workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
+  slotTypeId             String               @map("slot_type_id") @db.Uuid
+  slotType               WorkScheduleSlotType @relation(fields: [slotTypeId], references: [id], onDelete: Restrict)
 
-  name           String // เช่น "เวรเช้า (M)", "เวรบ่าย (A)", "เวรดึก (N)", "กะเปิดร้าน"
-  // 🌟 เก็บเป็น String (Wall-clock Time) เสมอ! ห้ามเก็บเป็น DateTime เด็ดขาด (โยนเรื่อง timezone ไปให้ OrganizationWorkSchedulePlace เก็บ)
+  name           String // เช่น แบบร่างเวรเช้า
   startTime      String @map("start_time") // "20:00"
   durationMinute Int    @map("duration_minute") // 720 (นาที)
-  quantity       Int // จำนวน Slot ที่จะสร้าง
 
   //   colorCode   String?   @map("color_code") // เอาไว้ให้หน้าบ้านระบายสีปฏิทินสวยๆ
 
@@ -126,15 +159,15 @@ model WorkScheduleSlotTemplate {
 
 // 6. สร้าง Slot จริง ให้ Staff มาลง หรือ admin จัดใส่ให้
 model WorkScheduleSlot {
-  id                        String                     @id @default(uuid(7)) @db.Uuid
-  workSchedulePositionId    String                     @map("work_schedule_position_id") @db.Uuid
-  workSchedulePosition      WorkSchedulePosition       @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
-  // คนที่มาลง Slot
-  workScheduleStaffId       String?                    @map("work_schedule_staff_id") @db.Uuid
+  id            String                    @id @default(uuid(7)) @db.Uuid
+  positionId    String                    @map("position_id") @db.Uuid
+  position      WorkSchedulePosition      @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  staffId       String                    @map("staff_id") @db.Uuid
   // relation จาก workScheduleStaffId ไป WorkScheduleStaff จะใส่หรือไม่ใส่ก็ได้ ถ้าใส่ DX จะดีขึ้น แต่ถ้าไม่ใส่จะถูกหลักมากกว่า
-  workScheduleStaffPosition WorkScheduleStaffPosition? @relation(fields: [workScheduleStaffId, workSchedulePositionId], references: [workScheduleStaffId, workSchedulePositionId], onDelete: Restrict)
+  staffPosition WorkScheduleStaffPosition @relation(fields: [staffId, positionId], references: [workScheduleStaffId, workSchedulePositionId], onDelete: Restrict)
+  slotTypeId    String                    @map("slot_type_id") @db.Uuid
+  slotType      WorkScheduleSlotType      @relation(fields: [slotTypeId], references: [id], onDelete: Restrict)
 
-  name String // เช่น "เวรเช้า (M)", "เวรบ่าย (A)", "เวรดึก (N)", "กะเปิดร้าน"
   note String? // Description
 
   // ตอนสร้างก็ให้ประกอบร่าง datetime และไปเอา timezone จาก OrganizationWorkSchedulePlace มาประกอบการสร้าง
@@ -143,7 +176,7 @@ model WorkScheduleSlot {
   actualEndTime   DateTime @map("actual_end_time") @db.Timestamptz
 
   // ช่วยออกแบบว่าควรใส่ index อย่างไรบ้างครับ
-  @@index([workSchedulePositionId, actualStartTime])
-  @@index([workScheduleStaffId, actualStartTime])
+  @@index([positionId, actualStartTime])
+  @@index([staffId, actualStartTime])
   @@map("work_schedule_slot")
 }

@@ -5,47 +5,12 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-import { toast } from "sonner";
-import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 
 import { CreatePersonForm } from "@/features/person/components/create-person-form";
-
-function ToastNotifier() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const errorCode = searchParams.get("error");
-
-    if (!errorCode) return;
-
-    if (errorCode === ErrorCode.PERSON_NOT_FOUND) {
-      const errorMessage = USER_ERROR_MESSAGES[errorCode];
-
-      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
-        description: errorMessage,
-      });
-    }
-
-    window.history.replaceState(null, "", window.location.pathname);
-  }, [searchParams]);
-
-  return null;
-}
 
 export default function PersonNewClient() {
   return (
     <>
-      {/* ===================================== */}
-      {/* Toast สำหรับ Error ที่มาพร้อมกับ URL */}
-      {/* ===================================== */}
-
-      <Suspense fallback={null}>
-        <ToastNotifier />
-      </Suspense>
-
       {/* ========================================================================================== */}
       {/* Main UI (children) */}
       {/* ========================================================================================== */}

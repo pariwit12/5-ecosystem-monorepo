@@ -11,21 +11,10 @@ import { workScheduleStaffQueries } from "@/features/work-schedule/staff/work-sc
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-// 🌟 รับ orgId ที่ผ่านการสแกนแล้วมาจาก Server Component
-export default function WorkScheduleAdminStaffClient({
-  placeId,
-}: {
-  placeId: string;
-}) {
+export default function Client({ placeId }: { placeId: string }) {
   const router = useRouter();
-
-  // =================================
-  // 🚀 1. ดึงข้อมูลจาก useQuery / Hook
-  // =================================
   const { getToken, userId, isLoaded } = useAuth();
+
   const { data, isLoading, isFetching, error } = useQuery(
     workScheduleStaffQueries.listsByPlaceId(userId, getToken, placeId, [
       ErrorCode.PERSON_NOT_FOUND,

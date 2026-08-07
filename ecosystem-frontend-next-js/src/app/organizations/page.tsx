@@ -12,7 +12,7 @@ import { CreateOrgModal } from "@/features/organizations/components/create-organ
 import OrganizationsLoading from "./loading";
 
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+import { API_ERROR_MESSAGES } from "@/constants/error-messages";
 
 function ToastNotifier() {
   const searchParams = useSearchParams();
@@ -28,7 +28,7 @@ function ToastNotifier() {
       errorCode === ErrorCode.ORGANIZATION_DELETED ||
       errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
     ) {
-      const errorMessage = USER_ERROR_MESSAGES[errorCode];
+      const errorMessage = API_ERROR_MESSAGES[errorCode];
       toast.error("ไม่สามารถเข้าถึงข้อมูลองค์กรได้", {
         description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
       });
@@ -114,7 +114,7 @@ export default function OrganizationsPage() {
 
         {/* 🌟 ใช้งาน Modal สร้างองค์กร (ปุ่มจะต่อท้ายลิสต์พอดี) */}
         {/* ปิดไว้ก่อน รอพร้อมให้คนสร้างองค์กรต่างๆได้แล้วค่อยเปิด ตอนนี้เน้นสร้าง function หลักให้ครบก่อน */}
-        {/* <CreateOrgModal /> */}
+        <CreateOrgModal />
       </div>
     </div>
   );

@@ -2,23 +2,9 @@
 
 import Link from "next/link";
 
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-// 🌟 รับ orgId ที่ผ่านการสแกนแล้วมาจาก Server Component
-export default function WorkScheduleAdminClient({
-  placeId,
-}: {
-  placeId: string;
-}) {
-  // ==================
-  // ส่วนแสดงผล UI หลัก
-  // ==================
+export default function Client({ placeId }: { placeId: string }) {
   return (
     <>
-      {/* ================== */}
-      {/* Main UI (children) */}
-      {/* ================== */}
       <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
         {/* 🟢 STREAMING_CHUNK:Rendering the header and back button */}
         <div className="flex items-center gap-4 border-b pb-6">

@@ -6,7 +6,7 @@ import { workScheduleSlotKeys } from "./work-schedule-slot-keys";
 // ---------- Import Function (.api) ----------
 // ============================================
 
-import { getWorkScheduleSlotsByPositionId } from "./api/queries/get-work-schedule-slots-by-position-id.api";
+import { getSlotsByPositionIdStartTimeEndTime } from "./api/queries/get-slots-by-position-id-start-time-end-time.api";
 
 // ============================================
 // ------- (จบ) Import Function (.api) --------
@@ -19,26 +19,35 @@ export const workScheduleSlotQueries = {
   // ===========================================
 
   // 1
-  queryGetWorkScheduleSlotsByPositionId: (
+  queryGetSlotsByPositionIdStartTimeEndTime: (
     positionId: string,
+
+    startTime: string,
+    endTime: string,
 
     userId: string | null | undefined,
     getToken: () => Promise<string | null>,
 
-    skipErrorCodes?: string[],
+    skipErrorCodes?: readonly string[],
   ) =>
     queryOptions({
-      queryKey: workScheduleSlotKeys.listsByPositionId(
+      queryKey: workScheduleSlotKeys.listsByPositionIdStartTimeEndTime(
         userId ?? "",
         positionId,
+        startTime,
+        endTime,
       ),
 
       queryFn: async () => {
         const token = await getToken();
         if (!token) throw new Error("Authentication token is missing");
 
-        return getWorkScheduleSlotsByPositionId(
+        return getSlotsByPositionIdStartTimeEndTime(
           positionId,
+
+          startTime,
+          endTime,
+
           token,
           skipErrorCodes,
         );
@@ -46,7 +55,7 @@ export const workScheduleSlotQueries = {
 
       staleTime: 60 * 1000,
 
-      enabled: !!userId && !!positionId,
+      enabled: !!userId && !!positionId && !!startTime && !!endTime,
     }),
 
   // ===========================================

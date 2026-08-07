@@ -39,6 +39,8 @@ export const programFeatureQueries = {
     //
     // ปรับตามใช้งานจริง
     valueOne: string,
+
+    // ปรับตามใช้งานจริง
     valueTwo: string,
     valueThree: string,
 
@@ -73,7 +75,11 @@ export const programFeatureQueries = {
           // ปรับตามใช้งานจริง
           valueOne,
           valueTwo,
+
+          // ปรับตามใช้งานจริง
           valueThree,
+
+          // ปรับตามใช้งานจริง
           token,
           skipErrorCodes,
         );

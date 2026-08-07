@@ -17,6 +17,7 @@ export const createMany = async (
   staffIds: string[],
 
   token: string,
+  // eslint-disable-next-line
   skipErrorCodes?: readonly string[],
 ): Promise<void> => {
   const paramData: CreateManyDtoParam = {
@@ -59,7 +60,7 @@ export const createMany = async (
     {
       headers: { Authorization: `Bearer ${token}` },
 
-      skipErrorCodes: skipErrorCodes,
+      // skipErrorCodes: skipErrorCodes,
     },
   );
 

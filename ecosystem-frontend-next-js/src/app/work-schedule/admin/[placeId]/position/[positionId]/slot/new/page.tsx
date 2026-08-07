@@ -3,25 +3,14 @@
 // ------------------------------------------------------------------------
 
 import { redirect } from "next/navigation";
+import { PageErrorList } from "@/constants/page-error-list.enum";
 
-import WorkScheduleAdminPositionSlotNewClient from "./client-page";
-
-// ==========================================
-// สร้างฟังก์ชัน สำหรับตรวจสอบ URL
-// ==========================================
+import Client from "./client-page";
 
 const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
   /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-// ==========================================
-// (จบ) สร้างฟังก์ชัน สำหรับตรวจสอบ URL
-// ==========================================
-
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-
-export default async function WorkScheduleAdminPositionSlotNewPage({
+export default async function Page({
   params,
   searchParams,
 }: {
@@ -33,32 +22,10 @@ export default async function WorkScheduleAdminPositionSlotNewPage({
     [key: string]: string | string[] | undefined;
   }>;
 }) {
-  //
-  // ==========================================
-  // ตรวจสอบ URL (param)
-  // ==========================================
-
   const resolvedParams = await params;
 
   const placeId = resolvedParams.placeId;
-
-  if (!uuidV7Regex.test(placeId)) {
-    redirect("/work-schedule?error=invalid_id");
-  }
-
   const positionId = resolvedParams.positionId;
-
-  if (!uuidV7Regex.test(positionId)) {
-    redirect(`/work-schedule/admin/${placeId}/position?error=invalid_id`);
-  }
-
-  // ==========================================
-  // (จบ) ตรวจสอบ URL (param)
-  // ==========================================
-
-  // ==========================================
-  // ตรวจสอบ URL (query)
-  // ==========================================
 
   const resolvedSearchParams = await searchParams;
 
@@ -69,19 +36,11 @@ export default async function WorkScheduleAdminPositionSlotNewPage({
 
   if (prefillId !== undefined && !uuidV7Regex.test(prefillId)) {
     redirect(
-      `/work-schedule/admin/${placeId}/position/${positionId}/slot/new/pre-fill?error=invalid_id`,
+      `/work-schedule/admin/${placeId}/position/${positionId}/slot/new/pre-fill?error=${PageErrorList.INVALID_ID}`,
     );
   }
 
-  // ==========================================
-  // (จบ) ตรวจสอบ URL (query)
-  // ==========================================
-
   return (
-    <WorkScheduleAdminPositionSlotNewClient
-      placeId={placeId}
-      positionId={positionId}
-      prefillId={prefillId}
-    />
+    <Client placeId={placeId} positionId={positionId} prefillId={prefillId} />
   );
 }

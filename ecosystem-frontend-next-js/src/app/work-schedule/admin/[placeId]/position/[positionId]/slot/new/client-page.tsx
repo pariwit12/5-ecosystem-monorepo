@@ -4,37 +4,27 @@
 
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { toast } from "sonner";
-import { isAxiosError } from "axios";
-import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { useQuery } from "@tanstack/react-query";
+
+import { workScheduleSlotTemplateQueries } from "@/features/work-schedule/slot-template/work-schedule-slot-template.queries";
+import { workScheduleSlotTypeQueries } from "@/features/work-schedule/slot-type/work-schedule-slot-type.queries";
+import { workScheduleStaffPositionQueries } from "@/features/work-schedule/staff-position/work-schedule-staff-position.queries";
+import { workSchedulePlaceQueries } from "@/features/work-schedule/place/work-schedule-place.queries";
+import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
+
+import { useEffectCheckError } from "@/hooks/use-effect-check-error";
+import { workScheduleAdminPlaceIdPositionPositionIdSlotNewErrorCodeRedirectList } from "./error-code-redirect-list";
+import RedirectUI from "@/components/redirect/redirect-ui";
+
+import ErrorQuery from "./error";
+
+import Loading from "./loading";
 
 import { cn } from "@/lib/utils";
 
-import Loading from "./loading";
-import ErrorQuery from "./error";
-
 import { ChildrenHeader } from "@/components/children-header";
-
-import { CreateWorkScheduleSlotForm } from "@/features/work-schedule/slot/components/create-work-schedule-slot-form";
-
-// ===================
-// Import Queries
-// ===================
-
-import { workSchedulePlaceQueries } from "@/features/work-schedule/place/work-schedule-place.queries";
-import { workScheduleSlotTemplateQueries } from "@/features/work-schedule/slot-template/work-schedule-slot-template.queries";
-
-// ===================
-// (จบ) Import Queries
-// ===================
-
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
+import { CreateManyForm } from "@/features/work-schedule/slot/components/create-many-form";
 
 export default function WorkScheduleAdminPositionSlotNewClient({
   placeId,
@@ -45,89 +35,7 @@ export default function WorkScheduleAdminPositionSlotNewClient({
   positionId: string;
   prefillId?: string;
 }) {
-  const router = useRouter();
   const { getToken, userId, isLoaded } = useAuth();
-
-  // =================================
-  // 🚀 ดึงข้อมูล Query (Place สำหรับ timezone)
-  // =================================
-
-  const {
-    data: dataQueryPlace,
-    isLoading: isLoadingPlace,
-    // eslint-disable-next-line
-    isFetching: isFetchingPlace,
-    error: errorQueryPlace,
-    refetch: refetchPlace,
-    // eslint-disable-next-line
-    dataUpdatedAt: dataUpdatedAtPlace,
-  } = useQuery(
-    workSchedulePlaceQueries.queryGetWorkSchedulePlaceById(
-      placeId,
-
-      userId,
-      getToken,
-
-      [
-        ErrorCode.PERSON_NOT_FOUND,
-
-        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-      ],
-    ),
-  );
-
-  // =================================
-  // 🚀 (จบ) ดึงข้อมูล Query (Place สำหรับ timezone)
-  // =================================
-
-  // ===============================================
-  // 🌟 ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
-
-  useEffect(() => {
-    if (errorQueryPlace && isAxiosError(errorQueryPlace)) {
-      const errorCode = errorQueryPlace.response?.data?.errorCode;
-
-      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
-        router.push(`/person/new?error=${errorCode}`);
-
-        return;
-      }
-
-      if (
-        [
-          ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
-          ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-          ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-        ].includes(errorCode)
-      ) {
-        router.push(`/work-schedule?error=${errorCode}`);
-
-        return;
-      }
-    }
-
-    // =================================================
-    // Error จากการ fetching ที่ผ่านตรวจสอบ redirect แล้ว
-    // =================================================
-
-    if (errorQueryPlace && dataQueryPlace !== undefined) {
-      toast.error(
-        "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
-      );
-    }
-    //
-  }, [errorQueryPlace, router, dataQueryPlace]);
-
-  // ===============================================
-  // 🌟 (จบ) ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
-
-  // =================================
-  // 🚀 ดึงข้อมูล Query (pre-fill)
-  // =================================
 
   const {
     data: dataQuery,
@@ -137,250 +45,231 @@ export default function WorkScheduleAdminPositionSlotNewClient({
     refetch,
     dataUpdatedAt,
   } = useQuery(
-    workScheduleSlotTemplateQueries.queryGetWorkScheduleSlotTemplateById(
+    workScheduleSlotTemplateQueries.queryGetSlotTemplateById(
       prefillId ?? "",
 
       userId,
       getToken,
 
-      [
-        ErrorCode.PERSON_NOT_FOUND,
-
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-
-        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
-
-        ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND,
-      ],
+      AccessControlErrorCode.verifyWorkScheduleSlotTemplateIdByWorkScheduleAdmin,
     ),
   );
 
-  // =================================
-  // 🚀 (จบ) ดึงข้อมูล Query (pre-fill)
-  // =================================
+  const {
+    data: dataQuerySlotType,
+    isLoading: isLoadingSlotType,
+    error: errorQuerySlotType,
+    refetch: refetchSlotType,
+  } = useQuery(
+    workScheduleSlotTypeQueries.queryGetSlotTypesByPositionId(
+      positionId,
 
-  // ===============================================
-  // 🌟 ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
+      userId,
+      getToken,
 
-  useEffect(() => {
-    if (errorQuery && isAxiosError(errorQuery)) {
-      const errorCode = errorQuery.response?.data?.errorCode;
+      AccessControlErrorCode.verifyWorkSchedulePositionByWorkScheduleAdmin,
+    ),
+  );
 
-      if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
-        router.push(`/person/new?error=${errorCode}`);
+  const {
+    data: dataQueryStaffPosition,
+    isLoading: isLoadingStaffPosition,
+    error: errorQueryStaffPosition,
+    refetch: refetchStaffPosition,
+  } = useQuery(
+    workScheduleStaffPositionQueries.queryGetStaffPositionsByPositionId(
+      positionId,
 
-        return;
-      }
+      userId,
+      getToken,
 
-      if (
-        [
-          ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-          ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-        ].includes(errorCode)
-      ) {
-        router.push(`/work-schedule?error=${errorCode}`);
+      AccessControlErrorCode.verifyWorkSchedulePositionByWorkScheduleAdmin,
+    ),
+  );
 
-        return;
-      }
+  const {
+    data: dataQueryPlace,
+    isLoading: isLoadingPlace,
+    error: errorQueryPlace,
+    refetch: refetchPlace,
+  } = useQuery(
+    workSchedulePlaceQueries.queryGetWorkSchedulePlaceById(
+      placeId,
 
-      if ([ErrorCode.WORK_SCHEDULE_POSITION_DELETED].includes(errorCode)) {
-        router.push(
-          `/work-schedule/admin/${placeId}/position?error=${errorCode}`,
-        );
+      userId,
+      getToken,
 
-        return;
-      }
+      AccessControlErrorCode.verifyWorkScheduleAdminAccess,
+    ),
+  );
 
-      if (
-        [ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND].includes(errorCode)
-      ) {
-        router.push(
-          `/work-schedule/admin/${placeId}/position/${positionId}/slot/new/pre-fill?error=${errorCode}`,
-        );
+  const { isRedirecting, targetUrl, errorCode } = useEffectCheckError(
+    errorQuery,
+    workScheduleAdminPlaceIdPositionPositionIdSlotNewErrorCodeRedirectList,
+    dataQuery,
+  );
 
-        return;
-      }
-    }
+  const {
+    isRedirecting: isRedirectingSlotType,
+    targetUrl: targetUrlSlotType,
+    errorCode: errorCodeSlotType,
+  } = useEffectCheckError(
+    errorQuerySlotType,
+    workScheduleAdminPlaceIdPositionPositionIdSlotNewErrorCodeRedirectList,
+    dataQuerySlotType,
+  );
 
-    // =================================================
-    // Error จากการ fetching ที่ผ่านตรวจสอบ redirect แล้ว
-    // =================================================
+  const {
+    isRedirecting: isRedirectingStaffPosition,
+    targetUrl: targetUrlStaffPosition,
+    errorCode: errorCodeStaffPosition,
+  } = useEffectCheckError(
+    errorQueryStaffPosition,
+    workScheduleAdminPlaceIdPositionPositionIdSlotNewErrorCodeRedirectList,
+    dataQueryStaffPosition,
+  );
 
-    if (errorQuery && dataQuery !== undefined) {
-      toast.error(
-        "ไม่สามารถอัปเดตข้อมูลล่าสุดได้ แต่คุณยังคงดูข้อมูลเดิมได้อยู่",
-      );
-    }
-    //
-  }, [errorQuery, router, dataQuery, placeId, positionId]);
+  const {
+    isRedirecting: isRedirectingPlace,
+    targetUrl: targetUrlPlace,
+    errorCode: errorCodePlace,
+  } = useEffectCheckError(
+    errorQueryPlace,
+    workScheduleAdminPlaceIdPositionPositionIdSlotNewErrorCodeRedirectList,
+    dataQueryPlace,
+  );
 
-  // ===============================================
-  // 🌟 (จบ) ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
-
-  // =================================================================================
-  // Loading UI (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // =================================================================================
-
-  if (!isLoaded || isLoading || isLoadingPlace) {
-    return <Loading />;
+  if (isRedirecting && targetUrl && errorCode) {
+    return <RedirectUI targetUrl={targetUrl} errorCode={errorCode} />;
   }
 
-  // =================================================================================
-  // (จบ) Loading UI (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // =================================================================================
-
-  // ==================================================================================================
-  // Flash UI (สำหรับ Redirect) (จำเป็นกรณี Client มี First Query  หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ==================================================================================================
+  if (isRedirectingSlotType && targetUrlSlotType && errorCodeSlotType) {
+    return (
+      <RedirectUI targetUrl={targetUrlSlotType} errorCode={errorCodeSlotType} />
+    );
+  }
 
   if (
-    (errorQueryPlace &&
-      dataQueryPlace === undefined &&
-      isAxiosError(errorQueryPlace) &&
-      [
-        ErrorCode.PERSON_NOT_FOUND,
-
-        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-      ].includes(errorQueryPlace.response?.data?.errorCode)) ||
-    (errorQuery &&
-      dataQuery === undefined &&
-      isAxiosError(errorQuery) &&
-      [
-        ErrorCode.PERSON_NOT_FOUND,
-
-        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
-        ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
-
-        ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
-
-        ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND,
-      ].includes(errorQuery.response?.data?.errorCode))
+    isRedirectingStaffPosition &&
+    targetUrlStaffPosition &&
+    errorCodeStaffPosition
   ) {
-    return <Loading />;
+    return (
+      <RedirectUI
+        targetUrl={targetUrlStaffPosition}
+        errorCode={errorCodeStaffPosition}
+      />
+    );
   }
 
-  // ==================================================================================================
-  // (จบ) Flash UI (สำหรับ Redirect) (จำเป็นกรณี Client มี First Query  หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ==================================================================================================
-
-  // ===========================================================================================================
-  // Early Return: หน้าจอ Error โหลดครั้งแรก (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ===========================================================================================================
-
-  if (errorQueryPlace && dataQueryPlace === undefined) {
-    return <ErrorQuery reset={() => refetchPlace()} />;
+  if (isRedirectingPlace && targetUrlPlace && errorCodePlace) {
+    return <RedirectUI targetUrl={targetUrlPlace} errorCode={errorCodePlace} />;
   }
 
   if (errorQuery && dataQuery === undefined) {
     return <ErrorQuery reset={() => refetch()} />;
   }
 
-  // ===========================================================================================================
-  // (จบ) Early Return: หน้าจอ Error โหลดครั้งแรก (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ===========================================================================================================
+  if (errorQuerySlotType && dataQuerySlotType === undefined) {
+    return <ErrorQuery reset={() => refetchSlotType()} />;
+  }
 
-  // ============================
-  // 🎯 ฟังก์ชันเฉพาะของหน้า
-  // ============================
+  if (errorQueryStaffPosition && dataQueryStaffPosition === undefined) {
+    return <ErrorQuery reset={() => refetchStaffPosition()} />;
+  }
 
-  // ============================
-  // 🎯 (จบ) ฟังก์ชันเฉพาะของหน้า
-  // ============================
-
-  // ===================================================
-  // ตรวจสอบความพร้อมข้อมูลที่ต้องใช้แสดงผลก่อนแสดงผลจริง
-  // ===================================================
+  if (errorQueryPlace && dataQueryPlace === undefined) {
+    return <ErrorQuery reset={() => refetchPlace()} />;
+  }
 
   if (
-    dataQueryPlace === undefined ||
-    (prefillId !== undefined && dataQuery === undefined)
+    !isLoaded ||
+    isLoading ||
+    isLoadingSlotType ||
+    isLoadingStaffPosition ||
+    isLoadingPlace ||
+    (prefillId !== undefined && dataQuery === undefined) ||
+    dataQuerySlotType === undefined ||
+    dataQueryStaffPosition === undefined ||
+    dataQueryPlace === undefined
   ) {
     return <Loading />;
   }
 
-  // ===================================================
-  // (จบ) ตรวจสอบความพร้อมข้อมูลที่ต้องใช้แสดงผลก่อนแสดงผลจริง
-  // ===================================================
-
-  // ==============================================================
-  // จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // ==============================================================
-
-  const place = dataQueryPlace;
   const slotTemplate = dataQuery;
-
-  // ==============================================================
-  // (จบ) จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // ==============================================================
-
-  // ===================================================
-  // ส่วนแสดงผล UI หลัก (snippet จากใน template/page.tsx)
-  // ===================================================
+  const slotTypes = dataQuerySlotType.slotTypes;
+  const staffPositions = dataQueryStaffPosition.staffPositions;
+  const place = dataQueryPlace;
 
   return (
-    <>
-      {/* ========================================================================================== */}
-      {/* Main UI (children) */}
-      {/* ========================================================================================== */}
+    <div
+      className={cn(
+        "@container",
 
-      <div
-        className={cn(
-          "@container",
+        "w-full",
 
-          "w-full",
+        "max-w-7xl",
 
-          "max-w-7xl",
+        "mx-auto",
 
-          "mx-auto",
+        "flex",
+        "flex-col",
+        "gap-2 sm:gap-3",
 
-          "flex",
-          "flex-col",
-          "gap-2 sm:gap-3",
+        "relative",
 
-          "relative",
+        "px-4 sm:px-6",
 
-          "px-4 sm:px-6",
+        "py-4 sm:py-6",
+      )}
+    >
+      <ChildrenHeader
+        title={`สร้างตารางเวร`}
+        description={`กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`}
+        backHref={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/menu`}
+        //
 
-          "py-4 sm:py-6",
-        )}
-      >
-        <ChildrenHeader
-          title={`สร้างตารางเวร`}
-          description={`กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`}
-          backHref={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/menu`}
-          //
+        // กรณี: ใช้ status bar
+        isFetching={isFetching}
+        errorQuery={errorQuery}
+        refetch={refetch}
+        dataUpdatedAt={dataUpdatedAt}
+        // (จบ) กรณี: ใช้ status bar
+      />
 
-          // กรณี: ใช้ status bar
-          isFetching={isFetching}
-          errorQuery={errorQuery}
-          refetch={refetch}
-          dataUpdatedAt={dataUpdatedAt}
-          // (จบ) กรณี: ใช้ status bar
-        />
+      {staffPositions.length === 0 && (
+        <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
+          <div className="py-6 text-center text-gray-500">
+            ไม่พบข้อมูลพนักงานของตำแหน่งงานนี้
+            กรุณาเพิ่มพนักงานเข้าตำแหน่งงานนี้ก่อน
+          </div>
+        </div>
+      )}
 
-        <CreateWorkScheduleSlotForm
+      {slotTypes.length === 0 && (
+        <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
+          <div className="py-6 text-center text-gray-500">
+            ไม่พบข้อมูลชนิด/ประเภทกะการทำงานของตำแหน่งงานนี้
+            กรุณาเพิ่มชนิด/ประเภทกะการทำงานเข้าตำแหน่งงานนี้ก่อน
+          </div>
+        </div>
+      )}
+
+      {staffPositions.length > 0 && slotTypes.length > 0 && (
+        <CreateManyForm
           positionId={positionId}
+          staffPositions={staffPositions}
           placeTimezone={place.timezone}
-          prefillName={slotTemplate?.name}
+          availableSlotTypes={slotTypes}
+          prefillSlotTypeId={slotTemplate?.slotTypeId}
           prefillStartTime={slotTemplate?.startTime}
           prefillDurationMinute={slotTemplate?.durationMinute}
-          prefillQuantity={slotTemplate?.quantity}
           urlOnSuccess={`/work-schedule/admin/${placeId}/position/${positionId}/slot`}
           urlOnCancel={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/menu`}
           skipErrorCodes={[]}
           className=""
         />
-      </div>
-
-      {/* ========================================================================================== */}
-      {/* (จบ) Main UI (children) */}
-      {/* ========================================================================================== */}
-      {/*  */}
-    </>
+      )}
+    </div>
   );
 }

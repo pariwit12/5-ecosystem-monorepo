@@ -57,10 +57,6 @@ import {
   PlusIcon,
 } from "@/components/menu-grid/icon";
 
-// ===================
-// Import Queries
-// ===================
-
 import {
   // ปรับตามใช้งานจริง
   templateQueries,
@@ -68,111 +64,36 @@ import {
   // ปรับตามใช้งานจริง
 } from "@/features/[program]/[feature]/[program]-[feature].queries";
 
-// ===================
-// (จบ) Import Queries
-// ===================
+// ==>>==>>== เพิ่ม Import Type ของ Response เพื่อใช้สร้าง type ให้ initialData ==<<==<<==
 
-// ----------- Import Type (Response from API) -----------
 import {
   // ปรับตามใช้งานจริง
-  GetTemplateResponse,
+  GetAvailableOtherProgramFeaturesResponse,
 
   // ปรับตามใช้งานจริง
-} from "@backend/modules/[template]/queries/get-[template].query";
+} from "@backend/modules/[program]/[feature]/queries/get-[available_null]-[other-program_null]-[features_feature].query";
 
-// ==========================================
-// 🛡️ Component ดักจับ Error จาก URL
-// ==========================================
+// ==>>==>>== (จบ) เพิ่ม Import Type ของ Response เพื่อใช้สร้าง type ให้ initialData ==<<==<<==
 
-function ToastNotifier() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const errorCode = searchParams.get(
-      // ปรับตามใช้งานจริง
-      "error",
-    );
-
-    // ปรับตามใช้งานจริง
-    if (!errorCode) return; // ถ้าไม่มี error ใน URL ก็ไม่ต้องทำอะไรเลย
-
-    // ปรับตามใช้งานจริง
-    if (errorCode === "invalid_id") {
-      //
-      // ปรับตามใช้งานจริง
-      toast.error(
-        //
-        // ปรับตามใช้งานจริง
-        "รหัสองค์กรไม่ถูกต้อง",
-      );
-
-      // ปรับตามใช้งานจริง
-    } else if (
-      //
-      // ปรับตามใช้งานจริง
-      errorCode === ErrorCode.ORGANIZATION_NOT_FOUND ||
-      errorCode === ErrorCode.ORGANIZATION_DELETED ||
-      errorCode === ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION
-    ) {
-      // ปรับตามใช้งานจริง
-      const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
-
-      // ปรับตามใช้งานจริง
-      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
-        description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
-      });
-    }
-
-    // ลบ ?error=... ออกจาก URL โดยคงพาทปัจจุบันไว้ (เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า)
-    window.history.replaceState(
-      null,
-      "",
-      window.location.pathname, // URL ที่จะแทนที่
-    );
-
-    // วิธีการใช้งาน window.location
-
-    // สมมติว่า URL เต็มๆ บนหน้าจอของผู้ใช้ตอนนี้คือ: https://www.yourdomain.com/template/123?error=invalid_id
-    // window.location.origin   จะได้ค่าเป็น https://www.yourdomain.com (ส่วนโดเมนหลัก)
-    // window.location.pathname จะได้ค่าเป็น /template/123 (ส่วนเส้นทางหน้าเว็บ) 👈 พระเอกของเราอยู่ตรงนี้ครับ!
-    // window.location.search   จะได้ค่าเป็น ?error=invalid_id (ส่วน Query Parameters ทั้งหมด)
-    // window.location.hash     จะได้ค่าเป็น #section1 (ถ้ามีการกระโดดไปตามจุดต่างๆ ของหน้า)
-    //
-  }, [searchParams]);
-
-  return null; // ไม่ต้องแสดงผล UI อะไรออกมา
-}
-
-// ==========================================
-// 🛡️ (จบ) Component ดักจับ Error จาก URL
-// ==========================================
-
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-
-// ปรับตามใช้งานจริง
-export default function TemplateClient({
-  //
-  // ปรับตามใช้งานจริง
+export default function Client({
   templateId,
   // eslint-disable-next-line
   templateQueryId,
 
+  // ==>>==>>== รับข้อมูลที่ Server ใช้ดึงข้อมูล initialData เพื่อมาลง key ให้ถูกต้อง (ป้องกันลงผิดคีย์) ==<<==<<==
+
   // ปรับตามใช้งานจริง
   serverUserId,
+
+  // ==>>==>>== เพิ่มเติมข้อมูล initialData จาก SSR เพื่อมาใส่เป็นค่าเริ่มต้นใน TanStack ==<<==<<==
   initialData,
-  //
 }: {
-  //
-  // ปรับตามใช้งานจริง
   templateId: string;
   templateQueryId?: string;
 
   // ปรับตามใช้งานจริง
   serverUserId: string | null;
-  initialData: GetTemplateResponse; // ปรับตามใช้งานจริง
-  //
+  initialData: GetAvailableOtherProgramFeaturesResponse;
 }) {
   // eslint-disable-next-line
   const router = useRouter();
@@ -184,6 +105,8 @@ export default function TemplateClient({
   // =================================
   // 🚀 ดึงข้อมูล Query
   // =================================
+
+  // *** ตอนจะใช้: มาศึกษาวิธีกำหนด key ให้ initialData เพื่อความถูกต้อง (ตอนนี้ตรวจสอบแค่ userId)
 
   const {
     //
@@ -226,198 +149,5 @@ export default function TemplateClient({
   // 🚀 (จบ) ดึงข้อมูล Query
   // =================================
 
-  // ===============================================
-  // 🌟 ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
-
-  // ปรับตามใช้งานจริง
-  useEffectRedirectFromErrorQuery
-    //
-    // ปรับตามใช้งานจริง
-    .ErrorCodeVerifyWorkSchedulePositionByWorkScheduleAdmin({
-      //
-
-      // ปรับตามใช้งานจริง
-      errorQuery: errorQuery,
-      dataQuery: dataQuery,
-      placeId: "placeId",
-    });
-
-  // ===============================================
-  // 🌟 (จบ) ดักจับ Error (จาก Query) แล้ว Redirect
-  // ===============================================
-
-  // =================================================================================
-  // Loading UI (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // =================================================================================
-
-  // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
-
-  if (!isLoaded || isLoading) {
-    return <Loading />;
-  }
-
-  // =================================================================================
-  // (จบ) Loading UI (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // =================================================================================
-
-  // ==================================================================================================
-  // Flash UI (สำหรับ Redirect) (จำเป็นกรณี Client มี First Query  หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ==================================================================================================
-
-  // ป้องกันหน้าจอกระพริบ (UI Flash)
-  // ทำงานเฉพาะตอนโหลดหน้าจอ เนื่องจากใช้ if() = ถ้าเกิด error จาก fetching จะไม่กระพริบ
-
-  if (
-    errorQuery &&
-    dataQuery === undefined &&
-    isAxiosError(errorQuery) &&
-    // ปรับตามใช้งานจริง
-    AccessControlErrorCode.verifyOrganizationAccess // ปรับตามใช้งานจริง
-      .includes(errorQuery.response?.data?.errorCode)
-  ) {
-    return <Loading />;
-  }
-
-  // ==================================================================================================
-  // (จบ) Flash UI (สำหรับ Redirect) (จำเป็นกรณี Client มี First Query  หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ==================================================================================================
-
-  // ===========================================================================================================
-  // Early Return: หน้าจอ Error โหลดครั้งแรก (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ===========================================================================================================
-
-  if (errorQuery && dataQuery === undefined) {
-    return <ErrorQuery reset={() => refetch()} />;
-  }
-
-  // ===========================================================================================================
-  // (จบ) Early Return: หน้าจอ Error โหลดครั้งแรก (จำเป็นกรณี Client มี First Query หรือ บัญชี userId เปลี่ยนโดยไม่ได้รีเฟรช)
-  // ===========================================================================================================
-
-  // ============================
-  // 🎯 ฟังก์ชันเฉพาะของหน้า
-  // ============================
-
-  // ============================
-  // 🎯 (จบ) ฟังก์ชันเฉพาะของหน้า
-  // ============================
-
-  // ===================================================
-  // ตรวจสอบความพร้อมข้อมูลที่ต้องใช้แสดงผลก่อนแสดงผลจริง
-  // ===================================================
-
-  if (
-    //
-    // ปรับตามใช้งานจริง
-    dataQuery === undefined
-    //
-  ) {
-    return <Loading />;
-  }
-
-  // ===================================================
-  // (จบ) ตรวจสอบความพร้อมข้อมูลที่ต้องใช้แสดงผลก่อนแสดงผลจริง
-  // ===================================================
-
-  // ==============================================================
-  // จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // ==============================================================
-
-  // ปรับตามใช้งานจริง
-  // const positions = dataQuery.positions;
-
-  // ==============================================================
-  // (จบ) จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // ==============================================================
-
-  // ===================================================
-  // ส่วนแสดงผล UI หลัก (snippet จากใน template/page.tsx)
-  // ===================================================
-
-  return (
-    <>
-      <Suspense fallback={null}>
-        <ToastNotifier />
-      </Suspense>
-
-      {/* ========================================================================================== */}
-      {/* Main UI (children) */}
-      {/* ========================================================================================== */}
-
-      <div
-        className={cn(
-          "@container",
-
-          "w-full",
-
-          "max-w-7xl",
-
-          "mx-auto",
-
-          "flex",
-          "flex-col",
-          "gap-2 sm:gap-3",
-
-          "relative",
-
-          "px-4 sm:px-6",
-
-          "py-4 sm:py-6",
-        )}
-      >
-        <ChildrenHeader
-          //
-          title={
-            //
-            // ปรับตามใช้งานจริง
-
-            // `${dataQuery.name}`
-            `รายการ...`
-            // `สร้าง...ใหม่`
-          }
-          description={
-            //
-            // ปรับตามใช้งานจริง
-
-            // `เลือกเมนูที่ต้องการจัดการหรือเข้าถึง`
-            `กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`
-            // `จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ`
-          }
-          backHref={
-            //
-            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-            //
-          }
-          //
-
-          // กรณี: ใช้ create button
-          createHref={
-            //
-            `/template/${templateId}/server-query` // ปรับตามใช้งานจริง
-            //
-          }
-          createLabel={
-            //
-            `สร้างข้อมูลใหม่ / สร้าง...ใหม่` // ปรับตามใช้งานจริง
-            //
-          }
-          // (จบ) กรณี: ใช้ create button
-
-          // กรณี: ใช้ status bar
-          isFetching={isFetching}
-          errorQuery={errorQuery}
-          refetch={refetch}
-          dataUpdatedAt={dataUpdatedAt}
-          // (จบ) กรณี: ใช้ status bar
-          //
-        />
-      </div>
-
-      {/* ========================================================================================== */}
-      {/* (จบ) Main UI (children) */}
-      {/* ========================================================================================== */}
-      {/*  */}
-    </>
-  );
+  return <></>;
 }

@@ -19,8 +19,7 @@ import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 // ErrorCode จากแต่ละ AccessControl
 import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
 
-// ปรับตามใช้งานจริง
-import TemplateClient from "./client-page";
+import Client from "./client-page";
 
 // ----------- Import Queries -----------
 import {
@@ -43,16 +42,11 @@ const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
 // (จบ) สร้างฟังก์ชัน สำหรับตรวจสอบ URL
 // ==========================================
 
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-
-// ปรับตามใช้งานจริง
-export default async function TemplatePage({
+export default async function Page({
   //
   // ปรับตามใช้งานจริง
   params,
-  searcjParams,
+  searchParams,
   // เปลี่ยนชื่อไม่ได้ Next.js กำหนดมาว่าต้องเป็น params และ searchParams เท่านั้น
 }: {
   //
@@ -63,7 +57,7 @@ export default async function TemplatePage({
     templateId: string;
     anotherId: string;
   }>;
-  searcjParams: Promise<{
+  searchParams: Promise<{
     [key: string]: string | string[] | undefined; // type ของค่าที่รับมาผ่าน query ที่จะเกิดขึ้นได้
   }>;
 }) {
@@ -138,7 +132,7 @@ export default async function TemplatePage({
   // ตรวจสอบ URL (query)
   // ==========================================
 
-  const resolvedSearchParams = await searcjParams;
+  const resolvedSearchParams = await searchParams;
 
   // var: 1 (From Query)
 
@@ -241,19 +235,12 @@ export default async function TemplatePage({
   // (จบ) Server Query + Hydration
   // =============================
 
-  // =============================
-  // เรียก Client-Page
-  // =============================
-
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      {/*  */}
-      <TemplateClient // ปรับตามใช้งานจริง
-        //
+      <Client
         // ปรับตามใช้งานจริง
-        templateId={templateId} // ปรับตามใช้งานจริง
-        templateQueryId={templateQueryId} // ปรับตามใช้งานจริง
-        //
+        templateId={templateId}
+        templateQueryId={templateQueryId}
       />
     </HydrationBoundary>
   );

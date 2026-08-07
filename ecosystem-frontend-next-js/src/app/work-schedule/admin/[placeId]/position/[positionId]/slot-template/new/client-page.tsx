@@ -4,204 +4,116 @@
 
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
+
+import { workScheduleSlotTypeQueries } from "@/features/work-schedule/slot-type/work-schedule-slot-type.queries";
+import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
+
+import { useEffectCheckError } from "@/hooks/use-effect-check-error";
+import { workScheduleAdminPlaceIdPositionPositionIdSlotTemplateNewErrorCodeRedirectList } from "./error-code-redirect-list";
+import RedirectUI from "@/components/redirect/redirect-ui";
+
+import ErrorQuery from "./error";
+
+import Loading from "./loading";
+
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
-import { CreateWorkScheduleSlotTemplateForm } from "@/features/work-schedule/slot-template/components/create-work-schedule-slot-template-form";
+import { ChildrenHeader } from "@/components/children-header";
+import { CreateForm } from "@/features/work-schedule/slot-template/components/create-form";
 
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-
-export default function WorkScheduleAdminPositionSlotTemplateNewClient({
+export default function Client({
   placeId,
   positionId,
 }: {
   placeId: string;
   positionId: string;
 }) {
+  const { getToken, userId, isLoaded } = useAuth();
+
+  const {
+    data: dataQuery,
+    isLoading,
+    isFetching,
+    error: errorQuery,
+    refetch,
+    dataUpdatedAt,
+  } = useQuery(
+    workScheduleSlotTypeQueries.queryGetSlotTypesByPositionId(
+      positionId,
+
+      userId,
+      getToken,
+
+      AccessControlErrorCode.verifyWorkSchedulePositionByWorkScheduleAdmin,
+    ),
+  );
+
+  const { isRedirecting, targetUrl, errorCode } = useEffectCheckError(
+    errorQuery,
+
+    workScheduleAdminPlaceIdPositionPositionIdSlotTemplateNewErrorCodeRedirectList,
+
+    dataQuery,
+  );
+
+  if (isRedirecting && targetUrl && errorCode) {
+    return <RedirectUI targetUrl={targetUrl} errorCode={errorCode} />;
+  }
+
+  if (errorQuery && dataQuery === undefined) {
+    return <ErrorQuery reset={() => refetch()} />;
+  }
+
+  if (!isLoaded || isLoading || dataQuery === undefined) {
+    return <Loading />;
+  }
+
+  const availableSlotTypes = dataQuery.slotTypes;
+
   return (
-    <>
-      {/* ========================================================================================== */}
-      {/* Main UI (children) */}
-      {/* ========================================================================================== */}
+    <div
+      className={cn(
+        //
+        "w-full",
+        "max-w-7xl",
 
-      <div
-        className={cn(
-          //
-          "w-full",
-          "max-w-7xl",
+        "mx-auto",
 
-          "mx-auto",
+        "flex",
+        "flex-col",
+        "gap-2 sm:gap-3",
 
-          "flex",
-          "flex-col",
-          "gap-2 sm:gap-3",
+        "relative",
 
-          "relative",
+        "px-4 sm:px-6",
+        "py-4 sm:py-6",
+        //
+      )}
+    >
+      <ChildrenHeader
+        title={`สร้าง slotTemplate ใหม่`}
+        description={`กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ`}
+        backHref={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
+        //
 
-          "px-4 sm:px-6",
-          "py-4 sm:py-6",
-          //
-        )}
-      >
-        {/*  */}
-        {/* ============================== */}
-        {/* ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
+        // กรณี: ใช้ status bar
+        isFetching={isFetching}
+        errorQuery={errorQuery}
+        refetch={refetch}
+        dataUpdatedAt={dataUpdatedAt}
+        // (จบ) กรณี: ใช้ status bar
+      />
 
-        <div>
-          {/*  */}
-          {/* =================================================================== */}
-          {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มสร้างข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
-
-          <div
-            className={cn(
-              //
-              "flex",
-              "flex-wrap",
-              "items-center",
-              "justify-between",
-
-              "gap-2 sm:gap-3",
-              "pb-4 sm:pb-4",
-
-              "border-b",
-              //
-            )}
-          >
-            {/*  */}
-            {/* ========================== */}
-            {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
-            <Link
-              href={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
-              className={cn(
-                //
-                "p-2", // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
-
-                "rounded-full",
-                // rounded-full + icon (h = w) + p-2 = ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
-
-                "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
-                //
-              )}
-            >
-              <svg
-                className={cn(
-                  //
-                  "h-6 w-6",
-                  //
-                )}
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </Link>
-
-            {/* ========================== */}
-            {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
-
-            {/* ============================================ */}
-            {/* 🟢 ส่วนหัวข้อ */}
-            {/* ============================================ */}
-
-            <div
-              className={cn(
-                //
-                "flex-1",
-
-                "min-w-0", // เปิดทางให้กล่องลูกสามารถใช้ truncate ได้
-
-                "gap-4 sm:gap-6",
-                //
-              )}
-            >
-              {/*  */}
-              {/* ============================= */}
-              {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
-              {/*  */}
-              <h2
-                className={cn(
-                  //
-                  "text-2xl sm:text-3xl",
-
-                  "truncate",
-
-                  "font-bold",
-                  "text-gray-800",
-                  //
-                )}
-              >
-                สร้าง slotTemplate ใหม่
-              </h2>
-
-              <p
-                className={cn(
-                  //
-                  "text-xs sm:text-sm",
-
-                  "truncate",
-
-                  "font-mono",
-                  "text-gray-500",
-                  //
-                )}
-              >
-                กรอกรายละเอียดและบันทึกเพื่อดำเนินการต่อ
-              </p>
-              {/*  */}
-
-              {/* ============================= */}
-              {/* 🟢 (จบ) ส่วนหัวข้อ */}
-              {/* ============================= */}
-              {/*  */}
-            </div>
-          </div>
-
-          {/* =================================================================== */}
-          {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มสร้างข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
-          {/*  */}
-        </div>
-
-        {/* ============================== */}
-        {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
-
-        {/* ===================== */}
-        {/* ส่วนแสดงผล: Form */}
-        {/* ===================== */}
-
-        <CreateWorkScheduleSlotTemplateForm
-          positionId={positionId}
-          urlOnSuccess={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
-          urlOnCancel={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
-          skipErrorCodes={[]}
-          className=""
-        />
-
-        {/* ===================== */}
-        {/* (จบ) ส่วนแสดงผล: Form */}
-        {/* ===================== */}
-        {/*  */}
-      </div>
-
-      {/* ========================================================================================== */}
-      {/* (จบ) Main UI (children) */}
-      {/* ========================================================================================== */}
-      {/*  */}
-    </>
+      <CreateForm
+        positionId={positionId}
+        availableSlotTypes={availableSlotTypes}
+        urlOnSuccess={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
+        urlOnCancel={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template`}
+        skipErrorCodes={[]}
+        className=""
+      />
+    </div>
   );
 }

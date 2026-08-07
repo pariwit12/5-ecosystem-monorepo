@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useErrorStore } from "@/store/use-error-store";
 
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+import { API_ERROR_MESSAGES } from "@/constants/error-messages";
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
 // 🌟 สอนให้ TypeScript รู้จัก Config พิเศษของเรา
 declare module "axios" {
@@ -115,7 +116,7 @@ apiClient.interceptors.response.use(
 
       const title = `เกิดข้อผิดพลาด`;
       const displayMessage =
-        USER_ERROR_MESSAGES[errorCode] || // 1. หาคำแปลสวยๆ จากหน้าบ้านก่อน
+        API_ERROR_MESSAGES[errorCode as ErrorCode] || // 1. หาคำแปลสวยๆ จากหน้าบ้านก่อน
         backendMessage || // 2. ถ้าไม่มี เอาข้อความจาก NestJS
         "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุจากเซิร์ฟเวอร์"; // 3. กันเหนียว
 

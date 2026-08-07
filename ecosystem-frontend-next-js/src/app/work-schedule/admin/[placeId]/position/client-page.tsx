@@ -7,49 +7,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+
 import Loading from "./loading";
 import ErrorQuery from "./error";
 
 import { workSchedulePositionQueries } from "@/features/work-schedule/position/work-schedule-position.queries";
 
-function ToastNotifier() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const errorCode = searchParams.get("error");
-
-    if (!errorCode) return;
-
-    if (errorCode === "invalid_id") {
-      toast.error("รหัส positionId ไม่ถูกต้อง");
-    } else if (
-      errorCode === ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND ||
-      errorCode === ErrorCode.WORK_SCHEDULE_POSITION_DELETED
-    ) {
-      const errorMessage = USER_ERROR_MESSAGES[errorCode];
-
-      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
-        description: errorMessage,
-      });
-    }
-
-    window.history.replaceState(null, "", window.location.pathname);
-  }, [searchParams]);
-
-  return null;
-}
-
-export default function WorkScheduleAdminPositionClient({
-  placeId,
-}: {
-  placeId: string;
-}) {
+export default function Client({ placeId }: { placeId: string }) {
   const router = useRouter();
   const { getToken, userId, isLoaded } = useAuth();
 
@@ -144,165 +113,213 @@ export default function WorkScheduleAdminPositionClient({
   const positions = dataQuery.positions;
 
   return (
-    <>
-      {/* ===================================== */}
-      {/* Toast สำหรับ Error ที่มาพร้อมกับ URL */}
-      {/* ===================================== */}
+    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+      {/*  */}
+      {/* ============================== */}
+      {/* ส่วนหัวข้อ + สถานะ fetching */}
+      {/* ============================== */}
 
-      <Suspense fallback={null}>
-        <ToastNotifier />
-      </Suspense>
-
-      {/* ========================================================================================== */}
-      {/* Main UI (children) */}
-      {/* ========================================================================================== */}
-
-      <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+      <div>
         {/*  */}
-        {/* ============================== */}
-        {/* ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
+        {/* =================================================================== */}
+        {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
+        {/* =================================================================== */}
 
-        <div>
+        <div className="flex items-center gap-4 border-b pb-6">
           {/*  */}
-          {/* =================================================================== */}
-          {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
+          {/* ========================== */}
+          {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
+          {/* ========================== */}
 
-          <div className="flex items-center gap-4 border-b pb-6">
-            {/*  */}
-            {/* ========================== */}
-            {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
-
-            <Link
-              href={`/work-schedule/admin/${placeId}`}
-              className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+          <Link
+            href={`/work-schedule/admin/${placeId}`}
+            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </Link>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </Link>
 
-            {/* ========================== */}
-            {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด) */}
-            {/* ========================== */}
+          {/* ========================== */}
+          {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด) */}
+          {/* ========================== */}
 
-            {/* ============================================ */}
-            {/* 🟢 ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
-            {/* ============================================ */}
+          {/* ============================================ */}
+          {/* 🟢 ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
+          {/* ============================================ */}
 
-            <div className="flex-1 flex items-center justify-between">
+          <div className="flex-1 flex items-center justify-between">
+            {/*  */}
+            {/* ============================= */}
+            {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
+            {/* ============================= */}
+
+            <div>
               {/*  */}
-              {/* ============================= */}
-              {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
-
-              <div>
-                {/*  */}
-                <h2 // หัวข้อ
-                  className="text-3xl font-bold text-gray-800"
-                >
-                  รายการตำแหน่งงาน
-                </h2>
-
-                <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
-                  className="text-gray-500 mt-1 font-mono text-sm"
-                >
-                  จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ
-                </p>
-                {/*  */}
-              </div>
-
-              {/* ============================= */}
-              {/* 🟢 (จบ) กลุ่มของส่วนหัวข้อ (ซ้าย) */}
-              {/* ============================= */}
-
-              {/* หากต้องมีทั้งปุ่ม "สร้าง" และ "แก้ไข" พร้อมกัน ต้องใส่ div ครอบอีกที ไม่งั้นจะมีตัวนึงถูกดีดมาไว้ตรงกลาง */}
-
-              {/* ======================== */}
-              {/* Create Button (ขวา) */}
-              {/* ======================== */}
-
-              <Link
-                href={`/work-schedule/admin/${placeId}/position/new`}
-                className="inline-flex items-center justify-center px-5 py-2.5 font-medium text-sm text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm transition-colors shrink-0"
+              <h2 // หัวข้อ
+                className="text-3xl font-bold text-gray-800"
               >
-                <span>+ สร้างข้อมูลใหม่</span>
-              </Link>
+                รายการตำแหน่งงาน
+              </h2>
 
-              {/* ======================== */}
-              {/* (จบ) Create Button (ขวา) */}
-              {/* ======================== */}
+              <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
+                className="text-gray-500 mt-1 font-mono text-sm"
+              >
+                จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ
+              </p>
               {/*  */}
             </div>
 
-            {/* ============================================ */}
-            {/* 🟢 (จบ) ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
-            {/* ============================================ */}
+            {/* ============================= */}
+            {/* 🟢 (จบ) กลุ่มของส่วนหัวข้อ (ซ้าย) */}
+            {/* ============================= */}
+
+            {/* หากต้องมีทั้งปุ่ม "สร้าง" และ "แก้ไข" พร้อมกัน ต้องใส่ div ครอบอีกที ไม่งั้นจะมีตัวนึงถูกดีดมาไว้ตรงกลาง */}
+
+            {/* ======================== */}
+            {/* Create Button (ขวา) */}
+            {/* ======================== */}
+
+            <Link
+              href={`/work-schedule/admin/${placeId}/position/new`}
+              className="inline-flex items-center justify-center px-5 py-2.5 font-medium text-sm text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm transition-colors shrink-0"
+            >
+              <span>+ สร้างข้อมูลใหม่</span>
+            </Link>
+
+            {/* ======================== */}
+            {/* (จบ) Create Button (ขวา) */}
+            {/* ======================== */}
             {/*  */}
           </div>
-          {/* =================================================================== */}
-          {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
-          {/* =================================================================== */}
 
-          {/* ====================== */}
-          {/* 🌟 แถบสถานะข้อมูล */}
-          {/* ====================== */}
+          {/* ============================================ */}
+          {/* 🟢 (จบ) ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
+          {/* ============================================ */}
+          {/*  */}
+        </div>
+        {/* =================================================================== */}
+        {/* 🟢 (จบ) ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
+        {/* =================================================================== */}
 
-          <div className="flex justify-end items-center h-6 mb-2 text-xs">
-            {
-              // =================================
-              // UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
+        {/* ====================== */}
+        {/* 🌟 แถบสถานะข้อมูล */}
+        {/* ====================== */}
 
-              isFetching ? (
-                <span className="text-gray-500 flex items-center gap-2 animate-pulse">
+        <div className="flex justify-end items-center h-6 mb-2 text-xs">
+          {
+            // =================================
+            // UI Fetching - กำลังอัปเดตข้อมูล
+            // =================================
+
+            isFetching ? (
+              <span className="text-gray-500 flex items-center gap-2 animate-pulse">
+                <svg
+                  className="animate-spin h-3.5 w-3.5 text-blue-500"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                กำลังอัปเดตข้อมูล...
+              </span>
+            ) : //
+
+            // =================================
+            // (จบ) UI Fetching - กำลังอัปเดตข้อมูล
+            // =================================
+
+            // ======================
+            // UI Error Fetched
+            // ======================
+
+            errorQuery ? (
+              <div className="flex items-center gap-2">
+                <span className="text-red-500 flex items-center gap-1.5 font-medium">
                   <svg
-                    className="animate-spin h-3.5 w-3.5 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5"
+                    fill="none"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
                     <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  กำลังอัปเดตข้อมูล...
+                  อัปเดตล่าสุดไม่สำเร็จ
                 </span>
-              ) : //
-
-              // =================================
-              // (จบ) UI Fetching - กำลังอัปเดตข้อมูล
-              // =================================
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="text-blue-600 hover:text-blue-700 font-semibold underline cursor-pointer transition-colors"
+                >
+                  ลองใหม่
+                </button>
+              </div>
+            ) : (
+              //
+              // ======================
+              // (จบ) UI Error Fetched
+              // ======================
 
               // ======================
-              // UI Error Fetched
+              // UI Fetch Success
               // ======================
 
-              errorQuery ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-red-500 flex items-center gap-1.5 font-medium">
+              dataUpdatedAt > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400 flex items-center gap-1.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3.5 w-3.5 text-green-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
+                  </span>
+
+                  {/* ปุ่มรีเฟรชข้อมูลแบบแมนนวล */}
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer transition-colors font-medium"
+                    title="กดเพื่ออัปเดตข้อมูลใหม่"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-3.5 w-3.5"
@@ -314,213 +331,147 @@ export default function WorkScheduleAdminPositionClient({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
                       />
                     </svg>
-                    อัปเดตล่าสุดไม่สำเร็จ
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => refetch()}
-                    className="text-blue-600 hover:text-blue-700 font-semibold underline cursor-pointer transition-colors"
-                  >
-                    ลองใหม่
+                    รีเฟรช
                   </button>
                 </div>
-              ) : (
-                //
-                // ======================
-                // (จบ) UI Error Fetched
-                // ======================
-
-                // ======================
-                // UI Fetch Success
-                // ======================
-
-                dataUpdatedAt > 0 && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 flex items-center gap-1.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3.5 w-3.5 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      อัปเดตล่าสุดเมื่อ: {formatLastUpdate(dataUpdatedAt)}
-                    </span>
-
-                    {/* ปุ่มรีเฟรชข้อมูลแบบแมนนวล */}
-                    <button
-                      type="button"
-                      onClick={() => refetch()}
-                      className="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer transition-colors font-medium"
-                      title="กดเพื่ออัปเดตข้อมูลใหม่"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"
-                        />
-                      </svg>
-                      รีเฟรช
-                    </button>
-                  </div>
-                )
-
-                // ======================
-                // (จบ) UI Fetch Success
-                // ======================
-                //
               )
-            }
-          </div>
 
-          {/* ====================== */}
-          {/* 🌟 (จบ) แถบสถานะข้อมูล */}
-          {/* ====================== */}
-          {/*  */}
+              // ======================
+              // (จบ) UI Fetch Success
+              // ======================
+              //
+            )
+          }
         </div>
 
-        {/* ============================== */}
-        {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
-        {/* ============================== */}
-
-        {/* ============================ */}
-        {/* 🌟 เนื้อหาหลักตรงนี้ */}
-        {/* ============================ */}
-
-        {/* ========================================================= */}
-        {/* ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
-        {/* ========================================================= */}
-
-        <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
-          {positions.map((p) => (
-            <div
-              key={p.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-gray-50/50 transition-colors"
-            >
-              {/*  */}
-              {/* ================= */}
-              {/* ฝั่งซ้าย: ข้อมูล */}
-              {/* ================= */}
-
-              <div className="flex items-center gap-4">
-                {/*  */}
-                {/* ================ */}
-                {/* โลโก้แบบกลม */}
-                {/* ================ */}
-
-                <div className="w-10 h-10 shrink-0 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-
-                {/* ================ */}
-                {/* (จบ) โลโก้แบบกลม */}
-                {/* ================ */}
-
-                {/* ========================== */}
-                {/* รายละเอียด (ถัดจากโลโก้) */}
-                {/* ========================== */}
-
-                <div>
-                  {/*  */}
-                  {/* ====================== */}
-                  {/* 🌟 ชื่อเต็มของรายการ */}
-                  {/* ====================== */}
-
-                  <h3 className="text-base font-semibold text-gray-800">
-                    {p.name}
-                  </h3>
-
-                  {/* ====================== */}
-                  {/* 🌟 (จบ) ชื่อเต็มของรายการ */}
-                  {/* ====================== */}
-
-                  {/* ================= */}
-                  {/* 🌟 รายละเอียด */}
-                  {/* ================= */}
-
-                  <p className="text-sm text-gray-500 font-mono mt-0.5">
-                    ID: {p.id.slice(0, 8)}...
-                  </p>
-
-                  {/* ================= */}
-                  {/* 🌟 (จบ) รายละเอียด */}
-                  {/* ================= */}
-                  {/*  */}
-                </div>
-
-                {/* ========================== */}
-                {/* (จบ) รายละเอียด (ถัดจากโลโก้) */}
-                {/* ========================== */}
-                {/*  */}
-              </div>
-
-              {/* ================= */}
-              {/* (จบ) ฝั่งซ้าย: ข้อมูล */}
-              {/* ================= */}
-
-              {/* ================== */}
-              {/* ฝั่งขวา: Action */}
-              {/* ================== */}
-
-              <Link
-                href={`/work-schedule/admin/${placeId}/position/${p.id}`}
-                className="w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                เลือก
-              </Link>
-
-              {/* ================== */}
-              {/* (จบ) ฝั่งขวา: Action */}
-              {/* ================== */}
-              {/*  */}
-            </div>
-          ))}
-
-          {/* ============================== */}
-          {/* กรณีไม่มีข้อมูล (Empty State) */}
-          {/* ============================== */}
-
-          {positions.length === 0 && (
-            <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
-          )}
-
-          {/* ============================== */}
-          {/* (จบ) กรณีไม่มีข้อมูล (Empty State) */}
-          {/* ============================== */}
-          {/*  */}
-        </div>
-
-        {/* ========================================================= */}
-        {/* (จบ) ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
-        {/* ========================================================= */}
-
-        {/* ============================ */}
-        {/* 🌟 (จบ) เนื้อหาหลักตรงนี้ */}
-        {/* ============================ */}
+        {/* ====================== */}
+        {/* 🌟 (จบ) แถบสถานะข้อมูล */}
+        {/* ====================== */}
         {/*  */}
       </div>
 
-      {/* ========================================================================================== */}
-      {/* (จบ) Main UI (children) */}
-      {/* ========================================================================================== */}
-    </>
+      {/* ============================== */}
+      {/* (จบ) ส่วนหัวข้อ + สถานะ fetching */}
+      {/* ============================== */}
+
+      {/* ============================ */}
+      {/* 🌟 เนื้อหาหลักตรงนี้ */}
+      {/* ============================ */}
+
+      {/* ========================================================= */}
+      {/* ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
+      {/* ========================================================= */}
+
+      <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
+        {positions.map((p) => (
+          <div
+            key={p.id}
+            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-gray-50/50 transition-colors"
+          >
+            {/*  */}
+            {/* ================= */}
+            {/* ฝั่งซ้าย: ข้อมูล */}
+            {/* ================= */}
+
+            <div className="flex items-center gap-4">
+              {/*  */}
+              {/* ================ */}
+              {/* โลโก้แบบกลม */}
+              {/* ================ */}
+
+              <div className="w-10 h-10 shrink-0 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">
+                {p.name.charAt(0).toUpperCase()}
+              </div>
+
+              {/* ================ */}
+              {/* (จบ) โลโก้แบบกลม */}
+              {/* ================ */}
+
+              {/* ========================== */}
+              {/* รายละเอียด (ถัดจากโลโก้) */}
+              {/* ========================== */}
+
+              <div>
+                {/*  */}
+                {/* ====================== */}
+                {/* 🌟 ชื่อเต็มของรายการ */}
+                {/* ====================== */}
+
+                <h3 className="text-base font-semibold text-gray-800">
+                  {p.name}
+                </h3>
+
+                {/* ====================== */}
+                {/* 🌟 (จบ) ชื่อเต็มของรายการ */}
+                {/* ====================== */}
+
+                {/* ================= */}
+                {/* 🌟 รายละเอียด */}
+                {/* ================= */}
+
+                <p className="text-sm text-gray-500 font-mono mt-0.5">
+                  ID: {p.id.slice(0, 8)}...
+                </p>
+
+                {/* ================= */}
+                {/* 🌟 (จบ) รายละเอียด */}
+                {/* ================= */}
+                {/*  */}
+              </div>
+
+              {/* ========================== */}
+              {/* (จบ) รายละเอียด (ถัดจากโลโก้) */}
+              {/* ========================== */}
+              {/*  */}
+            </div>
+
+            {/* ================= */}
+            {/* (จบ) ฝั่งซ้าย: ข้อมูล */}
+            {/* ================= */}
+
+            {/* ================== */}
+            {/* ฝั่งขวา: Action */}
+            {/* ================== */}
+
+            <Link
+              href={`/work-schedule/admin/${placeId}/position/${p.id}`}
+              className="w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              เลือก
+            </Link>
+
+            {/* ================== */}
+            {/* (จบ) ฝั่งขวา: Action */}
+            {/* ================== */}
+            {/*  */}
+          </div>
+        ))}
+
+        {/* ============================== */}
+        {/* กรณีไม่มีข้อมูล (Empty State) */}
+        {/* ============================== */}
+
+        {positions.length === 0 && (
+          <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
+        )}
+
+        {/* ============================== */}
+        {/* (จบ) กรณีไม่มีข้อมูล (Empty State) */}
+        {/* ============================== */}
+        {/*  */}
+      </div>
+
+      {/* ========================================================= */}
+      {/* (จบ) ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
+      {/* ========================================================= */}
+
+      {/* ============================ */}
+      {/* 🌟 (จบ) เนื้อหาหลักตรงนี้ */}
+      {/* ============================ */}
+      {/*  */}
+    </div>
   );
 }

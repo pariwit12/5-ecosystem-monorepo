@@ -20,6 +20,7 @@ export const createWorkSchedulePosition = async (
   name: string,
 
   token: string,
+  // eslint-disable-next-line
   skipErrorCodes?: string[],
 ): Promise<void> => {
   const paramData: CreateWorkSchedulePositionDtoParam = {
@@ -64,7 +65,7 @@ export const createWorkSchedulePosition = async (
     {
       headers: { Authorization: `Bearer ${token}` },
 
-      skipErrorCodes: skipErrorCodes,
+      // skipErrorCodes: skipErrorCodes,
     },
   );
 

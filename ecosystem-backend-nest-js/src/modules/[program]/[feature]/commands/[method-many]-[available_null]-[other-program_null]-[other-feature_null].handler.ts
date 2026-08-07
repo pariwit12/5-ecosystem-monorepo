@@ -10,6 +10,8 @@ import {
   // ปรับตามใช้งานจริง
 } from './[method-many]-[available_null]-[other-program_null]-[other-feature_null].command';
 
+import { BadRequestException } from '@nestjs/common';
+
 @CommandHandler(
   // ปรับตามใช้งานจริง
   MethodManyAvailableOtherProgramOtherFeatureCommand,
@@ -87,6 +89,49 @@ export class MethodManyAvailableOtherProgramOtherFeatureHandler implements IComm
         },
       });
 
+    // ==>>==>>== ตัวอย่างการ Lock โดยใช้ transaction ==<<==<<==
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "work_schedule_position" WHERE id = ${param.param_uuidv7} FOR UPDATE`;
+
+      const minMax = await tx.workScheduleMinMax.findFirst({
+        where: {
+          workSchedulePositionId: param.param_uuidv7!,
+          startTime: {
+            lt: body.body_string_datetime_start_time,
+          },
+          endTime: {
+            gt: body.body_string_datetime_end_time,
+          },
+        },
+        select: {
+          startTime: true,
+          endTime: true,
+        },
+      });
+
+      if (minMax) {
+        throw new BadRequestException(
+          `ไม่สามารถบันทึกได้ เนื่องจากมีข้อมูลทับซ้อนในช่วงเวลา ${minMax.startTime.toISOString()} - ${minMax.endTime.toISOString()} `,
+        );
+      }
+
+      await tx.workScheduleMinMax.create({
+        data: {
+          workSchedulePositionId: param.param_uuidv7!,
+          min: body.body_int,
+          max: body.body_int,
+          startTime: body.body_string_datetime_start_time,
+          endTime: body.body_string_datetime_end_time,
+        },
+        select: {
+          id: true,
+        },
+      });
+    });
+
+    // ==>>==>>== (จบ) ตัวอย่างการ Lock โดยใช้ transaction ==<<==<<==
+
     // ==>>==>>== (จบ) Create ==<<==<<==
 
     // ==>>==>>== CreateMany ==<<==<<==
@@ -102,8 +147,10 @@ export class MethodManyAvailableOtherProgramOtherFeatureHandler implements IComm
         // ปรับตามใช้งานจริง
         (bodyObj) => ({
           // ปรับตามใช้งานจริง
-          workSchedulePositionId: param.param_uuidv7!,
-          name: bodyObj.name,
+          positionId: param.param_uuidv7!,
+          staffId: 'test',
+          slotTypeId: 'test',
+
           actualStartTime: bodyObj.actual_start_time,
           actualEndTime: bodyObj.actual_end_time,
         }),

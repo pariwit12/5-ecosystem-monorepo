@@ -86,97 +86,99 @@ export const MethodManyAvailableOtherProgramOtherFeatureDtoBodySchema = z
     //
     // ปรับตามใช้งานจริง
     body_string: z
-
-      // ปรับตามใช้งานจริง
       .string({
-        message: 'ชื่อ...ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'ชื่อ...ต้องเป็น type: string เท่านั้น',
       })
       .trim()
       .min(
-        1, // ปรับตามใช้งานจริง
-        'กรุณาระบุชื่อ... (ห้ามเป็นค่าว่าง)', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        1,
+
+        // ปรับตามใช้งานจริง
+        'กรุณาระบุชื่อ... (ห้ามเป็นค่าว่าง)',
       ),
 
     // ปรับตามใช้งานจริง
     body_timezone: z
-
-      // ปรับตามใช้งานจริง
       .string({
-        message: 'ชื่อ timezone ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'ชื่อ timezone ต้องเป็น type: string เท่านั้น',
       })
       .trim()
       .refine(
-        isValidIanaTimezone, // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        isValidIanaTimezone,
         {
+          // ปรับตามใช้งานจริง
           message:
-            'timezone ไม่ถูกต้องตามมาตรฐาน IANA (ตัวอย่างที่ถูกต้อง: Asia/Bangkok)', // ปรับตามใช้งานจริง
+            'timezone ไม่ถูกต้องตามมาตรฐาน IANA (ตัวอย่างที่ถูกต้อง: Asia/Bangkok)',
         },
       ),
 
     // ปรับตามใช้งานจริง
     body_string_datetime_start_time: z
-
-      // ปรับตามใช้งานจริง
       .string({
-        message: 'actualStartTime ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'start_time ต้องเป็น type: string เท่านั้น',
       })
       .datetime({
         //
         // ปรับตามใช้งานจริง
 
         // อนุญาตให้ส่ง Timezone offset มาได้ เช่น 2026-07-06T08:00:00+07:00
-        offset: true, // ปรับตามใช้งานจริง
+        offset: true,
 
         // โดยค่าเริ่มต้น (Default) คำสั่ง .datetime() ของ Zod จะเข้มงวดมาก โดยจะบังคับให้ต้องส่งเวลามาเป็น UTC เท่านั้น (ต้องลงท้ายด้วยตัว Z เช่น 2026-07-06T08:00:00Z)
         // การใส่ offset: true คือการเปิดอนุญาตให้สามารถส่งเวลาที่มี Timezone Offset (การบวกลบเวลาท้องถิ่น) เข้ามาได้ครับ เช่น 2026-07-06T08:00:00+07:00 (เวลาไทย) ระบบก็จะยอมให้ผ่านได้
 
-        message: 'actualStartTime ต้องอยู่ในรูปแบบ ISO 8601', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'start_time ต้องอยู่ในรูปแบบ ISO 8601',
       }),
 
     // ปรับตามใช้งานจริง
     body_string_datetime_end_time: z
-
-      // ปรับตามใช้งานจริง
       .string({
-        message: 'actualEndTime ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'end_time ต้องเป็น type: string เท่านั้น',
       })
       .datetime({
         //
         // ปรับตามใช้งานจริง
 
         // อนุญาตให้ส่ง Timezone offset มาได้ เช่น 2026-07-06T08:00:00+07:00
-        offset: true, // ปรับตามใช้งานจริง
+        offset: true,
 
         // โดยค่าเริ่มต้น (Default) คำสั่ง .datetime() ของ Zod จะเข้มงวดมาก โดยจะบังคับให้ต้องส่งเวลามาเป็น UTC เท่านั้น (ต้องลงท้ายด้วยตัว Z เช่น 2026-07-06T08:00:00Z)
         // การใส่ offset: true คือการเปิดอนุญาตให้สามารถส่งเวลาที่มี Timezone Offset (การบวกลบเวลาท้องถิ่น) เข้ามาได้ครับ เช่น 2026-07-06T08:00:00+07:00 (เวลาไทย) ระบบก็จะยอมให้ผ่านได้
 
-        message: 'actualEndTime ต้องอยู่ในรูปแบบ ISO 8601', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: 'end_time ต้องอยู่ในรูปแบบ ISO 8601',
       }),
 
     // ปรับตามใช้งานจริง
     body_string_hh_mm_start_time: z
-
-      // ปรับตามใช้งานจริง
       .string({
-        message: '... ต้องเป็น type: string เท่านั้น', // ปรับตามใช้งานจริง
+        // ปรับตามใช้งานจริง
+        message: '... ต้องเป็น type: string เท่านั้น',
       })
       // ตรวจสอบฟอร์แมตเวลา HH:mm
       .regex(
         /^([01]\d|2[0-3]):([0-5]\d)$/,
-        'รูปแบบเวลาไม่ถูกต้อง กรุณาใช้รูปแบบ HH:mm (เช่น 08:00, 20:30)', // ปรับตามใช้งานจริง
+
+        // ปรับตามใช้งานจริง
+        'รูปแบบเวลาไม่ถูกต้อง กรุณาใช้รูปแบบ HH:mm (เช่น 08:00, 20:30)',
       ),
 
     // ปรับตามใช้งานจริง
     body_int: z
-
-      // ปรับตามใช้งานจริง
       .number({
         // ปรับตามใช้งานจริง
         message: '... ต้องเป็น type: number เท่านั้น',
       })
       .int({
         // ปรับตามใช้งานจริง
-        message: '... ต้องเป็น จำนวนเต็มบวก เท่านั้น',
+        message: '... ต้องเป็น จำนวนเต็ม เท่านั้น',
       })
       .min(
         // ปรับตามใช้งานจริง
@@ -260,7 +262,7 @@ export const MethodManyAvailableOtherProgramOtherFeatureDtoBodySchema = z
       new Date(data.body_string_datetime_end_time),
     {
       // ปรับตามใช้งานจริง
-      message: 'actualEndTime ต้องมากกว่า actualStartTime เสมอ',
+      message: 'end_time ต้องมากกว่า start_time เสมอ',
 
       // ชี้ field ที่ error เพื่อให้ฝั่ง frontend รู้ว่า error จาก field ไหน (กรณีที่นำไปแสดงผลต่อ)
       // ** ทริค: หากมีตัวแปรมากกว่า 1 ตัว เรามักจะให้ชี้ไปที่ตัวหลัง
@@ -320,6 +322,9 @@ export interface MethodManyAvailableOtherProgramOtherFeatureResponse {
     objectDataString: string;
     objectDataArrayString: string[];
   }[];
+
+  // ถ้าใน prisma เป็น date ให้ส่งกลับเป็น string เพราะจะเป็น type ที่ frontend ได้รับจริงๆ
+  // ถึงแม้ว่าใน Nest มันจะยังเป็น Date แต่ว่าเรามักไม่ค่อยได้ทำอะไรใน Nest แล้วหลังจากออกมาจาก prisma
 }
 
 // ==>>==>>== (จบ) "หน้าตาข้อมูล" ขาออก ==<<==<<==

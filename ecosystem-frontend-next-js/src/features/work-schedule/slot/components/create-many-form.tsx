@@ -1,0 +1,443 @@
+"use client";
+
+import { z } from "zod";
+
+import { useRouter } from "next/navigation";
+import { useForm, useWatch, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { useState } from "react";
+
+import { useCreateMany } from "../hooks/use-create-many";
+
+import { toast } from "sonner";
+import { DateTime } from "luxon";
+
+import { Calendar } from "@/components/ui/calendar";
+
+const FrontendFormSchema = z.object({
+  slot_type_id: z.uuid({
+    version: "v7",
+    message: "รูปแบบรหัส slot_type_id ไม่ถูกต้อง",
+  }),
+
+  dates: z
+    .array(
+      // ใช้ z.date() แทน z.string() เพราะ calendar ของ shadcn จะส่งค่ามาให้เป็น date
+      z.date({
+        message: "dates ต้องเป็น type: date เท่านั้น",
+      }),
+    )
+    .min(1, "กรุณาเลือกวันที่อย่างน้อย 1 วัน"),
+  // เช่น [new Date("2026-07-01"), new Date("2026-07-03")] (array ของ ค่าวันที่ที่ผู้ใช้เลือกจากปฏิทิน (เป็น JS Date Object))
+
+  start_time: z
+    .string({
+      message: "startTime ต้องเป็น type: string เท่านั้น",
+    })
+    .regex(
+      /^([01]\d|2[0-3]):([0-5]\d)$/,
+      "รูปแบบเวลาไม่ถูกต้อง กรุณาใช้รูปแบบ HH:mm (เช่น 08:00, 20:30)",
+    ), // เช่น "08:00"
+
+  duration_minute: z
+    .number({
+      message: "ระยะเวลาต้องเป็น type: number เท่านั้น",
+    })
+    .int({
+      message: "ระยะเวลาต้องเป็น จำนวนเต็มบวก เท่านั้น",
+    })
+    .min(1, "ระยะเวลาต้องไม่ต่ำกว่า 1 นาที"),
+});
+type FrontendForm = z.infer<typeof FrontendFormSchema>;
+
+export const CreateManyForm = ({
+  positionId,
+  staffPositions,
+  placeTimezone,
+  availableSlotTypes,
+
+  prefillSlotTypeId,
+  prefillStartTime,
+  prefillDurationMinute,
+
+  urlOnSuccess,
+  urlOnCancel,
+
+  skipErrorCodes,
+
+  className = "",
+}: {
+  positionId: string;
+  staffPositions: {
+    staffId: string;
+    name: string;
+  }[];
+  placeTimezone: string;
+  availableSlotTypes: {
+    id: string;
+    name: string;
+  }[];
+
+  prefillSlotTypeId?: string;
+  prefillStartTime?: string;
+  prefillDurationMinute?: number;
+
+  urlOnSuccess: string;
+  urlOnCancel: string;
+
+  skipErrorCodes?: string[];
+
+  className?: string;
+}) => {
+  const router = useRouter();
+
+  const { mutate: mutateCreateMany, isPending } = useCreateMany();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<FrontendForm>({
+    resolver: zodResolver(FrontendFormSchema),
+    defaultValues: {
+      slot_type_id: availableSlotTypes.some(
+        (slotType) => slotType.id === prefillSlotTypeId,
+      )
+        ? prefillSlotTypeId
+        : "",
+      dates: [], // ตัวอย่างข้อมูล: [new Date("2026-07-01"), new Date("2026-07-03")] (array ของ ค่าวันที่ที่ผู้ใช้เลือกจากปฏิทิน (เป็น JS Date Object))
+      start_time: prefillStartTime || "",
+      duration_minute: prefillDurationMinute || 0,
+    },
+  });
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === staffPositions.length) {
+      // ถ้าเลือกครบแล้ว ให้เคลียร์ทิ้ง
+      setSelectedIds([]);
+    } else {
+      // ถ้ายังไม่ครบ ให้เลือกทั้งหมด
+      setSelectedIds(
+        staffPositions.map((staffPosition) => staffPosition.staffId),
+      );
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(
+      (prev) =>
+        prev.includes(id)
+          ? prev.filter((item) => item !== id) // เอาออก
+          : [...prev, id], // เพิ่มเข้า
+    );
+  };
+
+  // Function แสดงเวลาสิ้นสุด (จาก start_time และ duration_minutue)
+
+  const startTimeValue = useWatch({
+    control,
+    name: "start_time",
+  });
+  const durationValue = useWatch({
+    control,
+    name: "duration_minute",
+  });
+
+  // Function แสดงเวลาสิ้นสุด (จาก start_time และ duration_minutue)
+
+  let endTimeDisplay = null;
+
+  if (startTimeValue && durationValue > 0) {
+    const [hours, minutes] = startTimeValue.split(":").map(Number);
+
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      // แปลงเป็นนาทีทั้งหมด แล้วบวก duration
+      const totalMinutes = hours * 60 + minutes + durationValue;
+
+      // คำนวณชั่วโมงและนาทีกลับ
+      const endHours = Math.floor(totalMinutes / 60) % 24;
+      const endMinutes = totalMinutes % 60;
+
+      // เช็คว่าข้ามวันหรือไม่
+      const daysLater = Math.floor(totalMinutes / (24 * 60));
+
+      const formattedTime = `${endHours.toString().padStart(2, "0")}:${endMinutes.toString().padStart(2, "0")}`;
+
+      // ข้อความต่อท้าย (กรณีผลลัพธ์ไม่อยู่ในวัน)
+      let daySuffix = "";
+      if (daysLater === 1) {
+        daySuffix = " (ของวันถัดไป)";
+      } else if (daysLater > 1) {
+        daySuffix = ` (ของ ${daysLater} วันถัดไป)`;
+      }
+
+      endTimeDisplay = `เวลาเลิกงาน: ${formattedTime} น.${daySuffix}`;
+    }
+  }
+
+  const onSubmit = (data: FrontendForm) => {
+    const slotsPayload: {
+      staff_id: string;
+      slot_type_id: string;
+      actual_start_time: string;
+      actual_end_time: string;
+    }[] = [];
+
+    // data.dates ตอนนี้เป็น Array ของ Date Object (เพราะเราใช้ Calendar จาก shadcn)
+    for (const dateObj of data.dates) {
+      // แปลง Date object ของ JS ให้เป็น String "YYYY-MM-DD" ก่อน
+      const dateString = DateTime.fromJSDate(dateObj).toFormat("yyyy-MM-dd");
+
+      // ประกอบร่าง วันที่ + เวลา โดยอ้างอิง Timezone
+      const startDt = DateTime.fromFormat(
+        `${dateString} ${data.start_time}`,
+        "yyyy-MM-dd HH:mm",
+        {
+          zone: placeTimezone,
+        },
+      );
+
+      // คำนวณเวลาจบ
+      const endDt = startDt.plus({ minutes: data.duration_minute });
+
+      // แปลงเป็น ISO string เพื่อส่งไป Backend
+      const actual_start_time = startDt.toISO()!;
+      const actual_end_time = endDt.toISO()!;
+
+      selectedIds.map((staffId) => {
+        slotsPayload.push({
+          staff_id: staffId,
+          slot_type_id: data.slot_type_id,
+          actual_start_time,
+          actual_end_time,
+        });
+      });
+    }
+
+    mutateCreateMany(
+      {
+        positionId: positionId,
+        slots: slotsPayload,
+        skipErrorCodes: skipErrorCodes,
+      },
+      {
+        onSuccess: () => {
+          toast.success("สร้าง workScheduleSlot เรียบร้อยแล้ว");
+          router.push(urlOnSuccess);
+        },
+        onError: () => {
+          toast.error(
+            "ไม่สามารถสร้าง workScheduleSlot ได้ กรุณาลองใหม่อีกครั้ง",
+          );
+        },
+      },
+    );
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className={`bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col gap-6 ${className}`}
+    >
+      <div className="flex flex-col gap-2">
+        <label htmlFor="dates" className="text-sm font-bold text-gray-700">
+          เลือกวันที่ต้องการสร้างเวร <span className="text-red-500">*</span>
+        </label>
+
+        {/* 🌟 พระเอกของเรา Controller + shadcn Calendar */}
+        <Controller
+          control={control}
+          name="dates"
+          render={({ field }) => (
+            <Calendar
+              mode="multiple" // สั่งให้เลือกได้หลายวัน
+              selected={field.value} // ค่าจาก Form
+              onSelect={field.onChange} // ส่งค่ากลับไป Form
+              disabled={isPending}
+              className="bg-white rounded-md border shadow-sm
+                max-w-150
+                portrait:w-full
+                landscape:w-[100vh] 
+              "
+            />
+          )}
+        />
+        {errors.dates && (
+          <p className="text-sm text-red-500 mt-1">{errors.dates.message}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="slot_type_id"
+          className="text-sm font-bold text-gray-700"
+        >
+          ชนิด/ประเภทกะการทำงาน <span className="text-red-500">*</span>
+        </label>
+
+        <select
+          id="slot_type_id"
+          {...register("slot_type_id")}
+          disabled={isPending}
+          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
+            errors.slot_type_id
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
+              : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
+          }`}
+        >
+          {availableSlotTypes.map((ast) => (
+            <option key={ast.id} value={ast.id}>
+              {ast.name}
+            </option>
+          ))}
+        </select>
+
+        {errors.slot_type_id && (
+          <p className="text-sm text-red-500">{errors.slot_type_id.message}</p>
+        )}
+
+        <p className="text-xs text-gray-500">
+          ชนิด/ประเภทกะการทำงาน จะถูกใช้ในการคำนวณและแสดงผลตารางกะการทำงาน
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="start_time" className="text-sm font-bold text-gray-700">
+          เวลาเริ่มงาน <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="start_time"
+          type="time"
+          {...register("start_time")}
+          disabled={isPending}
+          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
+            errors.start_time
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
+              : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
+          }`}
+        />
+        {errors.start_time && (
+          <p className="text-sm text-red-500">{errors.start_time.message}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="duration_minute"
+          className="text-sm font-bold text-gray-700"
+        >
+          ระยะเวลา (นาที) <span className="text-red-500">*</span>
+        </label>
+
+        <input
+          id="duration_minute"
+          type="number"
+          min="1"
+          {...register(
+            "duration_minute",
+
+            {
+              valueAsNumber: true,
+            },
+          )}
+          placeholder="กรุณาระบุระยะเวลา"
+          disabled={isPending}
+          className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
+            errors.duration_minute
+              ? "border-red-300 focus:ring-red-100 focus:border-red-500"
+              : "border-gray-300 focus:ring-purple-100 focus:border-purple-500"
+          }`}
+        />
+
+        {errors.duration_minute && (
+          <p className="text-sm text-red-500">
+            {errors.duration_minute.message}
+          </p>
+        )}
+      </div>
+
+      {/* =============================== */}
+      {/* พื้นที่แสดงผลลัพธ์จากค่าใน form */}
+      {/* =============================== */}
+
+      {/* // Function แสดงเวลาสิ้นสุด (จาก start_time และ duration_minutue) */}
+
+      <div
+        className={`text-sm px-4 py-3 rounded-lg border transition-all ${
+          endTimeDisplay
+            ? "bg-blue-50 border-blue-100 text-blue-700"
+            : "bg-gray-50 border-gray-100 text-gray-400"
+        }`}
+      >
+        {endTimeDisplay ||
+          "กรุณาระบุเวลาเริ่มต้นและระยะเวลา เพื่อดูเวลาเลิกงาน"}
+      </div>
+
+      {/* =============================== */}
+      {/* (จบ) พื้นที่แสดงผลลัพธ์จากค่าใน form */}
+      {/* =============================== */}
+
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={
+            selectedIds.length === staffPositions.length &&
+            staffPositions.length > 0
+          }
+          onChange={handleSelectAll}
+          className="w-5 h-5 cursor-pointer rounded border-gray-300"
+        />
+        <span className="text-sm font-medium text-gray-700">
+          เลือกทั้งหมด ({selectedIds.length}/{staffPositions.length})
+        </span>
+      </div>
+
+      <ul className="divide-y divide-gray-200 bg-white rounded-lg shadow-sm">
+        {staffPositions.map((staffPosition) => (
+          <li
+            key={staffPosition.staffId}
+            className="flex items-center p-4 hover:bg-gray-50"
+          >
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(staffPosition.staffId)}
+              onChange={() => handleToggleSelect(staffPosition.staffId)}
+              className="w-5 h-5 mr-4 cursor-pointer rounded border-gray-300"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900">
+                {staffPosition.name}
+              </p>
+              <p className="text-sm text-gray-500">
+                ID: {staffPosition.staffId}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => router.push(urlOnCancel)}
+          disabled={isPending}
+          className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
+        >
+          ยกเลิก
+        </button>
+
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+        </button>
+      </div>
+    </form>
+  );
+};

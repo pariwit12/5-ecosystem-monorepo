@@ -64,6 +64,7 @@ export const methodManyAvailableOtherProgramOtherFeature = async (
 
   // ปรับตามใช้งานจริง
   token: string,
+  // eslint-disable-next-line
   skipErrorCodes?: readonly string[],
 
   // ==>>==>>== (จบ) อื่นๆ ==<<==<<==
@@ -196,7 +197,8 @@ MethodManyAvailableOtherProgramOtherFeatureResponse> => {
         headers: { Authorization: `Bearer ${token}` },
 
         // ปรับตามใช้งานจริง
-        skipErrorCodes: skipErrorCodes,
+        // ปัจจุบัน comment ไว้ก่อน เนื่องจากตอนนี้ไม่ได้จัดการต่อใน method (เราสั่ง redirect เฉพาะ GET เท่านั้น)
+        // skipErrorCodes: skipErrorCodes,
       },
     );
 

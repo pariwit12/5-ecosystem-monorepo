@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider, Show, SignInButton, UserButton } from "@clerk/nextjs"; // 👈 1. นำเข้า Clerk
+import { ClerkProvider, Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 // eslint-disable-next-line
-import Sidebar from "@/components/sidebar"; // 👈 นำเข้า Sidebar
+import Sidebar from "@/components/use-by-layout/sidebar";
 import "./globals.css";
+
 import TanStackProvider from "@/provider/tan-stack-provider";
-import GlobalErrorModal from "@/components/global-error-modal";
+import { OfflineBanner } from "@/components/use-by-layout/offline-banner";
+
+import GlobalErrorModal from "@/components/use-by-layout/global-error-modal";
+
 import { Toaster } from "sonner";
-import { OfflineBanner } from "@/components/offline-banner";
+
+import { Suspense } from "react";
+import ToastNotifier from "@/components/use-by-layout/toast-notifier";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,14 +37,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // 👇 2. เอา ClerkProvider มาครอบโครงสร้างทั้งหมดไว้
+    // เอา ClerkProvider มาครอบโครงสร้างทั้งหมดไว้
     <ClerkProvider>
       <html
         lang="en"
         className={cn(
+          //
           // ===============================
           // 🟢 1. จัดการเรื่องฟอนต์ (Fonts)
           // ===============================
+
           geistSans.variable,
           geistMono.variable,
           "antialiased", // ทำให้ขอบตัวหนังสือคมชัดขึ้น
@@ -46,6 +54,7 @@ export default function RootLayout({
           // ===============================
           // 🟢 2. โครงสร้างหลัก (Layout)
           // ===============================
+
           "h-full",
 
           "overflow-y-auto", // ควรใช้ + คนใช้เยอะที่สุด
@@ -54,6 +63,7 @@ export default function RootLayout({
           // ===============================
           // 🟢 3. ป้องกันหน้าจอกระตุกจาก Scrollbar (กรณีใช้ overflow-y-auto)
           // ===============================
+
           "scrollbar-gutter-stable",
 
           // ความฉลาดของ scrollbar-gutter: stable:
@@ -64,7 +74,7 @@ export default function RootLayout({
         )}
       >
         <body className={cn("min-h-full flex flex-col bg-gray-50")}>
-          {/* 🌟 2. ขยับ TanStackProvider มาครอบทั้งหมดตั้งแต่ตรงนี้! */}
+          {/* ขยับ TanStackProvider มาครอบทั้งหมดตั้งแต่ตรงนี้! */}
           {/* เพื่อให้ Header และ Sidebar สามารถใช้ useQuery ดึง API ได้ด้วย */}
           <TanStackProvider>
             <OfflineBanner />
@@ -123,12 +133,21 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
-            {/* 🌟 4. วาง Global Modal ไว้ล่างสุดของ DOM */}
+
+            {/* 🌟 วาง Global Modal ไว้ล่างสุดของ DOM */}
             {/* เพื่อให้มันสามารถลอยทับ Header และ Sidebar ได้อย่างสมบูรณ์แบบ */}
             <GlobalErrorModal />
+
             {/* 🌟 ย้าย Toaster มาไว้ตรงนี้ครับ! จะได้ลอยทับหน้าเว็บได้อย่างสมบูรณ์แบบ */}
             {/* richColors คือการสั่งให้มีสีสวยๆ อัตโนมัติ (เช่น แดง=Error, เขียว=Success) */}
             <Toaster position="top-right" richColors />
+
+            {/* 🌟 วาง ToastNotifier สำหรับดักจับ URL Params เบื้องหลัง 🌟 */}
+            {/* จำเป็นต้องใช้ Suspense ครอบไว้ตามกฎของ Next.js App Router เมื่อใช้ useSearchParams */}
+            <Suspense fallback={null}>
+              <ToastNotifier />
+            </Suspense>
+
             {/* ขยับ TanStack ไว้ตรงนี้ เพื่อให้ทุกส่วนสามารถใช้ API ได้ */}
           </TanStackProvider>
         </body>

@@ -121,6 +121,8 @@ GetAvailableOtherProgramFeaturesResponse> => {
 
     // ปรับตามใช้งานจริง
     query_string: valueToQueryOne,
+    query_string_datetime_start_time: "2026-01-01Z...",
+    query_string_datetime_end_time: "2026...",
   };
 
   // ==>>==>>== 🌟 (จบ) จุดประกอบร่างข้อมูล Query + TS ตรวจ field ==<<==<<==

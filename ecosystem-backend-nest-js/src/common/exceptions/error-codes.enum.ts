@@ -1,38 +1,37 @@
 export enum ErrorCode {
-  //
   DEFAULT_ERROR = 'DEFAULT_ERROR',
 
+  // Person
   PERSON_NOT_FOUND = 'PERSON_NOT_FOUND',
+
+  // Organization
   ORGANIZATION_NOT_FOUND = 'ORGANIZATION_NOT_FOUND',
   ORGANIZATION_DELETED = 'ORGANIZATION_DELETED',
+
+  // Member
   NOT_A_MEMBER_OF_ORGANIZATION = 'NOT_A_MEMBER_OF_ORGANIZATION',
 
-  // ==========================
-  // Work-Schedule
-  // ==========================
+  // ===========================
+  // PROGRAM: Work-Schedule
+  // ===========================
 
+  // Place
   WORK_SCHEDULE_PLACE_NOT_FOUND = 'WORK_SCHEDULE_PLACE_NOT_FOUND',
   WORK_SCHEDULE_PLACE_DELETED = 'WORK_SCHEDULE_PLACE_DELETED',
+
+  // Admin
   NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE = 'NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE',
 
+  // Position
   WORK_SCHEDULE_POSITION_NOT_FOUND = 'WORK_SCHEDULE_POSITION_NOT_FOUND',
   WORK_SCHEDULE_POSITION_DELETED = 'WORK_SCHEDULE_POSITION_DELETED',
 
+  // Slot Template
   WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND = 'WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND',
 
-  // ค่อยเขียนเพิ่มเติมในภายหลัง เพื่อระบุให้ละเอียดขึ้น ตอนนี้เราควรเอาเวลาไปโฟกัสที่ business logic มากกว่า
-
-  //   // หมวด Auth
-  //   SESSION_EXPIRED = 'SESSION_EXPIRED',
-  //   UNAUTHORIZED_ACCESS = 'UNAUTHORIZED_ACCESS',
-
-  //   // หมวด Organization
-  //   ORG_NOT_FOUND = 'ORG_NOT_FOUND',
-  //   SUBSCRIPTION_EXPIRED = 'SUBSCRIPTION_EXPIRED',
-
-  //   // หมวด General
-  //   VALIDATION_FAILED = 'VALIDATION_FAILED',
-  //   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  // ===========================
+  // (จบ) PROGRAM: Work-Schedule
+  // ===========================
 }
 
 // อย่าลืมไปเพิ่มใน frontend/constants/error-messages.ts

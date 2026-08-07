@@ -10,4 +10,17 @@ export const workScheduleSlotKeys = {
       "by-position-id",
       positionId,
     ] as const,
+
+  listsByPositionIdStartTimeEndTime: (
+    userId: string,
+    positionId: string,
+    startTime: string,
+    endTime: string,
+  ) =>
+    [
+      ...workScheduleSlotKeys.listsByPositionId(userId, positionId),
+      "by-start-time-end-time",
+      startTime,
+      endTime,
+    ] as const,
 };

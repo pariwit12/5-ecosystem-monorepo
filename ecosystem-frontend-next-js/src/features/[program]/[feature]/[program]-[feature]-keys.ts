@@ -8,7 +8,7 @@ export const programFeatureKeys = {
       // ปรับตามใช้งานจริง
       userId,
       "program",
-      "template",
+      "feature",
     ] as const,
 
   // ปรับตามใช้งานจริง
@@ -37,6 +37,23 @@ export const programFeatureKeys = {
       ...programFeatureKeys.lists(userId),
       "by-value-one",
       valueOne,
+    ] as const,
+
+  // ปรับตามใช้งานจริง
+  listsByValueOneValueTwoValueThree: (
+    //
+    // ปรับตามใช้งานจริง
+    userId: string,
+    valueOne: string,
+    valueTwo: string,
+    valueThree: string,
+  ) =>
+    [
+      // ปรับตามใช้งานจริง
+      ...programFeatureKeys.listsByValueOne(userId, valueOne),
+      "by-value-two-value-three",
+      valueTwo,
+      valueThree,
     ] as const,
 
   // ปรับตามใช้งานจริง

@@ -2,14 +2,9 @@
 // Pattern: Server Internal Only + CSR
 // ------------------------------------------------------------------------
 
-import { redirect } from "next/navigation";
+import Client from "./client-page";
 
-import WorkScheduleAdminPositionNewClient from "./client-page";
-
-const uuidV7Regex = // ฟอร์แมตสำหรับ UUIDv7
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-export default async function WorkScheduleAdminPositionNewPage({
+export default async function Page({
   params,
 }: {
   params: Promise<{
@@ -20,9 +15,5 @@ export default async function WorkScheduleAdminPositionNewPage({
 
   const placeId = resolvedParams.placeId;
 
-  if (!uuidV7Regex.test(placeId)) {
-    redirect("/work-schedule?error=invalid_id");
-  }
-
-  return <WorkScheduleAdminPositionNewClient placeId={placeId} />;
+  return <Client placeId={placeId} />;
 }

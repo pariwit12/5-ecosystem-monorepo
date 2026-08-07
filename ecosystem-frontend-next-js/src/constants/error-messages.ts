@@ -1,35 +1,64 @@
-//
-// 🌟 หน้าบ้านรับหน้าที่แปล ErrorCode เป็นภาษามนุษย์
-
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { PageErrorList } from "./page-error-list.enum";
 
-export const USER_ERROR_MESSAGES: Record<string, string> = {
+export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   //
   // ยกมาจาก error-codes.enum.ts
 
-  [ErrorCode.DEFAULT_ERROR]:
-    "ErrorCode Default ที่สร้างจาก all-exceptions.filter",
+  [ErrorCode.DEFAULT_ERROR]: "เกิดข้อผิดพลาด (ErrorCode.DEFAULT_ERROR)",
 
+  // Person
   [ErrorCode.PERSON_NOT_FOUND]:
     "ไม่พบข้อมูลโปรไฟล์ของคุณ กรุณาลงทะเบียนก่อนเข้าใช้งาน",
-  [ErrorCode.ORGANIZATION_NOT_FOUND]: "ไม่พบองค์กรที่คุณพยายามเข้าถึง",
-  [ErrorCode.ORGANIZATION_DELETED]: "องค์กรนี้ถูกปิดตัวหรือลบออกจากระบบไปแล้ว",
-  [ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION]: "ไม่มีสิทธิเข้าถึงองค์กรนี้",
 
-  // ==========================
-  // Work-Schedule
-  // ==========================
+  // Organization
+  [ErrorCode.ORGANIZATION_NOT_FOUND]:
+    "ไม่พบองค์กร (ORGANIZATION) ที่เกี่ยวข้องในระบบ",
+  [ErrorCode.ORGANIZATION_DELETED]:
+    "องค์กร (ORGANIZATION) ที่เกี่ยวข้อง ถูกลบออกจากระบบหรือปิดการใช้งานไปแล้ว",
 
-  [ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND]: "ไม่พบองค์กรที่คุณพยายามเข้าถึง",
+  // Member
+  [ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION]:
+    "ต้องการสิทธิ สมาชิก (MEMBER) ในการเข้าถึงข้อมูล",
+
+  // ===========================
+  // PROGRAM: Work-Schedule
+  // ===========================
+
+  // Place
+  [ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND]:
+    "ไม่พบองค์กร (PLACE) ที่เกี่ยวข้องในระบบ",
   [ErrorCode.WORK_SCHEDULE_PLACE_DELETED]:
-    "องค์กรนี้ถูกปิดตัวหรือลบออกจากระบบไปแล้ว",
-  [ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE]: "ไม่มีสิทธิเข้าถึงข้อมูลนี้",
+    "องค์กร (PLACE) ที่เกี่ยวข้อง ถูกลบออกจากระบบหรือปิดการใช้งานไปแล้ว",
 
+  // Admin
+  [ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE]:
+    "ต้องการสิทธิ ผู้ดูแลระบบ (ADMIN) ในการเข้าถึงข้อมูล",
+
+  // Position
   [ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND]:
-    "ไม่พบตำแหน่งงานที่คุณพยายามเข้าถึง",
+    "ไม่พบตำแหน่งงาน (POSITION) ที่เกี่ยวข้องในระบบ",
   [ErrorCode.WORK_SCHEDULE_POSITION_DELETED]:
-    "ตำแหน่งงานนี้ถูกลบออกจากระบบไปแล้ว",
+    "ตำแหน่งงาน (POSITION) ที่เกี่ยวข้อง ถูกลบออกจากระบบหรือปิดการใช้งานไปแล้ว",
 
-  // อื่นๆ
-  //
+  // Slot Template
+  [ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND]:
+    "ไม่พบรายการแบบร่าง (SLOT TEMPLATE) ที่เกี่ยวข้องในระบบ",
+
+  // ===========================
+  // (จบ) PROGRAM: Work-Schedule
+  // ===========================
+};
+
+export const PAGE_ERROR_MESSAGES: Record<PageErrorList, string> = {
+  // รอเปลี่ยน
+  [PageErrorList.INVALID_ID]: "รูปแบบของรหัสไม่ถูกต้อง หรือไม่มีอยู่จริงในระบบ",
+
+  // ===========================
+  // PROGRAM: Work-Schedule
+  // ===========================
+
+  // ===========================
+  // (จบ) PROGRAM: Work-Schedule
+  // ===========================
 };

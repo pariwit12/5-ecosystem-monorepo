@@ -1,41 +1,29 @@
 "use client";
 
-import { useForm, useWatch, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { z } from "zod";
-import { DateTime } from "luxon";
-
-// ==>>==>>== Import Function (useHooks) ==<<==<<==
-
-import {
-  // ปรับตามใช้งานจริง
-  useMethodManyAvailableOtherProgramOtherFeature,
-
-  // ปรับตามใช้งานจริง
-} from "../hooks/use-[method-many]-[available_null]-[other-program_null]-[other-feature_null]";
-
-// ==>>==>>== (จบ) Import Function (useHooks) ==<<==<<==
-
-// ==>>==>>== Import Schema (From Backend) ==<<==<<==
-
 // นำมาใช้สร้าง Schema สำหรับ Form (หากไม่ใช้ก็ลบออกได้เลย)
-
 import {
   // ปรับตามใช้งานจริง
   MethodManyAvailableOtherProgramOtherFeatureDtoBodySchema,
 
   // ปรับตามใช้งานจริง
 } from "@backend/modules/[program]/[feature]/commands/[method-many]-[available_null]-[other-program_null]-[other-feature_null].command";
+import { z } from "zod";
 
-// ==>>==>>== (จบ) Import Schema (From Backend) ==<<==<<==
+import { useRouter } from "next/navigation";
+import {
+  // ปรับตามใช้งานจริง
+  useMethodManyAvailableOtherProgramOtherFeature,
 
-// ==>>==>>== Import UI ==<<==<<==
+  // ปรับตามใช้งานจริง
+} from "../hooks/use-[method-many]-[available_null]-[other-program_null]-[other-feature_null]";
+import { useForm, useWatch, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { DateTime } from "luxon";
+
+import { toast } from "sonner";
 
 import { Calendar } from "@/components/ui/calendar";
-
-// ==>>==>>== (จบ) Import UI ==<<==<<==
 
 // ==>>==>>== สร้าง Schema สำหรับ Form ==<<==<<==
 
@@ -688,6 +676,13 @@ export const MethodManyAvailableOtherProgramOtherFeatureForm = ({
           {...register(
             //
             "body_string_datetime_start_time", // ปรับตามใข้งานจริง
+
+            {
+              setValueAs: (v) => {
+                if (!v) return "";
+                return DateTime.fromISO(v, { zone: placeTimezone }).toISO();
+              },
+            },
             //
           )}
           disabled={isPending}
@@ -735,6 +730,13 @@ export const MethodManyAvailableOtherProgramOtherFeatureForm = ({
           {...register(
             //
             "body_string_datetime_end_time", // ปรับตามใข้งานจริง
+
+            {
+              setValueAs: (v) => {
+                if (!v) return "";
+                return DateTime.fromISO(v, { zone: placeTimezone }).toISO();
+              },
+            },
             //
           )}
           disabled={isPending}
@@ -854,6 +856,8 @@ export const MethodManyAvailableOtherProgramOtherFeatureForm = ({
             //
             // ปรับตามใช้งานจริง
             {
+              setValueAs: (v) => (v === "" ? undefined : Number(v)),
+
               valueAsNumber: true, // บอก HTML ให้แปลงค่าเป็น number ให้เรียบร้อยก่อนส่งให้ react-hook-form
               // default: HTML จะส่งค่าออกไปเป็น string ทั้งหมด
             },

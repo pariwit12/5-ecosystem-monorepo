@@ -25,7 +25,7 @@ export const workSchedulePlaceQueries = {
     userId: string | null | undefined,
     getToken: () => Promise<string | null>,
 
-    skipErrorCodes?: string[],
+    skipErrorCodes?: readonly string[],
   ) =>
     queryOptions({
       queryKey: workSchedulePlaceKeys.detail(userId ?? "", placeId),

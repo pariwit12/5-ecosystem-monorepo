@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
@@ -11,52 +10,12 @@ import { useAuth } from "@clerk/nextjs";
 import { workScheduleLogInQueries } from "@/features/work-schedule/log-in/work-schedule-log-in.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
 
-// ==========================================
-// 🛡️ Component ดักจับ Error จาก URL
-// ==========================================
-// (💡 Tip: ในอนาคตสามารถแยกฟังก์ชันนี้ไปไว้ใน components/url-error-toast.tsx ได้)
-function ToastNotifier() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const errorCode = searchParams.get("error");
-    if (!errorCode) return; // ถ้าไม่มี error ใน URL ก็ไม่ต้องทำอะไรเลย
-
-    if (errorCode === "invalid_id") {
-      toast.error("รหัสองค์กรไม่ถูกต้อง");
-    } else if (
-      errorCode === ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND ||
-      errorCode === ErrorCode.WORK_SCHEDULE_PLACE_DELETED ||
-      errorCode === ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE
-    ) {
-      const errorMessage = USER_ERROR_MESSAGES[errorCode]; // ใช้ "ข้อความ" ที่เตรียมไว้ใน USER_ERROR_MESSAGES
-
-      toast.error("ไม่สามารถเข้าถึงข้อมูลได้", {
-        description: errorMessage, // <--- จะได้ข้อความที่ต่างกันตาม Error เลยครับ!
-      });
-    }
-
-    // ลบ ?error=invalid_id ออกจาก URL เพื่อไม่ให้ Toast เด้งซ้ำตอนกดรีเฟรชหน้า
-    window.history.replaceState(null, "", "/work-schedule");
-  }, [searchParams]);
-
-  return null; // ไม่ต้องแสดงผล UI อะไรออกมา
-}
-
-// ==========================================
-// 🖥️ Component หลัก
-// ==========================================
-export default function TemplatePage() {
+export default function Page() {
   const router = useRouter();
-  // =================================
-  // 🚀 1. ดึงข้อมูลจาก useQuery / Hook
-  // =================================
   const { getToken, userId, isLoaded } = useAuth();
 
   const { data, isLoading, isFetching, error } = useQuery(
-    // ปรับตามใช้งานจริง
     workScheduleLogInQueries.userRolesByClerkId(userId, getToken, [
       ErrorCode.PERSON_NOT_FOUND,
     ]),
@@ -108,19 +67,8 @@ export default function TemplatePage() {
   const placesAsAdmin = data?.placesAsAdmin || [];
   const placesAsStaff = data?.placesAsStaff || [];
 
-  // ==================
-  // ส่วนแสดงผล UI หลัก
-  // ==================
   return (
     <>
-      {/* ใส่ fallback={null} เพื่อบอกว่าระหว่างรอโหลด ไม่ต้องโชว์อะไร */}
-      <Suspense fallback={null}>
-        {/* 💡 เกร็ดความรู้เพิ่มเติม: การที่เราเอา <Suspense> มาครอบไว้แบบนี้ เป็นการบอก Next.js
-            ว่า "ตรงส่วนนี้มีการใช้งานข้อมูลที่ต้องรอดึงจากเบราว์เซอร์ (URL) นะ ยูสามารถข้ามไปประมวลผล (Build) หน้าจอส่วนอื่นๆ ก่อนได้เลย ไม่ต้องรอ!"
-            ซึ่งจะช่วยให้ระบบ Static Rendering ของ Next.js ทำงานได้เต็มประสิทธิภาพ และผ่านฉลุยตอนสั่ง pnpm run build ครับ */}
-        <ToastNotifier />
-      </Suspense>
-
       {/* =============================== */}
       {/* Loading / Error UI (By Wrapper) */}
       {/* =============================== */}

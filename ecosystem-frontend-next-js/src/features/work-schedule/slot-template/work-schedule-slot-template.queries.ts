@@ -6,8 +6,8 @@ import { workScheduleSlotTemplateKeys } from "./work-schedule-slot-template-keys
 // ---------- Import Function (.api) ----------
 // ============================================
 
-import { getWorkScheduleSlotTemplateById } from "./api/queries/get-work-schedule-slot-template-by-id.api";
-import { getWorkScheduleSlotTemplatesByPositionId } from "./api/queries/get-work-schedule-slot-templates-by-position-id.api";
+import { getSlotTemplateById } from "./api/queries/get-slot-template-by-id.api";
+import { getSlotTemplatesByPositionId } from "./api/queries/get-slot-templates-by-position-id.api";
 
 // ============================================
 // ------- (จบ) Import Function (.api) --------
@@ -20,44 +20,13 @@ export const workScheduleSlotTemplateQueries = {
   // ===========================================
 
   // 1
-  queryGetWorkScheduleSlotTemplatesByPositionId: (
-    positionId: string,
-
-    userId: string | null | undefined,
-    getToken: () => Promise<string | null>,
-
-    skipErrorCodes?: string[],
-  ) =>
-    queryOptions({
-      queryKey: workScheduleSlotTemplateKeys.listsByPositionId(
-        userId ?? "",
-        positionId,
-      ),
-
-      queryFn: async () => {
-        const token = await getToken();
-        if (!token) throw new Error("Authentication token is missing");
-
-        return getWorkScheduleSlotTemplatesByPositionId(
-          positionId,
-          token,
-          skipErrorCodes,
-        );
-      },
-
-      staleTime: 60 * 1000,
-
-      enabled: !!userId && !!positionId,
-    }),
-
-  // 2
-  queryGetWorkScheduleSlotTemplateById: (
+  queryGetSlotTemplateById: (
     slotTemplateId: string,
 
     userId: string | null | undefined,
     getToken: () => Promise<string | null>,
 
-    skipErrorCodes?: string[],
+    skipErrorCodes?: readonly string[],
   ) =>
     queryOptions({
       queryKey: workScheduleSlotTemplateKeys.detail(
@@ -69,8 +38,9 @@ export const workScheduleSlotTemplateQueries = {
         const token = await getToken();
         if (!token) throw new Error("Authentication token is missing");
 
-        return getWorkScheduleSlotTemplateById(
+        return getSlotTemplateById(
           slotTemplateId,
+
           token,
           skipErrorCodes,
         );
@@ -79,6 +49,38 @@ export const workScheduleSlotTemplateQueries = {
       staleTime: 60 * 1000,
 
       enabled: !!userId && !!slotTemplateId,
+    }),
+
+  // 2
+  queryGetSlotTemplatesByPositionId: (
+    positionId: string,
+
+    userId: string | null | undefined,
+    getToken: () => Promise<string | null>,
+
+    skipErrorCodes?: readonly string[],
+  ) =>
+    queryOptions({
+      queryKey: workScheduleSlotTemplateKeys.listsByPositionId(
+        userId ?? "",
+        positionId,
+      ),
+
+      queryFn: async () => {
+        const token = await getToken();
+        if (!token) throw new Error("Authentication token is missing");
+
+        return getSlotTemplatesByPositionId(
+          positionId,
+
+          token,
+          skipErrorCodes,
+        );
+      },
+
+      staleTime: 60 * 1000,
+
+      enabled: !!userId && !!positionId,
     }),
 
   // ===========================================

@@ -3,12 +3,14 @@ import { Module } from '@nestjs/common';
 // ==========================
 // Import Feature Module
 // ==========================
+
 import {
   // ปรับตามใช้งานจริง
   FeatureModule,
 
   // ปรับตามใช้งานจริง
 } from './[feature]/[feature].module';
+
 // ==========================
 // (จบ) Import Feature Module
 // ==========================
@@ -19,7 +21,16 @@ import {
 
 @Module({
   imports: [
-    FeatureModule, // ปรับตามใช้งานจริง
+    // ==============================
+    // จุดลงทะเบียน Feature Module
+    // ==============================
+
+    // ปรับตามใช้งานจริง
+    FeatureModule,
+
+    // ==============================
+    // (จบ) จุดลงทะเบียน Feature Module
+    // ==============================
   ],
   controllers: [],
   providers: [],

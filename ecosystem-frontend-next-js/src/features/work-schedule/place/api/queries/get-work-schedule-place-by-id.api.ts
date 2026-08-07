@@ -48,7 +48,7 @@ export const getWorkSchedulePlaceById = async (
   // =========
 
   token: string,
-  skipErrorCodes?: string[],
+  skipErrorCodes?: readonly string[],
 
   // =========
   // (จบ) อื่นๆ
