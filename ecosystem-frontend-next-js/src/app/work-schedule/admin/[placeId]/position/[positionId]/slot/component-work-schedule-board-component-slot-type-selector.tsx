@@ -30,7 +30,7 @@ export function SlotTypeSelect({
         id="slot-type-filter"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none bg-white cursor-pointer min-w-[180px]"
+        className="border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none bg-white cursor-pointer min-w-45"
       >
         <option value="all">ทั้งหมด (All Types)</option>
         {options.map((option) => (
