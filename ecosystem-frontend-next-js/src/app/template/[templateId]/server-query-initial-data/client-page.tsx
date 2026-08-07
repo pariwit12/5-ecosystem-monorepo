@@ -10,56 +10,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-import { toast } from "sonner";
-
-// ตรวจสอบว่าเป็น Error เป็นรูปแบบ Error จาก Axios หรือไม่
-import { isAxiosError } from "axios";
-
-import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
-
-// ข้อความที่เตรียมไว้สำหรับ ErrorCode แต่ละประเภท
-import { USER_ERROR_MESSAGES } from "@/constants/error-messages";
+import { useRouter } from "next/navigation";
 
 // ErrorCode จากแต่ละ AccessControl
 import { AccessControlErrorCode } from "@backend/common/access-control/access-control-error-code.constant";
 
-// Redirect From ErrorQuery
-import { useEffectRedirectFromErrorQuery } from "@/hooks/use-effect-redirect-from-error-query";
-
-import { cn } from "@/lib/utils";
-
-// eslint-disable-next-line
-import Link from "next/link";
-
-// การเรียกใช้แบบนอก {} ชื่อไม่จำเป็นต้องตรงกับในไฟล์ ./loading.tsx หรือ ./error.tsx ก็ได้ (มันจะไปเอา default มาใช้อยู่แล้ว)
-import Loading from "./loading";
-import ErrorQuery from "./error";
-
-import { ChildrenHeader } from "@/components/children-header";
-// eslint-disable-next-line
-import { MenuGrid } from "@/components/menu-grid/menu-gird";
-// eslint-disable-next-line
-import { MenuCard } from "@/components/menu-grid/menu-card";
-import {
-  // eslint-disable-next-line
-  CalendarIcon,
-  // eslint-disable-next-line
-  PersonIcon,
-  // eslint-disable-next-line
-  DetailNoteIcon,
-  // eslint-disable-next-line
-  DocumentTextIcon,
-  // eslint-disable-next-line
-  SettingIcon,
-  // eslint-disable-next-line
-  PlusIcon,
-} from "@/components/menu-grid/icon";
-
 import {
   // ปรับตามใช้งานจริง
-  templateQueries,
+  programFeatureQueries,
 
   // ปรับตามใช้งานจริง
 } from "@/features/[program]/[feature]/[program]-[feature].queries";
@@ -121,10 +79,10 @@ export default function Client({
   } = useQuery({
     //
     // ปรับตามใช้งานจริง
-    ...templateQueries
+    ...programFeatureQueries
 
       // ปรับตามใช้งานจริง
-      .queryGetTemplate(
+      .queryGetAvailableOtherProgramFeatures(
         //
         // ปรับตามใช้งานจริง
         "string1",
