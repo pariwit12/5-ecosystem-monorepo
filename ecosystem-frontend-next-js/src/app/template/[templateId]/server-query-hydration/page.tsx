@@ -24,7 +24,7 @@ import Client from "./client-page";
 // ----------- Import Queries -----------
 import {
   // ปรับตามใช้งานจริง
-  templateQueries,
+  programFeatureQueries,
 
   // ปรับตามใช้งานจริง
 } from "@/features/[program]/[feature]/[program]-[feature].queries";
@@ -181,10 +181,10 @@ export default async function Page({
   try {
     await queryClient.fetchQuery(
       //
-      templateQueries // ปรับตามใช้งานจริง
+      programFeatureQueries // ปรับตามใช้งานจริง
         //
         // ปรับตามใช้งานจริง
-        .queryGetTemplate(
+        .queryGetAvailableOtherProgramFeatures(
           //
           // ปรับตามใช้งานจริง
           templateId,
