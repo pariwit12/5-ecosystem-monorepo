@@ -23,13 +23,15 @@ model Organization {
 }
 
 model Person {
-  id      String @id @default(uuid(7)) @db.Uuid
-  clerkId String @unique @map("clerk_id") // ไม่ได้ใช้ clerkId เป็น id เพื่อความยืดหยุ่น (ลดการผูกติดกับ Clerk)
+  id      String  @id @default(uuid(7)) @db.Uuid
+  clerkId String? @unique @map("clerk_id") // คนไข้ไม่จำเป็นต้องมี Clerk account
 
-  // firstName String @map("first_name")
-  // lastName  String @map("last_name")
-  // email      String? @unique
-  // phone      String?
+  firstName String? @map("first_name")
+  lastName  String? @map("last_name")
+  nickname  String?
+  phone     String?
+  cid       String? @unique @db.VarChar(13)
+  birthDate DateTime? @map("birth_date") @db.Date
 
   version Int @default(1)
   // ใช้สำหรับ
@@ -37,6 +39,10 @@ model Person {
   // 2. สร้าง + เปลี่ยนแปลงข้อมูล Organization (หน้าจัดการองค์กร)
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
+  legacyIdentities              PersonLegacyIdentity[]
+  dentist                       PersonDentist?
+  staff                         PersonStaff?
+  dentalPatient                 PersonDentalPatient?
   // workScheduleAdminInvitationRequests WorkScheduleAdminInvitationRequest[] (ระบบเชิญ admin ค่อยทำทีหลัง)
   workScheduleAdmins             WorkScheduleAdmin[]
   workScheduleStaffs             WorkScheduleStaff[]
@@ -44,6 +50,59 @@ model Person {
   // personDentalPatient PersonDentalPatient?
 
   @@map("person")
+}
+
+model PersonDentist {
+  personId      String   @id @map("person_id") @db.Uuid
+  person        Person   @relation(fields: [personId], references: [id], onDelete: Restrict)
+  licenseNumber String?  @unique @map("license_number")
+  legacyRole    String?  @map("legacy_role")
+
+  clinicAffiliations PersonDentistAffiliation[]
+
+  @@map("person_dentist")
+}
+
+model PersonStaff {
+  personId   String     @id @map("person_id") @db.Uuid
+  person     Person     @relation(fields: [personId], references: [id], onDelete: Restrict)
+  role       StaffRole  @default(OTHER)
+  legacyRole String?    @map("legacy_role")
+
+  clinicAffiliations PersonStaffAffiliation[]
+
+  @@map("person_staff")
+}
+
+enum StaffRole {
+  ADMIN
+  MANAGER
+  RECEPTIONIST
+  DENTAL_ASSISTANT
+  ACCOUNTING
+  OTHER
+}
+
+model PersonDentalPatient {
+  personId       String                       @id @map("person_id") @db.Uuid
+  person         Person                       @relation(fields: [personId], references: [id], onDelete: Restrict)
+  legacyPatientId Int?                       @unique @map("legacy_patient_id")
+  clinicAffiliations PersonDentalPatientAffiliation[]
+
+  @@map("person_dental_patient")
+}
+
+model PersonLegacyIdentity {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  personId   String   @map("person_id") @db.Uuid
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Restrict)
+  source     String
+  entityType String   @map("entity_type")
+  legacyId   Int      @map("legacy_id")
+
+  @@unique([source, entityType, legacyId])
+  @@index([personId])
+  @@map("person_legacy_identity")
 }
 
 model PersonOrganizationAffiliation {
