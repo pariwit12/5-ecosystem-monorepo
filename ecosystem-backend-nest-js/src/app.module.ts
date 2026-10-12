@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AccessControlModule } from './common/access-control/access-control.module';
 
+import { AgentModule } from './modules/agent/agent.module';
+
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PersonModule } from './modules/person/person.module';
@@ -14,6 +16,8 @@ import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module
   imports: [
     PrismaModule,
     AccessControlModule,
+
+    AgentModule,
 
     WebhooksModule,
     OrganizationsModule,

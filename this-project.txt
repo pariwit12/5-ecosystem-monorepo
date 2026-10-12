@@ -146,9 +146,110 @@ Step 1
         }[];
 
 
+    - {
+      startTime: string;
+      endTime: string;
 
-    - ตรวจสอบค่า min โดย ถ้าเกิด น้อยกว่า min ให้เติมเวรให้เกินจำนวนได้
-    - ตรวจสอบค่า max โดย บังคับไม่ให้เกิน max
+      staffs: {
+        id: string;
+
+        slotTypes: {
+          id: string;
+
+          slotTemplates: {
+            id: string;
+            targetQuantity: number | null;
+          }[];
+
+          targetQuantity: number | null;
+        }[];
+
+        targetQuantity: number | null;
+
+        dayOffs: {
+          startTime: string;
+          endTime: string;
+        }[];
+
+      }[];
+    }
+
+    - function ตรวจสอบ targetQuantity {
+      ตรวจสอบ targetQuantity[slotType] === sum of (targetQuantity[slotTemplate])
+      ตรวจสอบ targetQuantity === sum of (targetQuantity[slotType])
+    }
+
+    - function TestAvailability
+      - ดึง existingSlot
+      - ดึง min/max (ใช้ max)
+
+      - ถอดค่า date เริ่มต้น / date สิ้นสุด เพื่อนำมาใช้ประกอบกับเวลาของ slotTemplate เพื่อสร้าง slot ได้ถูก
+        - startDate (2026-08-05)
+        - endDate (2026-09-05)
+
+
+
+      set focus = layer 0
+
+      set availablityIndex = 1;
+
+      while (some quantity < targetQuantity && availability[0] === 1) {
+
+        if (availability[focus] === 1 and quantity[focus] === 0) {
+          for (dayAdd = startDateTime, dayAdd <= endDateTime && slotToCreate[focus][0] === undefined, dayAdd ++) {
+            if (dayAdd ไม่ทับกับ slotToCreate[ทั้งหมด]) {
+              slotToCreate[focus][0].date = dayAdd
+            }
+          }
+
+          if (slotToCreate[focus][0] === undefined) {
+            availability[focus] = 0
+          }
+        }
+
+        while (availability[focus] === 1 and quantity[focus] < targetQuantity[focus]) {
+          int i = quantity[focus].length
+
+          for (dayAdd = 1, slotToCreate[focus][i-1].date + dayAdd <= endDateTime && slotToCreate[focus][i] === undefined, dayAdd ++) {
+            if (slotToCreate[focus][i-1].date + dayAdd ไม่ทับกับ slotToCreate[ทั้งหมด]) {
+              slotToCreate[focus][i].date = slotToCreate[focus][i-1].date + dayAdd
+            }
+          }
+
+          if (slotToCreate[focus][i] === undefined) {
+            remove slotToCreate[focus]
+            availability[focus] = 0
+          }
+
+        }
+        
+        if (availability[focus] === 1 and quantity[focus] === targetQuantity[focus]){
+          focus ++
+        }
+
+        while (availability[focus] === 0) {
+          for (i = slotToCreate[focus-1].length, i >= 0 && availability[focus] === 0, i --) {
+            for (dayAdd = 1, slotToCreate[focus-1][i].date + dayAdd <= endDateTime && availability[focus] === 0, dayAdd ++) {
+              if (slotToCreate[focus-1][i].date + dayAdd ไม่ทับกับ slotToCreate[ทั้งหมด]) {
+                slotToCreate[focus-1][i].date = slotToCreate[focus-1][i].date + dayAdd
+                availability[focus] = 1
+              }
+            }
+          }
+          
+          if (availability[focus] === 0) {
+            remove slotToCreate[focus-1]
+            availability[focus-1] = 0
+            focus --
+          }
+        }
+
+      }
+
+      if (all quantity === targetQuantity) return slotToCreate
+      else throw error
+
+
 
     - priority การลงข้อมูล
       1 พยายามให้จำนวนเวรเท่ากัน (โดยจะ fill ให้เต็ม min ก่อน แล้วที่เหลือ เฉลี่ยกันเกิน min หรือว่าจะให้ เฉลี่ยทั้งหมด)
@@ -219,6 +320,12 @@ _________________________________________________________________________
 
 
 ######### ไอเดีย #########
+
+# โปรแกรม + model ช่วยจดและสรุปวิธีปฏิบัติตัว เวลาหมอคุยกับคนไข้ ในห้องตรวจ
+  - ใช้ speech-to-text แปลงเสียงพูด ระหว่าง หมอ/คนไข้
+  - ส่งให้ LLM paraphase
+  - หมอตรวจสอบและบันทึกเข้าระบบ
+  - ส่งต่อหรือเปิดให้คนไข้เข้าถึงข้อมูลได้ สำหรับกรณีต่างๆ
 
 # โปรแกรม ตารางการทำงาน (คน กับ สถานที่)
 

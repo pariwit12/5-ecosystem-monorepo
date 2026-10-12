@@ -21,7 +21,7 @@ import Loading from "./loading";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-export default function WorkScheduleAdminPositionSlotTemplateClient({
+export default function Client({
   placeId,
   positionId,
 }: {
@@ -577,18 +577,9 @@ export default function WorkScheduleAdminPositionSlotTemplateClient({
           </div>
         ))}
 
-        {/* ============================== */}
-        {/* กรณีไม่มีข้อมูล (Empty State) */}
-        {/* ============================== */}
-
         {slotTemplates.length === 0 && (
           <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
         )}
-
-        {/* ============================== */}
-        {/* (จบ) กรณีไม่มีข้อมูล (Empty State) */}
-        {/* ============================== */}
-        {/*  */}
       </div>
 
       {/* ========================================================= */}

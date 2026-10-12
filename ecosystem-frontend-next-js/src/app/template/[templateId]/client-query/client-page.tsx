@@ -11,6 +11,8 @@
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 
+import { useState } from "react";
+
 import {
   // ปรับตามใช้งานจริง
   programFeatureQueries,
@@ -46,6 +48,11 @@ export default function Client({
   templateQueryId?: string;
 }) {
   const { getToken, userId, isLoaded } = useAuth();
+
+  // eslint-disable-next-line
+  const [startDateTime, setStartDateTime] = useState<string>("");
+  // eslint-disable-next-line
+  const [endDateTime, setEndDateTime] = useState<string>("");
 
   // ==>>==>>== 🚀 ดึงข้อมูล Query ==<<==<<==
 
