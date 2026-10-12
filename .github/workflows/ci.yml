@@ -30,29 +30,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate Prisma schema
-        run: pnpm run prisma:validate
-
-      - name: Generate Prisma Client
-        run: pnpm run prisma:generate
-
-      - name: Typecheck backend
-        run: pnpm run typecheck:backend
-
-      - name: Typecheck frontend
-        run: pnpm run typecheck:frontend
-
-      - name: Lint backend
-        run: pnpm run lint:backend
-
-      - name: Lint frontend
-        run: pnpm run lint:frontend
-
-      - name: Build backend
-        run: pnpm run build:backend
-
-      - name: Build frontend
-        run: pnpm run build:frontend
-
-      - name: Run backend unit tests
-        run: pnpm run test:backend
+      - name: Verify repository
+        run: pnpm run verify
