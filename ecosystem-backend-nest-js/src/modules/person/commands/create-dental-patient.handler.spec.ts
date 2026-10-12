@@ -2,6 +2,80 @@ import { CreateDentalPatientHandler } from './create-dental-patient.handler';
 import { CreateDentalPatientCommand } from './create-dental-patient.command';
 
 describe('CreateDentalPatientHandler', () => {
+  it('rejects a creator without staff affiliation to the clinic', async () => {
+    const tx = {
+      person: { findUnique: jest.fn().mockResolvedValue({ staff: null }) },
+    };
+    const handler = new CreateDentalPatientHandler(
+      {
+        $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+          callback(tx),
+        ),
+      } as never,
+      {} as never,
+    );
+
+    await expect(
+      handler.execute(
+        new CreateDentalPatientCommand('clerk-outsider', {
+          organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+          firstName: 'New',
+          lastName: 'Patient',
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('creates the person, patient, and first clinic affiliation together', async () => {
+    const tx = {
+      person: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValueOnce({
+            staff: { clinicAffiliations: [{ personStaffId: 'staff-1' }] },
+          })
+          .mockResolvedValueOnce(null),
+        create: jest.fn().mockResolvedValue({ id: 'person-2' }),
+      },
+      personDentalPatient: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ personId: 'person-2' }),
+      },
+      personDentalPatientAffiliation: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+    };
+    const patientNumberService = {
+      allocateNextInTransaction: jest.fn().mockResolvedValue('1'),
+    };
+    const handler = new CreateDentalPatientHandler(
+      {
+        $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+          callback(tx),
+        ),
+      } as never,
+      patientNumberService as never,
+    );
+
+    await expect(
+      handler.execute(
+        new CreateDentalPatientCommand('clerk-staff', {
+          organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+          firstName: 'New',
+          lastName: 'Patient',
+          cid: '9876543210123',
+        }),
+      ),
+    ).resolves.toMatchObject({
+      personId: 'person-2',
+      patientNumber: '1',
+      createdPerson: true,
+      createdPatient: true,
+      createdAffiliation: true,
+    });
+  });
+
   it('does not overwrite an existing person matched by cid', async () => {
     const person = {
       id: 'person-1',
