@@ -23,8 +23,9 @@ model Organization {
 }
 
 model Person {
-  id      String  @id @default(uuid(7)) @db.Uuid
-  clerkId String? @unique @map("clerk_id") // คนไข้ไม่จำเป็นต้องมี Clerk account
+  id            String       @id @default(uuid(7)) @db.Uuid
+  userAccountId String?      @unique @map("user_account_id") @db.Uuid
+  userAccount   UserAccount? @relation(fields: [userAccountId], references: [id], onDelete: Restrict)
 
   firstName String? @map("first_name")
   lastName  String? @map("last_name")
@@ -53,6 +54,14 @@ model Person {
   // personDentalPatient PersonDentalPatient?
 
   @@map("person")
+}
+
+model UserAccount {
+  id      String @id @default(uuid(7)) @db.Uuid
+  clerkId String @unique @map("clerk_id")
+  person  Person?
+
+  @@map("user_account")
 }
 
 model PersonDentist {

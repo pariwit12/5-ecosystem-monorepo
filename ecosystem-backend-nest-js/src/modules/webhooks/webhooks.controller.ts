@@ -91,13 +91,10 @@ export class WebhooksController {
 
         console.log(`🎉 มีผู้ใช้สมัครใหม่! Clerk ID: ${clerkId}`);
 
-        await this.prisma.person.create({
-          data: {
-            clerkId: clerkId,
-            // firstName: firstName,
-            // lastName: lastName,
-            // email: email,
-          },
+        await this.prisma.userAccount.upsert({
+          where: { clerkId },
+          update: {},
+          create: { clerkId },
         });
         console.log(`✅ [Success] User created in DB: ${clerkId}`);
         // } else if (eventType === 'organization.created') {

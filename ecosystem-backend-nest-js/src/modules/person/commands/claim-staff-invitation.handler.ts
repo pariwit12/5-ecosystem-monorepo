@@ -34,45 +34,41 @@ export class ClaimStaffInvitationHandler implements ICommandHandler<
           if (invitation.expiresAt <= new Date())
             throw new GoneException('รหัสเชิญหมดอายุแล้ว');
 
-          const currentPerson = await tx.person.findUnique({
+          const account = await tx.userAccount.findUnique({
             where: { clerkId: command.clerkId },
+            include: { person: true },
           });
-          if (!currentPerson)
-            throw new NotFoundException('ไม่พบข้อมูลผู้ใช้งาน');
+          if (!account) throw new NotFoundException('ไม่พบบัญชีผู้ใช้งาน');
 
-          let personId = currentPerson.id;
-          if (
-            invitation.targetPersonId &&
-            invitation.targetPersonId !== currentPerson.id
-          ) {
+          let personId: string;
+          if (invitation.targetPersonId) {
             const target = await tx.person.findUnique({
               where: { id: invitation.targetPersonId },
             });
             if (!target) throw new NotFoundException('ไม่พบบุคคลที่ถูกเชิญ');
-            if (target.clerkId && target.clerkId !== command.clerkId)
+            if (target.userAccountId && target.userAccountId !== account.id)
               throw new ConflictException('บุคคลนี้เชื่อมกับบัญชีอื่นแล้ว');
-            if (
-              currentPerson.firstName ||
-              currentPerson.lastName ||
-              currentPerson.cid ||
-              currentPerson.phone ||
-              currentPerson.birthDate
-            ) {
+
+            if (account.person && account.person.id !== target.id) {
               throw new ConflictException(
-                'บัญชีปัจจุบันมีข้อมูลบุคคลแล้ว ไม่สามารถเชื่อมอัตโนมัติได้',
+                'บัญชีนี้เชื่อมกับบุคคลอื่นอยู่แล้ว ไม่สามารถเชื่อมอัตโนมัติได้',
               );
             }
-
-            await tx.person.update({
-              where: { id: currentPerson.id },
-              data: { clerkId: null },
-            });
-            await tx.person.update({
-              where: { id: target.id },
-              data: { clerkId: command.clerkId },
-            });
-            await tx.person.delete({ where: { id: currentPerson.id } });
+            if (!target.userAccountId) {
+              await tx.person.update({
+                where: { id: target.id },
+                data: { userAccountId: account.id },
+              });
+            }
             personId = target.id;
+          } else if (account.person) {
+            personId = account.person.id;
+          } else {
+            const person = await tx.person.create({
+              data: { userAccountId: account.id },
+              select: { id: true },
+            });
+            personId = person.id;
           }
 
           await tx.personStaff.upsert({

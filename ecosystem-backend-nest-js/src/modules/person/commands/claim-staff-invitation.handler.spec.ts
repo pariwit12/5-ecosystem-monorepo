@@ -20,7 +20,13 @@ describe('ClaimStaffInvitationHandler', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       person: {
-        findUnique: jest.fn().mockResolvedValue({ id: 'person-1' }),
+        create: jest.fn(),
+      },
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'account-1',
+          person: { id: 'person-1' },
+        }),
       },
       personStaff: { upsert: jest.fn() },
       personStaffAffiliation: { upsert: jest.fn() },

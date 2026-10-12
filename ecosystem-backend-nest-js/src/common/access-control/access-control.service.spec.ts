@@ -3,9 +3,11 @@ import { ErrorCode } from '../exceptions/error-codes.enum';
 
 describe('AccessControlService', () => {
   const prisma = {
-    person: { findUnique: jest.fn() },
+    userAccount: { findUnique: jest.fn() },
     organization: { findUnique: jest.fn() },
+    personOrganizationAffiliation: { findUnique: jest.fn() },
     organizationWorkSchedulePlace: { findUnique: jest.fn() },
+    workScheduleAdmin: { findFirst: jest.fn() },
     workSchedulePosition: { findUnique: jest.fn() },
     workScheduleSlotTemplate: { findUnique: jest.fn() },
   };
@@ -15,7 +17,9 @@ describe('AccessControlService', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('returns the person id for a known Clerk user', async () => {
-    prisma.person.findUnique.mockResolvedValue({ id: 'person-1' });
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
+    });
 
     await expect(service.verifyPerson('clerk-1')).resolves.toEqual({
       personId: 'person-1',
@@ -23,7 +27,7 @@ describe('AccessControlService', () => {
   });
 
   it('rejects an unknown Clerk user', async () => {
-    prisma.person.findUnique.mockResolvedValue(null);
+    prisma.userAccount.findUnique.mockResolvedValue(null);
 
     await expect(service.verifyPerson('unknown')).rejects.toMatchObject({
       errorCode: ErrorCode.PERSON_NOT_FOUND,
@@ -37,15 +41,15 @@ describe('AccessControlService', () => {
       service.verifyOrganizationAccess('clerk-1', 'org-1'),
     ).rejects.toMatchObject({ errorCode: ErrorCode.ORGANIZATION_DELETED });
 
-    expect(prisma.person.findUnique).not.toHaveBeenCalled();
+    expect(prisma.userAccount.findUnique).not.toHaveBeenCalled();
   });
 
   it('rejects a person who is not an organization member', async () => {
     prisma.organization.findUnique.mockResolvedValue({ deletedAt: null });
-    prisma.person.findUnique.mockResolvedValue({
-      id: 'person-1',
-      personOrganizationAffiliations: [],
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
     });
+    prisma.personOrganizationAffiliation.findUnique.mockResolvedValue(null);
 
     await expect(
       service.verifyOrganizationAccess('clerk-1', 'org-1'),
@@ -56,9 +60,12 @@ describe('AccessControlService', () => {
 
   it('returns the person id for an organization member', async () => {
     prisma.organization.findUnique.mockResolvedValue({ deletedAt: null });
-    prisma.person.findUnique.mockResolvedValue({
-      id: 'person-1',
-      personOrganizationAffiliations: [{ organizationId: 'org-1' }],
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
+    });
+    prisma.personOrganizationAffiliation.findUnique.mockResolvedValue({
+      personId: 'person-1',
+      organizationId: 'org-1',
     });
 
     await expect(
@@ -82,10 +89,10 @@ describe('AccessControlService', () => {
     prisma.organizationWorkSchedulePlace.findUnique.mockResolvedValue({
       deletedAt: null,
     });
-    prisma.person.findUnique.mockResolvedValue({
-      id: 'person-1',
-      workScheduleAdmins: [{ deletedAt: null }],
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
     });
+    prisma.workScheduleAdmin.findFirst.mockResolvedValue({ id: 'admin-1' });
 
     await expect(
       service.verifyWorkScheduleAdminAccess('clerk-1', 'place-1'),
@@ -97,10 +104,10 @@ describe('AccessControlService', () => {
       deletedAt: null,
       organizationWorkSchedulePlace: { id: 'place-1', deletedAt: null },
     });
-    prisma.person.findUnique.mockResolvedValue({
-      id: 'person-1',
-      workScheduleAdmins: [{ deletedAt: null }],
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
     });
+    prisma.workScheduleAdmin.findFirst.mockResolvedValue({ id: 'admin-1' });
 
     await expect(
       service.verifyWorkSchedulePositionByWorkScheduleAdmin(

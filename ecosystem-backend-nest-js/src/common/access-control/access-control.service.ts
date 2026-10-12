@@ -8,17 +8,15 @@ export class AccessControlService {
   constructor(private prisma: PrismaService) {}
 
   // 1
-  // - ตรวจ clerkId -> Person
+  // - ตรวจ clerkId -> UserAccount -> Person
   async verifyPerson(clerkId: string) {
-    const person = await this.prisma.person.findUnique({
+    const account = await this.prisma.userAccount.findUnique({
       where: { clerkId },
-      select: {
-        id: true,
-      },
+      select: { person: { select: { id: true } } },
     });
 
     // 1
-    if (!person) {
+    if (!account?.person) {
       throw new AppException(
         ErrorCode.PERSON_NOT_FOUND,
         'ClerkId นี้ไม่มีในตาราง Person',
@@ -26,7 +24,7 @@ export class AccessControlService {
       );
     }
 
-    return { personId: person.id };
+    return { personId: account.person.id };
   }
 
   // 2
@@ -58,34 +56,14 @@ export class AccessControlService {
       );
     }
 
-    const person = await this.prisma.person.findUnique({
-      where: { clerkId: clerkId },
-      select: {
-        id: true,
-        personOrganizationAffiliations: {
-          where: { organizationId: organizationId },
-          select: {
-            // รอเปลี่ยน (หากอนาคตมีการใช้ deletedAt)
-            organizationId: true,
-          },
-        },
-      },
-    });
-
-    // 3
-    if (!person) {
-      throw new AppException(
-        ErrorCode.PERSON_NOT_FOUND,
-        'ClerkId นี้ไม่มีในตาราง Person',
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    const { personId } = await this.verifyPerson(clerkId);
+    const affiliation =
+      await this.prisma.personOrganizationAffiliation.findUnique({
+        where: { personId_organizationId: { personId, organizationId } },
+      });
 
     // 4
-    if (
-      !person.personOrganizationAffiliations ||
-      person.personOrganizationAffiliations.length === 0
-    ) {
+    if (!affiliation) {
       throw new AppException(
         ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION,
         'PersonId นี้ไม่มี PersonOrganizationAffiliation ที่เชื่อมกับ OrganizationId นี้',
@@ -94,25 +72,20 @@ export class AccessControlService {
     }
 
     return {
-      personId: person.id,
+      personId,
     };
   }
 
   async verifyOrganizationAdmin(clerkId: string, organizationId: string) {
     await this.verifyOrganizationAccess(clerkId, organizationId);
 
-    const person = await this.prisma.person.findUnique({
-      where: { clerkId },
-      select: {
-        id: true,
-        personOrganizationAffiliations: {
-          where: { organizationId, role: 'ADMIN' },
-          select: { organizationId: true },
-        },
-      },
-    });
+    const { personId } = await this.verifyPerson(clerkId);
+    const affiliation =
+      await this.prisma.personOrganizationAffiliation.findUnique({
+        where: { personId_organizationId: { personId, organizationId } },
+      });
 
-    if (!person?.personOrganizationAffiliations.length) {
+    if (affiliation?.role !== 'ADMIN') {
       throw new AppException(
         ErrorCode.NOT_AN_ADMIN_OF_ORGANIZATION,
         'ต้องเป็นผู้ดูแลองค์กร',
@@ -120,7 +93,7 @@ export class AccessControlService {
       );
     }
 
-    return { personId: person.id };
+    return { personId };
   }
 
   // ===========================
@@ -157,30 +130,17 @@ export class AccessControlService {
       );
     }
 
-    const person = await this.prisma.person.findUnique({
-      where: { clerkId: clerkId },
-      select: {
-        id: true,
-        workScheduleAdmins: {
-          where: { organizationWorkSchedulePlaceId: placeId, deletedAt: null },
-          select: {
-            deletedAt: true,
-          },
-        },
+    const { personId } = await this.verifyPerson(clerkId);
+    const admin = await this.prisma.workScheduleAdmin.findFirst({
+      where: {
+        personId,
+        organizationWorkSchedulePlaceId: placeId,
+        deletedAt: null,
       },
     });
 
-    // 3
-    if (!person) {
-      throw new AppException(
-        ErrorCode.PERSON_NOT_FOUND,
-        'ClerkId นี้ไม่มีในตาราง Person',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     // 4
-    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+    if (!admin) {
       throw new AppException(
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
         'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
@@ -189,7 +149,7 @@ export class AccessControlService {
     }
 
     return {
-      personId: person.id,
+      personId,
     };
   }
 
@@ -241,34 +201,18 @@ export class AccessControlService {
       );
     }
 
-    const person = await this.prisma.person.findUnique({
-      where: { clerkId: clerkId },
-      select: {
-        id: true,
-        workScheduleAdmins: {
-          where: {
-            organizationWorkSchedulePlaceId:
-              workSchedulePosition.organizationWorkSchedulePlace.id,
-            deletedAt: null,
-          },
-          select: {
-            deletedAt: true,
-          },
-        },
+    const { personId } = await this.verifyPerson(clerkId);
+    const admin = await this.prisma.workScheduleAdmin.findFirst({
+      where: {
+        personId,
+        organizationWorkSchedulePlaceId:
+          workSchedulePosition.organizationWorkSchedulePlace.id,
+        deletedAt: null,
       },
     });
 
-    // 4
-    if (!person) {
-      throw new AppException(
-        ErrorCode.PERSON_NOT_FOUND,
-        'ClerkId นี้ไม่มีในตาราง Person',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     // 5
-    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+    if (!admin) {
       throw new AppException(
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
         'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
@@ -277,7 +221,7 @@ export class AccessControlService {
     }
 
     return {
-      personId: person.id,
+      personId,
       organizationWorkSchedulePlaceId:
         workSchedulePosition.organizationWorkSchedulePlace.id,
     };
@@ -339,35 +283,19 @@ export class AccessControlService {
       );
     }
 
-    const person = await this.prisma.person.findUnique({
-      where: { clerkId: clerkId },
-      select: {
-        id: true,
-        workScheduleAdmins: {
-          where: {
-            organizationWorkSchedulePlaceId:
-              workScheduleSlotTemplate.workSchedulePosition
-                .organizationWorkSchedulePlace.id,
-            deletedAt: null,
-          },
-          select: {
-            deletedAt: true,
-          },
-        },
+    const { personId } = await this.verifyPerson(clerkId);
+    const admin = await this.prisma.workScheduleAdmin.findFirst({
+      where: {
+        personId,
+        organizationWorkSchedulePlaceId:
+          workScheduleSlotTemplate.workSchedulePosition
+            .organizationWorkSchedulePlace.id,
+        deletedAt: null,
       },
     });
 
-    // 4
-    if (!person) {
-      throw new AppException(
-        ErrorCode.PERSON_NOT_FOUND,
-        'ClerkId นี้ไม่มีในตาราง Person',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     // 5
-    if (!person.workScheduleAdmins || person.workScheduleAdmins.length === 0) {
+    if (!admin) {
       throw new AppException(
         ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
         'PersonId นี้ไม่มี WorkScheduleAdmin ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
@@ -376,7 +304,7 @@ export class AccessControlService {
     }
 
     return {
-      personId: person.id,
+      personId,
       organizationWorkSchedulePlaceId:
         workScheduleSlotTemplate.workSchedulePosition
           .organizationWorkSchedulePlace.id,

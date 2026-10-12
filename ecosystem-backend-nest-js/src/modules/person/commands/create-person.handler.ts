@@ -13,17 +13,15 @@ export class CreatePersonHandler implements ICommandHandler<
   async execute(command: CreatePersonCommand): Promise<void> {
     const { clerkId } = command;
 
-    await this.prisma.person.upsert({
-      where: {
-        clerkId: clerkId,
-      },
+    const account = await this.prisma.userAccount.upsert({
+      where: { clerkId },
       update: {},
-      create: {
-        clerkId: clerkId,
-      },
-      select: {
-        id: true,
-      },
+      create: { clerkId },
+      select: { id: true, person: { select: { id: true } } },
     });
+
+    if (!account.person) {
+      await this.prisma.person.create({ data: { userAccountId: account.id } });
+    }
   }
 }

@@ -1,8 +1,7 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { AccessControlService } from '../../../common/access-control/access-control.service';
 import { CreateStaffInvitationCommand } from './create-staff-invitation.command';
 
 @CommandHandler(CreateStaffInvitationCommand)
@@ -10,24 +9,49 @@ export class CreateStaffInvitationHandler implements ICommandHandler<
   CreateStaffInvitationCommand,
   { code: string; expiresAt: Date }
 > {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly accessControlService: AccessControlService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: CreateStaffInvitationCommand) {
     const { clerkId, organizationId, clinicId, body } = command;
-    const { personId: createdByPersonId } =
-      await this.accessControlService.verifyOrganizationAdmin(
-        clerkId,
-        organizationId,
-      );
-
     const clinic = await this.prisma.organizationDentalClinic.findFirst({
       where: { id: clinicId, organizationId, deletedAt: null },
       select: { id: true },
     });
     if (!clinic) throw new NotFoundException('ไม่พบคลินิกในองค์กรนี้');
+
+    const account = await this.prisma.userAccount.findUnique({
+      where: { clerkId },
+      select: {
+        person: {
+          select: {
+            id: true,
+            personOrganizationAffiliations: {
+              where: { organizationId, role: 'ADMIN' },
+              select: { organizationId: true },
+            },
+            staff: {
+              select: {
+                clinicAffiliations: {
+                  where: {
+                    organizationDentalClinicId: clinicId,
+                    role: 'ADMIN',
+                  },
+                  select: { personStaffId: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const person = account?.person;
+    const canInvite =
+      person &&
+      (person.personOrganizationAffiliations.length > 0 ||
+        Boolean(person.staff?.clinicAffiliations.length));
+    if (!person || !canInvite)
+      throw new ForbiddenException('ไม่มีสิทธิ์เชิญพนักงานเข้าคลินิกนี้');
+    const createdByPersonId = person.id;
 
     let targetPersonId: string | undefined;
     if (body.cid) {

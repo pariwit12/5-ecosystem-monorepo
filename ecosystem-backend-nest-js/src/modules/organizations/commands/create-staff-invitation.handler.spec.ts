@@ -10,6 +10,15 @@ describe('CreateStaffInvitationHandler', () => {
       organizationDentalClinic: {
         findFirst: jest.fn().mockResolvedValue({ id: 'clinic-1' }),
       },
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
+            id: 'admin-1',
+            personOrganizationAffiliations: [{ organizationId: 'org-1' }],
+            staff: null,
+          },
+        }),
+      },
       staffInvitation: {
         create: jest.fn(
           (args: {
@@ -25,15 +34,7 @@ describe('CreateStaffInvitationHandler', () => {
         ),
       },
     };
-    const accessControl = {
-      verifyOrganizationAdmin: jest
-        .fn()
-        .mockResolvedValue({ personId: 'admin-1' }),
-    };
-    const handler = new CreateStaffInvitationHandler(
-      prisma as never,
-      accessControl as never,
-    );
+    const handler = new CreateStaffInvitationHandler(prisma as never);
 
     const result = await handler.execute(
       new CreateStaffInvitationCommand('clerk-1', 'org-1', 'clinic-1', {

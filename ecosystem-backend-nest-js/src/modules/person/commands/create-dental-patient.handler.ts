@@ -44,27 +44,32 @@ export class CreateDentalPatientHandler implements ICommandHandler<
 
     return this.prisma.$transaction(
       async (tx) => {
-        const creator = await tx.person.findUnique({
+        const creator = await tx.userAccount.findUnique({
           where: { clerkId },
           select: {
-            staff: {
+            person: {
               select: {
-                clinicAffiliations: {
-                  where: {
-                    organizationDentalClinicId: body.organizationDentalClinicId,
-                    organizationDentalClinic: {
-                      deletedAt: null,
-                      organization: { deletedAt: null },
+                staff: {
+                  select: {
+                    clinicAffiliations: {
+                      where: {
+                        organizationDentalClinicId:
+                          body.organizationDentalClinicId,
+                        organizationDentalClinic: {
+                          deletedAt: null,
+                          organization: { deletedAt: null },
+                        },
+                      },
+                      select: { personStaffId: true },
                     },
                   },
-                  select: { personStaffId: true },
                 },
               },
             },
           },
         });
 
-        if (!creator?.staff?.clinicAffiliations.length) {
+        if (!creator?.person?.staff?.clinicAffiliations.length) {
           throw new ForbiddenException('ผู้สร้างต้องเป็นพนักงานของคลินิกนี้');
         }
 

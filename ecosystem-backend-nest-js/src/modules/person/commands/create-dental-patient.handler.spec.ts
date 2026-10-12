@@ -53,7 +53,9 @@ describe('CreateDentalPatientHandler', () => {
   });
   it('rejects a creator without staff affiliation to the clinic', async () => {
     const tx = {
-      person: { findUnique: jest.fn().mockResolvedValue({ staff: null }) },
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({ person: { staff: null } }),
+      },
     };
     const handler = new CreateDentalPatientHandler(
       {
@@ -77,13 +79,15 @@ describe('CreateDentalPatientHandler', () => {
 
   it('creates the person, patient, and first clinic affiliation together', async () => {
     const tx = {
-      person: {
-        findUnique: jest
-          .fn()
-          .mockResolvedValueOnce({
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
             staff: { clinicAffiliations: [{ personStaffId: 'staff-1' }] },
-          })
-          .mockResolvedValueOnce(null),
+          },
+        }),
+      },
+      person: {
+        findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'person-2' }),
       },
       personDentalPatient: {
@@ -135,13 +139,15 @@ describe('CreateDentalPatientHandler', () => {
       birthDate: new Date('1990-01-01'),
     };
     const tx = {
-      person: {
-        findUnique: jest
-          .fn()
-          .mockResolvedValueOnce({
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
             staff: { clinicAffiliations: [{ personStaffId: 'staff-1' }] },
-          })
-          .mockResolvedValueOnce(person),
+          },
+        }),
+      },
+      person: {
+        findUnique: jest.fn().mockResolvedValue(person),
         create: jest.fn(),
       },
       personDentalPatient: {
