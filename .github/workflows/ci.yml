@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify monorepo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm run prisma:validate
+
+      - name: Generate Prisma Client
+        run: pnpm run prisma:generate
+
+      - name: Typecheck backend
+        run: pnpm run typecheck:backend
+
+      - name: Typecheck frontend
+        run: pnpm run typecheck:frontend
+
+      - name: Lint backend
+        run: pnpm run lint:backend
+
+      - name: Lint frontend
+        run: pnpm run lint:frontend
+
+      - name: Build backend
+        run: pnpm run build:backend
+
+      - name: Build frontend
+        run: pnpm run build:frontend
+
+      - name: Run backend unit tests
+        run: pnpm run test:backend
