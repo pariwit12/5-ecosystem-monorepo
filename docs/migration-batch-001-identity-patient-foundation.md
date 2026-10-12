@@ -21,6 +21,7 @@
 - การสร้าง patient number ต้องทำใน transaction ที่ป้องกันเลขซ้ำเมื่อมีการสร้างพร้อมกัน
 - ยังไม่ทำ full legacy-data import ในระยะนี้ ใช้ข้อมูลใหม่และ fixture ขนาดเล็กสำหรับพัฒนา
 - legacy snapshot จะถูกใช้ภายหลังเพื่อวัดจำนวนข้อมูล, ตรวจ duplicate และ rehearsal mapping เท่านั้น
+- เมื่อ `cid` ตรงกับ `Person` เดิม ให้ใช้ข้อมูลเดิมและห้าม overwrite profile จาก request ใหม่
 
 ## Source fields and decisions
 
