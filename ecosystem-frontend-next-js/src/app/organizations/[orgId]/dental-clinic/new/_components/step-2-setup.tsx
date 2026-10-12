@@ -12,12 +12,10 @@ const setupClinicSchema = z.object({
 type SetupClinicFormValues = z.infer<typeof setupClinicSchema>;
 
 export default function StepSetup({
-  orgId,
   defaultName,
   onNext,
   onBack,
 }: {
-  orgId: string;
   defaultName: string;
   onNext: () => void;
   onBack: () => void;
@@ -37,7 +35,7 @@ export default function StepSetup({
     },
   });
 
-  const onSubmit = async (values: SetupClinicFormValues) => {
+  const onSubmit = async () => {
     // 🌟 Dummy Mutation (จำลองการยิง API 1.5 วินาที)
     const dummyPromise = new Promise((resolve) => setTimeout(resolve, 1500));
 

@@ -166,7 +166,6 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
           )}
           {currentStep === 2 && (
             <StepSetup
-              orgId={orgId}
               defaultName={orgDetails?.name || ""}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
