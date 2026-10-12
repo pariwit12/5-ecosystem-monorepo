@@ -71,15 +71,6 @@ export default function WorkScheduleAdminPositionSlotNewMenuClient({
           description={`ต้องการกำหนดรายละเอียดเอง โดยไม่ใช้แบบร่าง`}
           //
         />
-
-        <MenuCard
-          //
-          href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/auto-calculate`}
-          icon={<PlusIcon />}
-          title={`ใช้ระบบอัตโนมัติ`}
-          description={`ใช้โปรแกรมช่วยคำนวนลงวันทำงานให้พนักงาน โดยกำหนดรายละเอียดและเงื่อนไขต่างๆเอง`}
-          //
-        />
       </MenuGrid>
     </div>
   );
