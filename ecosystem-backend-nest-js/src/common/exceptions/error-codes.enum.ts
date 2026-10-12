@@ -10,6 +10,7 @@ export enum ErrorCode {
 
   // Member
   NOT_A_MEMBER_OF_ORGANIZATION = 'NOT_A_MEMBER_OF_ORGANIZATION',
+  NOT_AN_ADMIN_OF_ORGANIZATION = 'NOT_AN_ADMIN_OF_ORGANIZATION',
 
   // ===========================
   // PROGRAM: Work-Schedule

@@ -9,6 +9,8 @@ model OrganizationDentalClinic {
 
   // 🌟 บังคับใส่ Timezone มาตรฐาน IANA เสมอ (เช่น "Asia/Bangkok", "Europe/London")
   timezone String // @default("Asia/Bangkok") // เอาไว้บอกว่าต้องแสดงข้อมูล ในโมดูลนี้ด้วย timezone ไหน
+  name          String
+  licenseNumber String? @unique @map("license_number")
 
   // name                String
   // address             String?
@@ -69,6 +71,8 @@ model PersonStaffAffiliation {
   personStaff                PersonStaff              @relation(fields: [personStaffId], references: [personId], onDelete: Restrict)
   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  role                        StaffRole                 @default(OTHER)
+  legacyRole                  String?                   @map("legacy_role")
 
   @@id([personStaffId, organizationDentalClinicId])
   @@index([organizationDentalClinicId])

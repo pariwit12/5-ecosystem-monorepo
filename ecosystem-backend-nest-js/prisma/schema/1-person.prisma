@@ -64,10 +64,8 @@ model PersonDentist {
 }
 
 model PersonStaff {
-  personId   String     @id @map("person_id") @db.Uuid
-  person     Person     @relation(fields: [personId], references: [id], onDelete: Restrict)
-  role       StaffRole  @default(OTHER)
-  legacyRole String?    @map("legacy_role")
+  personId String @id @map("person_id") @db.Uuid
+  person   Person @relation(fields: [personId], references: [id], onDelete: Restrict)
 
   clinicAffiliations PersonStaffAffiliation[]
 
@@ -110,12 +108,18 @@ model PersonOrganizationAffiliation {
   person         Person       @relation(fields: [personId], references: [id], onDelete: Restrict)
   organizationId String       @map("organization_id") @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  role           OrganizationRole @default(MEMBER)
 
   // 🔥 ใช้ id เป็น Composite PK (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)
   @@id([personId, organizationId]) // = เร็วตัวแรก และ 2 ตัว (ตัวที่ไม่อยู่ตามลำดับจากด้านซ้ายจะช้า ต้องไปทำ index เพิ่มถ้าต้องใช้ในการค้นหา)
   // 🌟 สร้างทางด่วนแยกให้ตัวหลัง (เพราะบางครั้งเราอยากค้นหาจากฝั่งหลังตัวเดียว)
   @@index([organizationId])
   @@map("person_organization_affiliation")
+}
+
+enum OrganizationRole {
+  ADMIN
+  MEMBER
 }
 
 // enum BloodType {

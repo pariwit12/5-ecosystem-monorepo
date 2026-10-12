@@ -29,7 +29,7 @@ export class CreateOrganizationHandler implements ICommandHandler<
         name: body.name,
         // สร้างความสัมพันธ์ (ตั้งให้คนที่กดสร้างเป็นสมาชิกทันที)
         personOrganizationAffiliations: {
-          create: { personId: personId },
+          create: { personId: personId, role: 'ADMIN' },
         },
       },
       select: {

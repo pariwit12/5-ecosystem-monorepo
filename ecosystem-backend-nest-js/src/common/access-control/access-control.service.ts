@@ -98,6 +98,31 @@ export class AccessControlService {
     };
   }
 
+  async verifyOrganizationAdmin(clerkId: string, organizationId: string) {
+    await this.verifyOrganizationAccess(clerkId, organizationId);
+
+    const person = await this.prisma.person.findUnique({
+      where: { clerkId },
+      select: {
+        id: true,
+        personOrganizationAffiliations: {
+          where: { organizationId, role: 'ADMIN' },
+          select: { organizationId: true },
+        },
+      },
+    });
+
+    if (!person?.personOrganizationAffiliations.length) {
+      throw new AppException(
+        ErrorCode.NOT_AN_ADMIN_OF_ORGANIZATION,
+        'ต้องเป็นผู้ดูแลองค์กร',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return { personId: person.id };
+  }
+
   // ===========================
   // โปรแกรม: Work-Schedule
   // ===========================

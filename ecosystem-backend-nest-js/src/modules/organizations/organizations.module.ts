@@ -6,11 +6,13 @@ import { CreateOrganizationHandler } from './commands/create-organization.handle
 import { UpdateOrganizationByIdHandler } from './commands/update-organization-by-id.handler';
 import { GetOrganizationsHandler } from './queries/get-organizations.handler';
 import { GetOrganizationByIdHandler } from './queries/get-organization-by-id.handler';
+import { CreateDentalClinicHandler } from './commands/create-dental-clinic.handler';
 
 // มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
 const CommandHandlers = [
   CreateOrganizationHandler,
   UpdateOrganizationByIdHandler,
+  CreateDentalClinicHandler,
 ];
 const QueryHandlers = [GetOrganizationsHandler, GetOrganizationByIdHandler];
 

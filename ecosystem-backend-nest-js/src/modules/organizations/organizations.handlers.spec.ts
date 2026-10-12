@@ -52,7 +52,9 @@ describe('organization handlers', () => {
       expect.objectContaining({
         data: {
           name: 'Clinic',
-          personOrganizationAffiliations: { create: { personId: 'person-1' } },
+          personOrganizationAffiliations: {
+            create: { personId: 'person-1', role: 'ADMIN' },
+          },
         },
       }),
     );

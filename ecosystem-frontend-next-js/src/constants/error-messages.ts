@@ -20,6 +20,8 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   // Member
   [ErrorCode.NOT_A_MEMBER_OF_ORGANIZATION]:
     "ต้องการสิทธิ สมาชิก (MEMBER) ในการเข้าถึงข้อมูล",
+  [ErrorCode.NOT_AN_ADMIN_OF_ORGANIZATION]:
+    "ต้องการสิทธิ ผู้ดูแลองค์กร (ADMIN) ในการเข้าถึงข้อมูล",
 
   // ===========================
   // PROGRAM: Work-Schedule

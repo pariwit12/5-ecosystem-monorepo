@@ -34,6 +34,10 @@ import {
   UpdateOrganizationByIdDtoParam,
   UpdateOrganizationByIdDtoBody,
 } from './commands/update-organization-by-id.command';
+import {
+  CreateDentalClinicBody,
+  CreateDentalClinicCommand,
+} from './commands/create-dental-clinic.command';
 
 @Controller('api/organizations')
 export class OrganizationsController {
@@ -70,6 +74,18 @@ export class OrganizationsController {
       CreateOrganizationCommand,
       CreateOrganizationResponse
     >(new CreateOrganizationCommand(clerkUser.sub, body));
+  }
+
+  @Post(':organization_id/dental-clinics')
+  @UseGuards(ClerkAuthGuard)
+  async createDentalClinic(
+    @Param('organization_id') organizationId: string,
+    @Body() body: CreateDentalClinicBody,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.commandBus.execute<CreateDentalClinicCommand, { id: string }>(
+      new CreateDentalClinicCommand(clerkUser.sub, organizationId, body),
+    );
   }
 
   // ==========================================

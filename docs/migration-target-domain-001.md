@@ -24,7 +24,8 @@ Organization
 | `Person` | ผู้ใช้/บุคคลที่ยืนยันตัวตนในระบบ | UUID, optional profile fields, optional Clerk identity |
 | `PersonLegacyIdentity` | trace source identity | source system, entity type, legacy integer id, target id |
 | `PersonDentist` | บทบาททันตแพทย์ | person id, license number |
-| `PersonStaff` | บทบาทเจ้าหน้าที่ | person id, legacy role |
+| `PersonStaff` | ระบุว่าบุคคลเป็นเจ้าหน้าที่ | person id |
+| `PersonStaffAffiliation` | บทบาทและสิทธิ์ของเจ้าหน้าที่ต่อคลินิก | person id, clinic id, role, legacy role |
 | `DentalPatient` | ข้อมูลคนไข้ | patient number/legacy reference, profile, DOB, contact |
 | `DentalPatientLegacyIdentity` | trace คนไข้จากระบบเก่า | source system, legacy patient id, patient id |
 
@@ -36,6 +37,7 @@ Organization
 - ข้อมูล `cid`/เลขบัตรประชาชนต้องไม่อยู่ใน log และควรกำหนดสิทธิ์การเข้าถึงแยกต่างหาก
 - การเชื่อม `Patient` กับ `Person` ต้อง optional เพราะคนไข้ไม่จำเป็นต้องมีบัญชีผู้ใช้
 - การเชื่อมบุคลากรกับ `OrganizationDentalClinic` ต้องรองรับหลายคลินิกในอนาคต
+- พนักงานทั่วไปไม่จำเป็นต้องเป็นสมาชิกของ `Organization`; role อยู่ที่ affiliation ของแต่ละคลินิก
 - การ import ต้องสร้าง target UUID ใหม่ และใช้ legacy identity เป็น idempotency key
 
 ## Decisions required before implementation
