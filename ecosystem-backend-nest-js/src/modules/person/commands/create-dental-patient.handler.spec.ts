@@ -1,7 +1,56 @@
 import { CreateDentalPatientHandler } from './create-dental-patient.handler';
 import { CreateDentalPatientCommand } from './create-dental-patient.command';
+import { Prisma } from '@prisma/client';
 
 describe('CreateDentalPatientHandler', () => {
+  it('retries a transaction conflict and returns the committed result', async () => {
+    const result = { personId: 'person-1', patientNumber: '5' };
+    const transaction = jest
+      .fn()
+      .mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError('Conflict', {
+          code: 'P2034',
+          clientVersion: '7.8.0',
+        }),
+      )
+      .mockResolvedValueOnce(result);
+    const handler = new CreateDentalPatientHandler(
+      { $transaction: transaction } as never,
+      {} as never,
+    );
+    await expect(
+      handler.execute(
+        new CreateDentalPatientCommand('staff', {
+          organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+          firstName: 'New',
+          lastName: 'Patient',
+        }),
+      ),
+    ).resolves.toEqual(result);
+    expect(transaction).toHaveBeenCalledTimes(2);
+    expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  });
+
+  it('does not retry unrelated database failures', async () => {
+    const error = new Error('Database unavailable');
+    const transaction = jest.fn().mockRejectedValue(error);
+    const handler = new CreateDentalPatientHandler(
+      { $transaction: transaction } as never,
+      {} as never,
+    );
+    await expect(
+      handler.execute(
+        new CreateDentalPatientCommand('staff', {
+          organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+          firstName: 'New',
+          lastName: 'Patient',
+        }),
+      ),
+    ).rejects.toBe(error);
+    expect(transaction).toHaveBeenCalledTimes(1);
+  });
   it('rejects a creator without staff affiliation to the clinic', async () => {
     const tx = {
       person: { findUnique: jest.fn().mockResolvedValue({ staff: null }) },
