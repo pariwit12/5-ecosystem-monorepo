@@ -29,8 +29,13 @@ describe('organization handlers', () => {
   });
 
   it('creates an organization for the verified person', async () => {
-    accessControlService.verifyPerson.mockResolvedValue({ personId: 'person-1' });
-    prisma.organization.create.mockResolvedValue({ id: 'org-1', name: 'Clinic' });
+    accessControlService.verifyPerson.mockResolvedValue({
+      personId: 'person-1',
+    });
+    prisma.organization.create.mockResolvedValue({
+      id: 'org-1',
+      name: 'Clinic',
+    });
 
     const handler = new CreateOrganizationHandler(
       prisma as never,
@@ -39,7 +44,7 @@ describe('organization handlers', () => {
 
     await expect(
       handler.execute(
-        new CreateOrganizationCommand('clerk-1', { name: 'Clinic' } as never),
+        new CreateOrganizationCommand('clerk-1', { name: 'Clinic' }),
       ),
     ).resolves.toEqual({ id: 'org-1' });
 
@@ -54,7 +59,9 @@ describe('organization handlers', () => {
   });
 
   it('lists organizations available to the verified person', async () => {
-    accessControlService.verifyPerson.mockResolvedValue({ personId: 'person-1' });
+    accessControlService.verifyPerson.mockResolvedValue({
+      personId: 'person-1',
+    });
     prisma.organization.findMany.mockResolvedValue([
       { id: 'org-1', name: 'Clinic A' },
       { id: 'org-2', name: 'Clinic B' },
@@ -65,7 +72,9 @@ describe('organization handlers', () => {
       accessControlService as never,
     );
 
-    await expect(handler.execute(new GetOrganizationsQuery('clerk-1'))).resolves.toEqual({
+    await expect(
+      handler.execute(new GetOrganizationsQuery('clerk-1')),
+    ).resolves.toEqual({
       organizations: [
         { id: 'org-1', name: 'Clinic A' },
         { id: 'org-2', name: 'Clinic B' },
@@ -88,8 +97,8 @@ describe('organization handlers', () => {
       handler.execute(
         new UpdateOrganizationByIdCommand(
           'clerk-1',
-          { organization_id: 'org-1' } as never,
-          { name: 'Updated Clinic' } as never,
+          { organization_id: 'org-1' },
+          { name: 'Updated Clinic' },
         ),
       ),
     ).resolves.toEqual({ id: 'org-1' });
@@ -104,7 +113,10 @@ describe('organization handlers', () => {
 
   it('returns an organization by id after access is verified', async () => {
     accessControlService.verifyOrganizationAccess.mockResolvedValue(undefined);
-    prisma.organization.findFirst.mockResolvedValue({ id: 'org-1', name: 'Clinic' });
+    prisma.organization.findFirst.mockResolvedValue({
+      id: 'org-1',
+      name: 'Clinic',
+    });
 
     const handler = new GetOrganizationByIdHandler(
       prisma as never,
@@ -113,7 +125,7 @@ describe('organization handlers', () => {
 
     await expect(
       handler.execute(
-        new GetOrganizationByIdQuery('clerk-1', { organization_id: 'org-1' } as never),
+        new GetOrganizationByIdQuery('clerk-1', { organization_id: 'org-1' }),
       ),
     ).resolves.toEqual({ id: 'org-1', name: 'Clinic' });
   });
@@ -129,7 +141,7 @@ describe('organization handlers', () => {
 
     await expect(
       handler.execute(
-        new GetOrganizationByIdQuery('clerk-1', { organization_id: 'org-1' } as never),
+        new GetOrganizationByIdQuery('clerk-1', { organization_id: 'org-1' }),
       ),
     ).rejects.toMatchObject({
       errorCode: ErrorCode.ORGANIZATION_NOT_FOUND,
