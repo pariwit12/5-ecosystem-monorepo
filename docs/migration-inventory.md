@@ -1,6 +1,6 @@
 # Legacy dental-clinic inventory
 
-This inventory is based on a read-only review of the legacy projects. It is a planning document, not a migration script.
+This inventory is based on a read-only review of the legacy projects. It is a planning document, not a migration script. The first concrete mapping batch is documented in [migration-batch-001-identity-patient-foundation.md](migration-batch-001-identity-patient-foundation.md).
 
 ## Legacy database models
 
@@ -26,6 +26,10 @@ The legacy Prisma schema currently contains these domains:
 | `image_urls` | Patient images | Storage and ownership decision required |
 | `io_exam_patient` | Intraoral examination | Target model not implemented |
 | `io_finding_list` | Examination findings | Target model not implemented |
+
+## First-batch conclusion
+
+The first migration batch should be identity and patient foundation, but it is not ready for implementation yet. The target `Person` model currently only contains `clerkId`; it does not yet have profile, legacy-id, dentist, staff, or patient fields. Therefore the next implementation step is to finalize the target domain models and identity rules, not to write an import script.
 
 ## Legacy application modules
 
