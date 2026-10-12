@@ -4,7 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:backend": "pnpm --dir ecosystem-backend-nest-js run start:dev",
+    "dev:frontend": "pnpm --dir ecosystem-frontend-next-js run dev",
+    "build:backend": "pnpm --dir ecosystem-backend-nest-js run build",
+    "build:frontend": "pnpm --dir ecosystem-frontend-next-js run build",
+    "typecheck:backend": "pnpm --dir ecosystem-backend-nest-js run typecheck",
+    "typecheck:frontend": "pnpm --dir ecosystem-frontend-next-js run typecheck",
+    "lint:backend": "pnpm --dir ecosystem-backend-nest-js run lint:check",
+    "lint:frontend": "pnpm --dir ecosystem-frontend-next-js run lint",
+    "test:backend": "pnpm --dir ecosystem-backend-nest-js run test",
+    "test:e2e": "pnpm --dir ecosystem-backend-nest-js run test:e2e",
+    "prisma:generate": "pnpm --dir ecosystem-backend-nest-js exec prisma generate",
+    "prisma:validate": "pnpm --dir ecosystem-backend-nest-js exec prisma validate"
   },
   "keywords": [],
   "author": "",
