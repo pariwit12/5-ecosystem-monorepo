@@ -14,6 +14,7 @@
     "lint:frontend": "pnpm --dir ecosystem-frontend-next-js run lint",
     "test:backend": "pnpm --dir ecosystem-backend-nest-js run test",
     "test:e2e": "pnpm --dir ecosystem-backend-nest-js run test:e2e",
+    "verify": "pnpm run prisma:validate && pnpm run prisma:generate && pnpm run typecheck:backend && pnpm run typecheck:frontend && pnpm run lint:backend && pnpm run lint:frontend && pnpm run build:backend && pnpm run build:frontend && pnpm run test:backend",
     "prisma:generate": "pnpm --dir ecosystem-backend-nest-js run prisma:generate",
     "prisma:validate": "pnpm --dir ecosystem-backend-nest-js run prisma:validate",
     "prisma:migrate:status": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:status",
