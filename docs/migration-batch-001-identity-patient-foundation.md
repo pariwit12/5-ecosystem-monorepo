@@ -1,6 +1,6 @@
 # Migration batch 001: identity and patient foundation
 
-สถานะ: Draft — ยังไม่ใช่ migration script และยังไม่ควรรันกับ production
+สถานะ: Approved for implementation — ยังไม่ใช่ data import และยังไม่ควรรันกับ production
 
 ## Scope
 
@@ -12,6 +12,15 @@
 | `staff` | `Person` + affiliation/บทบาทเจ้าหน้าที่ | Target schema ยังไม่พร้อม |
 | `patients` | ตารางคนไข้ที่ต้องสร้าง โดยอาจเชื่อมกับ `Person` ภายหลัง | Target schema ยังไม่พร้อม |
 | `organizations` (ไม่มีในระบบเก่า) | `Organization` + `OrganizationDentalClinic` | ต้องกำหนด organization แรกจาก deployment |
+
+## Confirmed decisions
+
+- `Person` เป็นข้อมูลบุคคลกลางหนึ่งคน และ `cid` unique ระดับระบบ
+- คนไข้เชื่อมได้หลายคลินิกผ่าน `PersonDentalPatientAffiliation`
+- `patientNumber` เป็น running number แยกตามคลินิก โดยเริ่มจากเลขธรรมดา
+- การสร้าง patient number ต้องทำใน transaction ที่ป้องกันเลขซ้ำเมื่อมีการสร้างพร้อมกัน
+- ยังไม่ทำ full legacy-data import ในระยะนี้ ใช้ข้อมูลใหม่และ fixture ขนาดเล็กสำหรับพัฒนา
+- legacy snapshot จะถูกใช้ภายหลังเพื่อวัดจำนวนข้อมูล, ตรวจ duplicate และ rehearsal mapping เท่านั้น
 
 ## Source fields and decisions
 
