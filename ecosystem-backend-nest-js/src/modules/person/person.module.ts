@@ -4,10 +4,15 @@ import { PersonController } from './person.controller';
 
 import { CreatePersonHandler } from './commands/create-person.handler';
 import { CreateDentalPatientHandler } from './commands/create-dental-patient.handler';
+import { ClaimStaffInvitationHandler } from './commands/claim-staff-invitation.handler';
 import { PatientNumberService } from './services/patient-number.service';
 
 // มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
-const CommandHandlers = [CreatePersonHandler, CreateDentalPatientHandler];
+const CommandHandlers = [
+  CreatePersonHandler,
+  CreateDentalPatientHandler,
+  ClaimStaffInvitationHandler,
+];
 const QueryHandlers = [];
 
 @Module({

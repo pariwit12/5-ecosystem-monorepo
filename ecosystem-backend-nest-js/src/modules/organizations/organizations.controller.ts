@@ -38,6 +38,10 @@ import {
   CreateDentalClinicBody,
   CreateDentalClinicCommand,
 } from './commands/create-dental-clinic.command';
+import {
+  CreateStaffInvitationBody,
+  CreateStaffInvitationCommand,
+} from './commands/create-staff-invitation.command';
 
 @Controller('api/organizations')
 export class OrganizationsController {
@@ -85,6 +89,27 @@ export class OrganizationsController {
   ) {
     return this.commandBus.execute<CreateDentalClinicCommand, { id: string }>(
       new CreateDentalClinicCommand(clerkUser.sub, organizationId, body),
+    );
+  }
+
+  @Post(':organization_id/dental-clinics/:clinic_id/staff-invitations')
+  @UseGuards(ClerkAuthGuard)
+  async createStaffInvitation(
+    @Param('organization_id') organizationId: string,
+    @Param('clinic_id') clinicId: string,
+    @Body() body: CreateStaffInvitationBody,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.commandBus.execute<
+      CreateStaffInvitationCommand,
+      { code: string; expiresAt: Date }
+    >(
+      new CreateStaffInvitationCommand(
+        clerkUser.sub,
+        organizationId,
+        clinicId,
+        body,
+      ),
     );
   }
 

@@ -27,6 +27,7 @@ model OrganizationDentalClinic {
   personDentalPatientAffiliations PersonDentalPatientAffiliation[]
   personStaffAffiliations         PersonStaffAffiliation[]
   patientNumberSequence           PatientNumberSequence?
+  staffInvitations               StaffInvitation[]
   // ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
   // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
@@ -77,6 +78,28 @@ model PersonStaffAffiliation {
   @@id([personStaffId, organizationDentalClinicId])
   @@index([organizationDentalClinicId])
   @@map("person_staff_affiliation")
+}
+
+model StaffInvitation {
+  id                              String                   @id @default(uuid(7)) @db.Uuid
+  codeHash                        String                   @unique @map("code_hash")
+  organizationDentalClinicId      String                   @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic        OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  role                            StaffRole
+  targetPersonId                  String?                  @map("target_person_id") @db.Uuid
+  targetPerson                    Person?                  @relation("StaffInvitationTarget", fields: [targetPersonId], references: [id], onDelete: Restrict)
+  createdByPersonId               String                   @map("created_by_person_id") @db.Uuid
+  createdByPerson                 Person                   @relation("StaffInvitationCreator", fields: [createdByPersonId], references: [id], onDelete: Restrict)
+  usedByPersonId                  String?                  @map("used_by_person_id") @db.Uuid
+  usedByPerson                    Person?                  @relation("StaffInvitationUser", fields: [usedByPersonId], references: [id], onDelete: Restrict)
+  createdAt                       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt                       DateTime                 @map("expires_at") @db.Timestamptz
+  usedAt                          DateTime?                @map("used_at") @db.Timestamptz
+
+  @@index([organizationDentalClinicId])
+  @@index([targetPersonId])
+  @@index([createdByPersonId])
+  @@map("staff_invitation")
 }
 
 // model PersonDentistAffiliation {

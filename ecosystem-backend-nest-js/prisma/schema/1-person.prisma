@@ -46,6 +46,9 @@ model Person {
   // workScheduleAdminInvitationRequests WorkScheduleAdminInvitationRequest[] (ระบบเชิญ admin ค่อยทำทีหลัง)
   workScheduleAdmins             WorkScheduleAdmin[]
   workScheduleStaffs             WorkScheduleStaff[]
+  staffInvitationsCreated        StaffInvitation[] @relation("StaffInvitationCreator")
+  staffInvitationsTargeted       StaffInvitation[] @relation("StaffInvitationTarget")
+  staffInvitationsUsed           StaffInvitation[] @relation("StaffInvitationUser")
   // personDentist       PersonDentist?
   // personDentalPatient PersonDentalPatient?
 

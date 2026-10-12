@@ -12,6 +12,10 @@ import {
   CreateDentalPatientCommand,
   type CreateDentalPatientResponse,
 } from './commands/create-dental-patient.command';
+import {
+  ClaimStaffInvitationBody,
+  ClaimStaffInvitationCommand,
+} from './commands/claim-staff-invitation.command';
 
 @Controller('api/person')
 export class PersonController {
@@ -42,5 +46,17 @@ export class PersonController {
       CreateDentalPatientCommand,
       CreateDentalPatientResponse
     >(new CreateDentalPatientCommand(clerkUser.sub, body));
+  }
+
+  @Post('staff-invitations/claim')
+  @UseGuards(ClerkAuthGuard)
+  async claimStaffInvitation(
+    @ClerkUser() clerkUser: ClerkUserData,
+    @Body() body: ClaimStaffInvitationBody,
+  ) {
+    return this.commandBus.execute<
+      ClaimStaffInvitationCommand,
+      { organizationDentalClinicId: string; role: string }
+    >(new ClaimStaffInvitationCommand(clerkUser.sub, body.code));
   }
 }
