@@ -24,11 +24,20 @@ model OrganizationDentalClinic {
   personDentistAffiliations       PersonDentistAffiliation[]
   personDentalPatientAffiliations PersonDentalPatientAffiliation[]
   personStaffAffiliations         PersonStaffAffiliation[]
+  patientNumberSequence           PatientNumberSequence?
   // ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
   // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
   @@index([organizationId])
   @@map("organization_dental_clinic")
+}
+
+model PatientNumberSequence {
+  organizationDentalClinicId String                   @id @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  nextNumber                 Int                      @default(1) @map("next_number")
+
+  @@map("patient_number_sequence")
 }
 
 model PersonDentalPatientAffiliation {
