@@ -15,7 +15,10 @@
     "test:backend": "pnpm --dir ecosystem-backend-nest-js run test",
     "test:e2e": "pnpm --dir ecosystem-backend-nest-js run test:e2e",
     "prisma:generate": "pnpm --dir ecosystem-backend-nest-js run prisma:generate",
-    "prisma:validate": "pnpm --dir ecosystem-backend-nest-js run prisma:validate"
+    "prisma:validate": "pnpm --dir ecosystem-backend-nest-js run prisma:validate",
+    "prisma:migrate:status": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:status",
+    "prisma:migrate:dev": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:dev",
+    "prisma:migrate:deploy": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:deploy"
   },
   "keywords": [],
   "author": "",
