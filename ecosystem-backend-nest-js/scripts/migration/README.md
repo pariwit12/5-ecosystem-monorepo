@@ -92,6 +92,8 @@ pnpm run migration:plan:identity
 
 Extractor อ่านเฉพาะ Person ID, identity documents, legacy identities และการมี role Patient/Staff/Dentist ไม่อ่าน Clerk ID หรือข้อมูล profile ใช้ transaction แบบ `READ ONLY`, ไม่ยอมเขียนไฟล์ภายใน Git และไม่มี database write
 
+Target state มี fingerprint แบบ SHA-256 ของ host/port/database โดยไม่รวม username, password หรือ connection options คำสั่ง apply ใช้ตรวจว่า state ถูก extract มาจากฐานข้อมูลเดียวกับ target ที่กำลังจะเขียน
+
 ## Write-manifest preparation
 
 หลัง planner ไม่มี rejected record หรือ manual review แล้ว สามารถตรวจว่าแผนพร้อมแปลงเป็น operation ที่ idempotent ได้ด้วย:
@@ -120,3 +122,41 @@ pnpm run migration:prepare:identity-apply
 ```
 
 ไฟล์จริงยังคงต้องอยู่นอก Git และห้ามนำ manifest ที่มีข้อมูลส่วนบุคคลไปพิมพ์ใน log หรือ commit ลง repository
+
+## Identity apply executor
+
+คำสั่งนี้เป็นโหมดเขียนจริง จึงห้ามรันจนกว่าจะ rehearse กับ disposable database และตรวจ report แล้ว:
+
+```powershell
+$env:MIGRATION_TARGET_DATABASE_URL = '<target writer connection>'
+$env:MIGRATION_IDENTITY_INPUT = 'D:\migration-private\identity-input.json'
+$env:MIGRATION_TARGET_STATE = 'D:\migration-private\target-state.json'
+$env:MIGRATION_CLINIC_ID = '<target clinic UUID>'
+$env:MIGRATION_APPLY_ENVIRONMENT = 'disposable'
+$env:MIGRATION_APPLY_ACK = 'APPLY_TO_DISPOSABLE_TARGET'
+$env:MIGRATION_APPLY_REPORT = 'D:\migration-private\identity-apply-report.json'
+pnpm run migration:apply:identity
+```
+
+Environment และ acknowledgement ที่รองรับ:
+
+| Environment  | Acknowledgement              |
+| ------------ | ---------------------------- |
+| `disposable` | `APPLY_TO_DISPOSABLE_TARGET` |
+| `staging`    | `APPLY_TO_STAGING_TARGET`    |
+| `production` | `APPLY_TO_PRODUCTION_TARGET` |
+
+มาตรการของ executor:
+
+- ไม่มี default database URL และไม่อ่าน `DATABASE_URL`
+- ปฏิเสธ target ที่ตรงกับ `LEGACY_DATABASE_URL`
+- input, target state และ report ต้องเป็นคนละไฟล์และอยู่นอก repository
+- report ต้องเป็นไฟล์ใหม่ เพื่อไม่เขียนทับ audit trail เดิม
+- fingerprint ของ target connection ต้องตรงกับ read-only target state
+- ตรวจ identity ซ้ำใน transaction เพื่อรองรับ state ที่เปลี่ยนหลังวางแผน
+- ใช้ `Serializable` transaction แยกต่อ Person และอัปเดต report หลัง commit แต่ละราย
+- การรันซ้ำ reuse Person/role/affiliation เดิมและไม่แก้ profile เดิม
+- HN ถูกเพิ่มและสร้าง affiliation ใน transaction เดียวกัน; transaction ที่ล้มเหลวไม่ใช้เลขนั้น
+- error report ใช้เฉพาะรหัสที่ sanitize แล้ว ไม่บันทึก connection string หรือข้อมูลส่วนบุคคล
+
+ก่อน staging หรือ production ต้อง extract target state ใหม่ทุกครั้ง และเปลี่ยนทั้ง environment กับ acknowledgement ให้ตรงกัน ห้ามใช้ report path เดิมซ้ำ

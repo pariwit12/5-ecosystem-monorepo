@@ -17,6 +17,7 @@
     "migration:rehearse:identity": "node scripts/migration/rehearse-identity.mjs",
     "migration:plan:identity": "node scripts/migration/plan-identity-import.mjs",
     "migration:prepare:identity-apply": "node scripts/migration/prepare-identity-apply.mjs",
+    "migration:apply:identity": "node scripts/migration/apply-identity-import.mjs",
     "migration:test": "node --test scripts/migration/*.test.mjs",
     "prebuild": "pnpm run prisma:generate",
     "build": "nest build",

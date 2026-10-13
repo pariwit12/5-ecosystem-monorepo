@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import pg from 'pg';
 import { mapTargetIdentityState } from './common/target-state-extraction.mjs';
+import { databaseTargetFingerprint } from './common/database-target.mjs';
 
 const { Client } = pg;
 const help = `Usage:
@@ -122,7 +123,11 @@ try {
     formatVersion: 1,
     containsPersonalData: true,
     extractedAt: new Date().toISOString(),
-    target: { kind: 'ecosystem-postgresql', schema },
+    target: {
+      kind: 'ecosystem-postgresql',
+      schema,
+      fingerprint: databaseTargetFingerprint(connectionString),
+    },
     ...state,
   };
 
