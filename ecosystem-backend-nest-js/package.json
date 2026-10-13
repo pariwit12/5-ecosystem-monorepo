@@ -11,6 +11,7 @@
     "prisma:migrate:status": "prisma migrate status",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "migration:audit:legacy": "node scripts/migration/audit-legacy.mjs",
     "prebuild": "pnpm run prisma:generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

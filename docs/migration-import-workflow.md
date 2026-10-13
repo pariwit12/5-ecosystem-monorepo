@@ -29,7 +29,7 @@ scripts/
    └─ reports/
 ```
 
-This layout is intentionally documentation-only until the first migration batch and its target schema are approved.
+The first read-only aggregate audit is implemented under `ecosystem-backend-nest-js/scripts/migration`. Import/apply tooling remains intentionally unimplemented until a source audit and mapping rehearsal are reviewed.
 
 ## Run contract
 
@@ -41,3 +41,11 @@ pnpm migration:patients -- --source <snapshot> --target staging --apply
 ```
 
 The exact commands and credentials must be defined only after the source-to-target mapping is approved. Do not put connection strings in scripts or commit them to Git.
+
+## Current audit command
+
+```text
+pnpm run migration:audit:legacy
+```
+
+The command requires `LEGACY_DATABASE_URL`, refuses to run when it matches `DATABASE_URL`, opens a PostgreSQL `READ ONLY` transaction, and emits aggregate counts only. See `ecosystem-backend-nest-js/scripts/migration/README.md`.

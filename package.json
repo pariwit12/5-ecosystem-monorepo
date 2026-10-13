@@ -19,7 +19,8 @@
     "prisma:validate": "pnpm --dir ecosystem-backend-nest-js run prisma:validate",
     "prisma:migrate:status": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:status",
     "prisma:migrate:dev": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:dev",
-    "prisma:migrate:deploy": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:deploy"
+    "prisma:migrate:deploy": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:deploy",
+    "migration:audit:legacy": "pnpm --dir ecosystem-backend-nest-js run migration:audit:legacy"
   },
   "keywords": [],
   "author": "",

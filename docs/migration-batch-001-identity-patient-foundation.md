@@ -6,12 +6,12 @@
 
 กำหนด mapping ชุดแรกจากระบบเก่าไปยังโครงสร้างใหม่ โดยแยกข้อมูลบุคลากรออกจากข้อมูลคนไข้ และเก็บ legacy id เพื่อให้ตรวจสอบย้อนกลับได้
 
-| Source | Target | Status |
-|---|---|---|
-| `doctors` | `Person` + `PersonDentist` + clinic affiliation | Target schema พร้อม; ยังไม่ import |
-| `staff` | `Person` + `PersonStaff` + clinic affiliation | Target schema และ invitation workflow พร้อม; ยังไม่ import |
-| `patients` | `Person` + `PersonDentalPatient` + clinic affiliation | Target schema และ HN allocation พร้อม; ยังไม่ import |
-| `organizations` (ไม่มีในระบบเก่า) | `Organization` + `OrganizationDentalClinic` | สร้างผ่าน application ก่อนเลือกเป้าหมาย import |
+| Source                            | Target                                                | Status                                                     |
+| --------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
+| `doctors`                         | `Person` + `PersonDentist` + clinic affiliation       | Target schema พร้อม; ยังไม่ import                         |
+| `staff`                           | `Person` + `PersonStaff` + clinic affiliation         | Target schema และ invitation workflow พร้อม; ยังไม่ import |
+| `patients`                        | `Person` + `PersonDentalPatient` + clinic affiliation | Target schema และ HN allocation พร้อม; ยังไม่ import       |
+| `organizations` (ไม่มีในระบบเก่า) | `Organization` + `OrganizationDentalClinic`           | สร้างผ่าน application ก่อนเลือกเป้าหมาย import             |
 
 ## Confirmed decisions
 
@@ -27,16 +27,16 @@
 
 ## Source fields and decisions
 
-| Source field | Proposed target | Transformation / rule | Decision |
-|---|---|---|---|
-| `doctors.id` / `staff.id` | legacy reference ของ Person/role record | เก็บเป็น integer เดิม ห้ามใช้แทน UUID | พร้อมเป็นหลักการ |
-| `username` | migration reference only | ห้ามนำ username/password เดิมไปใช้เป็น Clerk credential | บุคลากรใช้ staff invitation; คนไข้เลื่อนไปพร้อม patient portal |
-| `first_name`, `last_name` | `Person.firstName`, `Person.lastName` | trim; คงค่า null; ห้ามใช้เป็น identity | พร้อม |
-| `cid` / `id_number` | identity document field | trim, normalize และตรวจค่าซ้ำก่อน import | ต้องกำหนดสิทธิ์และการเก็บข้อมูลอ่อนไหว |
-| `telephone` | phone field | normalize รูปแบบเบอร์ แต่ห้าม dedupe ด้วยเบอร์เพียงอย่างเดียว | ต้องกำหนดกฎ duplicate |
-| `patients.id` | patient legacy id | เก็บเพื่อ traceability และ idempotent re-run | ต้องมี target field/index |
-| `patients.birth_day` | date of birth | เก็บเป็น date ไม่แปลงเป็น timezone | พร้อมเป็นหลักการ |
-| `patients.insurance_balance` | patient insurance/account balance | ห้าม migrate เป็นยอดเงินโดยไม่ยืนยันความหมายทางธุรกิจ | ต้องตรวจสอบกับเจ้าของระบบ |
+| Source field                 | Proposed target                         | Transformation / rule                                         | Decision                                                       |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `doctors.id` / `staff.id`    | legacy reference ของ Person/role record | เก็บเป็น integer เดิม ห้ามใช้แทน UUID                         | พร้อมเป็นหลักการ                                               |
+| `username`                   | migration reference only                | ห้ามนำ username/password เดิมไปใช้เป็น Clerk credential       | บุคลากรใช้ staff invitation; คนไข้เลื่อนไปพร้อม patient portal |
+| `first_name`, `last_name`    | `Person.firstName`, `Person.lastName`   | trim; คงค่า null; ห้ามใช้เป็น identity                        | พร้อม                                                          |
+| `cid` / `id_number`          | identity document field                 | trim, normalize และตรวจค่าซ้ำก่อน import                      | ต้องกำหนดสิทธิ์และการเก็บข้อมูลอ่อนไหว                         |
+| `telephone`                  | phone field                             | normalize รูปแบบเบอร์ แต่ห้าม dedupe ด้วยเบอร์เพียงอย่างเดียว | ต้องกำหนดกฎ duplicate                                          |
+| `patients.id`                | patient legacy id                       | เก็บเพื่อ traceability และ idempotent re-run                  | ต้องมี target field/index                                      |
+| `patients.birth_day`         | date of birth                           | เก็บเป็น date ไม่แปลงเป็น timezone                            | พร้อมเป็นหลักการ                                               |
+| `patients.insurance_balance` | patient insurance/account balance       | ห้าม migrate เป็นยอดเงินโดยไม่ยืนยันความหมายทางธุรกิจ         | ต้องตรวจสอบกับเจ้าของระบบ                                      |
 
 ## Identity and deduplication
 
@@ -53,7 +53,8 @@
 - [x] สร้าง staff invitation และ patient-number allocation ที่ปลอดภัยต่อ concurrency
 - [ ] กำหนด organization/clinic แรกและ timezone
 - [x] กำหนดวิธีเชื่อมบัญชีบุคลากรผ่าน invitation โดยไม่ย้าย password เดิม
-- [ ] เขียน read-only source extractor และรายงาน row count/duplicate
+- [x] เขียน read-only aggregate audit สำหรับ row count/duplicate ภายในแต่ละ source table
+- [ ] รัน aggregate audit กับ legacy snapshot และทบทวนรายงาน
 - [ ] สร้าง mapping table จริงจาก sample data โดยไม่ใส่ข้อมูลส่วนบุคคลลง Git
 - [ ] ทดสอบ import บน database สำเนาแบบ idempotent
 
