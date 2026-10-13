@@ -59,6 +59,7 @@
 - [x] สร้างและทดสอบ identity mapping ด้วย sanitized fixture โดยไม่เชื่อมฐานข้อมูล
 - [x] สร้าง read-only identity extractor ที่ไม่อ่าน credential และบังคับให้ output อยู่นอก Git
 - [x] สร้าง dry-run target planner สำหรับ insert/reuse/manual review โดยไม่มี database write
+- [x] สร้าง read-only target-state extractor โดยไม่อ่าน Clerk identity หรือ profile
 - [ ] สร้าง mapping report จาก legacy snapshot โดยเก็บข้อมูลส่วนบุคคลไว้นอก Git
 - [ ] ทดสอบ import บน database สำเนาแบบ idempotent
 

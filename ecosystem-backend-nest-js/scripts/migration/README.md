@@ -77,3 +77,17 @@ pnpm run migration:plan:identity
 - `MANUAL_REVIEW` เมื่อ source มี warning หรือ document กับ legacy identity ชี้ไปคนละ Person
 
 Planner คำนวณ role และ legacy identity ที่ยังขาด แต่ไม่มีโค้ดเขียนฐานข้อมูล และ output แสดงเฉพาะจำนวนรวม
+
+### Read-only target state
+
+เมื่อต้องการแทน sanitized target fixture ให้สร้าง state file ภายนอก Git:
+
+```powershell
+$env:MIGRATION_TARGET_DATABASE_URL = '<read-only target connection>'
+$env:MIGRATION_TARGET_ACK = 'READ_ONLY_TARGET'
+$env:MIGRATION_TARGET_STATE = 'D:\migration-private\target-state.json'
+pnpm run migration:extract:target-identities
+pnpm run migration:plan:identity
+```
+
+Extractor อ่านเฉพาะ Person ID, identity documents, legacy identities และการมี role Patient/Staff/Dentist ไม่อ่าน Clerk ID หรือข้อมูล profile ใช้ transaction แบบ `READ ONLY`, ไม่ยอมเขียนไฟล์ภายใน Git และไม่มี database write

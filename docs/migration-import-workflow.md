@@ -53,3 +53,5 @@ The command requires `LEGACY_DATABASE_URL`, refuses to run when it matches `DATA
 Identity extraction is available as `pnpm run migration:extract:legacy-identities`. It requires an explicit snapshot acknowledgement, selects no credential fields, and refuses to write its PII-bearing output inside the repository. The extracted file can feed the in-memory rehearsal but no apply command exists yet.
 
 Target planning is available as `pnpm run migration:plan:identity`. The planner works from files, reports aggregate insert/reuse/review actions, and has zero database connections and zero writes.
+
+Target matching state can be extracted with `pnpm run migration:extract:target-identities` using a read-only target connection. The output contains document identifiers and must remain outside Git; it excludes Clerk IDs and profile fields.
