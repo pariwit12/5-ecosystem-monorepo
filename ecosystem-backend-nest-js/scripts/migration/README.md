@@ -91,3 +91,32 @@ pnpm run migration:plan:identity
 ```
 
 Extractor อ่านเฉพาะ Person ID, identity documents, legacy identities และการมี role Patient/Staff/Dentist ไม่อ่าน Clerk ID หรือข้อมูล profile ใช้ transaction แบบ `READ ONLY`, ไม่ยอมเขียนไฟล์ภายใน Git และไม่มี database write
+
+## Write-manifest preparation
+
+หลัง planner ไม่มี rejected record หรือ manual review แล้ว สามารถตรวจว่าแผนพร้อมแปลงเป็น operation ที่ idempotent ได้ด้วย:
+
+```powershell
+pnpm run migration:prepare:identity-apply
+```
+
+คำสั่งเริ่มต้นใช้ sanitized fixtures และรายงานเฉพาะจำนวนรวม โดยมีหลักประกันดังนี้:
+
+- หยุดทันทีถ้ายังมี rejected record หรือ manual review
+- Person ใหม่เริ่มด้วย `CREATE_PERSON`; Person เดิมจะไม่มี operation แก้ profile
+- identity document, legacy identity, role และ clinic affiliation ใช้ความหมายแบบ `ENSURE` และรักษาค่าของ affiliation/role เดิมหากมีอยู่แล้ว
+- patient number ระบุให้ allocator สร้างภายใน transaction เดียวกับ affiliation
+- staff role ตั้งต้นเป็น `OTHER` และเก็บค่า role เดิมใน `legacyRole`
+- operation ของแต่ละ Person เป็น transaction boundary หนึ่งชุด
+- ยังไม่มี database executor, ไม่มีการเชื่อมฐานข้อมูล และไม่มีการเขียนข้อมูล
+
+เมื่อใช้ไฟล์จริง ต้องระบุคลินิกเป้าหมายอย่างชัดเจน:
+
+```powershell
+$env:MIGRATION_IDENTITY_INPUT = 'D:\migration-private\identity-input.json'
+$env:MIGRATION_TARGET_STATE = 'D:\migration-private\target-state.json'
+$env:MIGRATION_CLINIC_ID = '<target clinic UUID>'
+pnpm run migration:prepare:identity-apply
+```
+
+ไฟล์จริงยังคงต้องอยู่นอก Git และห้ามนำ manifest ที่มีข้อมูลส่วนบุคคลไปพิมพ์ใน log หรือ commit ลง repository

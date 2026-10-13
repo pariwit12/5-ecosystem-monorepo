@@ -53,6 +53,7 @@ export const planTargetIdentityImport = (sourcePlan, targetState) => {
       actions.push({
         identityKey: person.identityKey,
         action: 'INSERT_PERSON',
+        identityDocumentsToAdd: person.identityDocuments,
         rolesToAdd: person.roles,
         legacyIdentitiesToAdd: person.legacyIdentities,
       });
@@ -61,6 +62,9 @@ export const planTargetIdentityImport = (sourcePlan, targetState) => {
 
     const targetPerson = targetPeople.get(targetPersonId);
     const existingRoles = new Set(targetPerson.roles ?? []);
+    const existingDocuments = new Set(
+      (targetPerson.identityDocuments ?? []).map(documentKey),
+    );
     const existingLegacyIdentities = new Set(
       (targetPerson.legacyIdentities ?? []).map(legacyKey),
     );
@@ -68,6 +72,9 @@ export const planTargetIdentityImport = (sourcePlan, targetState) => {
       identityKey: person.identityKey,
       action: 'REUSE_PERSON',
       targetPersonId,
+      identityDocumentsToAdd: person.identityDocuments.filter(
+        (document) => !existingDocuments.has(documentKey(document)),
+      ),
       rolesToAdd: person.roles.filter((role) => !existingRoles.has(role)),
       legacyIdentitiesToAdd: person.legacyIdentities.filter(
         (identity) => !existingLegacyIdentities.has(legacyKey(identity)),
@@ -92,6 +99,10 @@ export const summarizeTargetImportPlan = (targetPlan) => {
     ),
     legacyIdentitiesToAdd: targetPlan.actions.reduce(
       (total, item) => total + (item.legacyIdentitiesToAdd?.length ?? 0),
+      0,
+    ),
+    identityDocumentsToAdd: targetPlan.actions.reduce(
+      (total, item) => total + (item.identityDocumentsToAdd?.length ?? 0),
       0,
     ),
   };

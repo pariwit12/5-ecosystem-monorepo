@@ -111,3 +111,35 @@ test('rejects invalid explicit document and duplicate source identity', () => {
     DUPLICATE_LEGACY_IDENTITY: 1,
   });
 });
+
+test('preserves one legacy staff role and reviews conflicting role values', () => {
+  const preserved = buildIdentityPlan([
+    {
+      source: 'staff',
+      legacyId: 1,
+      cid: '1111111111111',
+      legacyRole: 'front desk',
+    },
+  ]);
+  const conflicting = buildIdentityPlan([
+    {
+      source: 'staff',
+      legacyId: 1,
+      cid: '2222222222222',
+      legacyRole: 'front desk',
+    },
+    {
+      source: 'staff',
+      legacyId: 2,
+      cid: '2222222222222',
+      legacyRole: 'assistant',
+    },
+  ]);
+
+  assert.equal(preserved.persons[0].staff.legacyRole, 'front desk');
+  assert.ok(
+    conflicting.manualReview[0].reasons.includes(
+      'CONFLICTING_LEGACY_STAFF_ROLES',
+    ),
+  );
+});

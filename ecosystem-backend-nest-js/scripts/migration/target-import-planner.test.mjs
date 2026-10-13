@@ -41,6 +41,30 @@ test('plans a new person when no target identity matches', () => {
   assert.equal(targetPlan.actions[0].action, 'INSERT_PERSON');
 });
 
+test('adds a source document when a reusable person matched by legacy identity lacks it', () => {
+  const sourcePlan = buildIdentityPlan([
+    { source: 'patients', legacyId: 1, cid: '1111111111111' },
+  ]);
+  const targetPlan = planTargetIdentityImport(sourcePlan, {
+    persons: [
+      {
+        id: 'person-1',
+        identityDocuments: [],
+        legacyIdentities: [
+          {
+            source: 'legacy-dental-clinic',
+            entityType: 'patients',
+            legacyId: 1,
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(targetPlan.actions[0].action, 'REUSE_PERSON');
+  assert.equal(targetPlan.actions[0].identityDocumentsToAdd.length, 1);
+});
+
 test('blocks warnings and conflicting target owners for manual review', () => {
   const sourcePlan = buildIdentityPlan([
     { source: 'patients', legacyId: 1, cid: '1111111111111' },

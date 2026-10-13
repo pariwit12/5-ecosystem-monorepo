@@ -1,0 +1,25 @@
+[
+  {
+    "source": "patients",
+    "legacyId": 1,
+    "cid": "1111111111111",
+    "firstName": "Sample",
+    "lastName": "Person"
+  },
+  {
+    "source": "staff",
+    "legacyId": 7,
+    "cid": "1111111111111",
+    "firstName": "Sample",
+    "lastName": "Person",
+    "legacyRole": "staff"
+  },
+  {
+    "source": "doctors",
+    "legacyId": 3,
+    "cid": "2222222222222",
+    "firstName": "Example",
+    "lastName": "Dentist",
+    "licenseNumber": "SYNTHETIC-001"
+  }
+]

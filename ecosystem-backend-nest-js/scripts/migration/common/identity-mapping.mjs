@@ -82,6 +82,12 @@ const findConflicts = (records) =>
     return values.size > 1;
   });
 
+const distinctValues = (records, field) => [
+  ...new Set(
+    records.map((record) => record[field]).filter((value) => value !== null),
+  ),
+];
+
 const roleForSource = (source) =>
   ({ patients: 'PATIENT', staff: 'STAFF', doctors: 'DENTIST' })[source];
 
@@ -144,6 +150,23 @@ export const buildIdentityPlan = (inputRecords) => {
     }
     if (conflicts.length > 0) warnings.push('CONFLICTING_PROFILE_FIELDS');
 
+    const staffRecords = records.filter((record) => record.source === 'staff');
+    const staffLegacyRoles = distinctValues(staffRecords, 'legacyRole');
+    if (staffLegacyRoles.length > 1) {
+      warnings.push('CONFLICTING_LEGACY_STAFF_ROLES');
+    }
+
+    const dentistRecords = records.filter(
+      (record) => record.source === 'doctors',
+    );
+    const dentistLicenseNumbers = distinctValues(
+      dentistRecords,
+      'licenseNumber',
+    );
+    if (dentistLicenseNumbers.length > 1) {
+      warnings.push('CONFLICTING_DENTIST_LICENSE_NUMBERS');
+    }
+
     const firstValue = (field) =>
       records.find((record) => record[field] !== null)?.[field] ?? null;
     const person = {
@@ -167,13 +190,15 @@ export const buildIdentityPlan = (inputRecords) => {
         legacyId: record.legacyId,
       })),
       dentist:
-        records.find((record) => record.source === 'doctors') === undefined
+        dentistRecords.length === 0
           ? null
           : {
-              licenseNumber:
-                records.find((record) => record.source === 'doctors')
-                  ?.licenseNumber ?? null,
+              licenseNumber: dentistLicenseNumbers[0] ?? null,
             },
+      staff:
+        staffRecords.length === 0
+          ? null
+          : { legacyRole: staffLegacyRoles[0] ?? null },
       warnings,
     };
     persons.push(person);
