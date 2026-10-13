@@ -21,6 +21,7 @@
     "prisma:migrate:dev": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:dev",
     "prisma:migrate:deploy": "pnpm --dir ecosystem-backend-nest-js run prisma:migrate:deploy",
     "migration:audit:legacy": "pnpm --dir ecosystem-backend-nest-js run migration:audit:legacy",
+    "migration:extract:legacy-identities": "pnpm --dir ecosystem-backend-nest-js run migration:extract:legacy-identities",
     "migration:rehearse:identity": "pnpm --dir ecosystem-backend-nest-js run migration:rehearse:identity",
     "migration:test": "pnpm --dir ecosystem-backend-nest-js run migration:test"
   },

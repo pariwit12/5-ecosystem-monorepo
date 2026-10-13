@@ -49,3 +49,5 @@ pnpm run migration:audit:legacy
 ```
 
 The command requires `LEGACY_DATABASE_URL`, refuses to run when it matches `DATABASE_URL`, opens a PostgreSQL `READ ONLY` transaction, and emits aggregate counts only. See `ecosystem-backend-nest-js/scripts/migration/README.md`.
+
+Identity extraction is available as `pnpm run migration:extract:legacy-identities`. It requires an explicit snapshot acknowledgement, selects no credential fields, and refuses to write its PII-bearing output inside the repository. The extracted file can feed the in-memory rehearsal but no apply command exists yet.

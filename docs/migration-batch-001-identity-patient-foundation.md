@@ -57,6 +57,7 @@
 - [x] เขียน read-only aggregate audit สำหรับ row count/duplicate ภายในแต่ละ source table
 - [ ] รัน aggregate audit กับ legacy snapshot และทบทวนรายงาน
 - [x] สร้างและทดสอบ identity mapping ด้วย sanitized fixture โดยไม่เชื่อมฐานข้อมูล
+- [x] สร้าง read-only identity extractor ที่ไม่อ่าน credential และบังคับให้ output อยู่นอก Git
 - [ ] สร้าง mapping report จาก legacy snapshot โดยเก็บข้อมูลส่วนบุคคลไว้นอก Git
 - [ ] ทดสอบ import บน database สำเนาแบบ idempotent
 

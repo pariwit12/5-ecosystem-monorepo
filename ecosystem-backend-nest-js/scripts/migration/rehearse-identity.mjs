@@ -6,10 +6,14 @@ import {
   summarizeIdentityPlan,
 } from './common/identity-mapping.mjs';
 
+const inputArgument = process.argv.slice(2).find((value) => value !== '--');
 const fixturePath = resolve(
-  process.argv[2] || 'scripts/migration/fixtures/identity-sanitized.json',
+  process.env.MIGRATION_IDENTITY_INPUT ||
+    inputArgument ||
+    'scripts/migration/fixtures/identity-sanitized.json',
 );
-const records = JSON.parse(await readFile(fixturePath, 'utf8'));
+const input = JSON.parse(await readFile(fixturePath, 'utf8'));
+const records = Array.isArray(input) ? input : input.records;
 if (!Array.isArray(records))
   throw new Error('Identity input must be an array.');
 

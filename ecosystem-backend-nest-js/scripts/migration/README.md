@@ -42,3 +42,24 @@ pnpm run migration:rehearse:identity
 - ทุก source record ที่ผ่าน validation เก็บ legacy identity เพื่อรองรับ idempotent import
 
 ไฟล์ input จริงอาจมีข้อมูลส่วนบุคคลและต้องอยู่นอก Git ส่วน report จากคำสั่ง rehearsal มีเฉพาะตัวเลขรวม
+
+## Read-only identity extraction
+
+Extractor มีไว้ใช้กับ database snapshot เท่านั้น เลือกเฉพาะข้อมูล identity/profile ที่ต้องใช้ และไม่ query `username` หรือ `password`
+
+```powershell
+$env:LEGACY_DATABASE_URL = '<read-only snapshot connection>'
+$env:LEGACY_SNAPSHOT_ACK = 'READ_ONLY_SNAPSHOT'
+$env:MIGRATION_IDENTITY_INPUT = 'D:\migration-private\identity-input.json'
+pnpm run migration:extract:legacy-identities
+pnpm run migration:rehearse:identity
+```
+
+มาตรการป้องกัน:
+
+- ใช้ PostgreSQL transaction แบบ `READ ONLY`
+- ปฏิเสธ source URL ที่ตรงกับ target `DATABASE_URL`
+- ต้องยืนยัน snapshot ผ่าน `LEGACY_SNAPSHOT_ACK`
+- มี row limit ก่อนอ่านข้อมูล โดยตั้งค่าเพิ่มได้ผ่าน `MIGRATION_MAX_ROWS`
+- ไม่ยอมเขียนไฟล์ PII ภายใน repository และไม่เขียนทับไฟล์เดิม
+- ไม่มี target database connection และไม่มีโหมด apply
