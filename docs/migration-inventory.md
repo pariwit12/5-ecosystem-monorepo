@@ -6,26 +6,26 @@ This inventory is based on a read-only review of the legacy projects. It is a pl
 
 The legacy Prisma schema currently contains these domains:
 
-| Legacy model | Domain | Target status |
-|---|---|---|
-| `patients` | Patient records | Target foundation implemented; import pending |
-| `doctors` | Dentist records | Target role and clinic affiliation implemented; import pending |
-| `staff` | Staff records | Target role, clinic affiliation, and invitation implemented; import pending |
-| `appointments` | Appointments | Target model not implemented |
-| `doctor_schedules` | Dentist schedules | Target model not finalized |
-| `clinic_queue` | Clinic queue | Target model not implemented |
-| `visits` | Visits/treatment visits | Target model not implemented |
-| `visit_procedures` | Procedures per visit | Target model not implemented |
-| `procedures` | Procedure catalog | Target model not implemented |
-| `money_received` | Payments | Target model not implemented |
-| `payment_methods` | Payment methods | Target model not implemented |
-| `continue_tx_list` | Continuing treatment catalog | Target model not implemented |
-| `continue_tx_patient` | Continuing treatment records | Target model not implemented |
-| `doctor_fee_rates` | Dentist fee rules | Target model not implemented |
-| `feedback_surveys` | Feedback | Target model not implemented |
-| `image_urls` | Patient images | Storage and ownership decision required |
-| `io_exam_patient` | Intraoral examination | Target model not implemented |
-| `io_finding_list` | Examination findings | Target model not implemented |
+| Legacy model          | Domain                       | Target status                                                               |
+| --------------------- | ---------------------------- | --------------------------------------------------------------------------- |
+| `patients`            | Patient records              | Target foundation implemented; import pending                               |
+| `doctors`             | Dentist records              | Target role and clinic affiliation implemented; import pending              |
+| `staff`               | Staff records                | Target role, clinic affiliation, and invitation implemented; import pending |
+| `appointments`        | Appointments                 | Target model not implemented                                                |
+| `doctor_schedules`    | Dentist schedules            | Target model not finalized                                                  |
+| `clinic_queue`        | Clinic queue                 | Target model not implemented                                                |
+| `visits`              | Visits/treatment visits      | Target model not implemented                                                |
+| `visit_procedures`    | Procedures per visit         | Target model not implemented                                                |
+| `procedures`          | Procedure catalog            | Target catalog foundation implemented; import pending                       |
+| `money_received`      | Payments                     | Target model not implemented                                                |
+| `payment_methods`     | Payment methods              | Target clinic catalog implemented; import pending                           |
+| `continue_tx_list`    | Continuing treatment catalog | Target model not implemented                                                |
+| `continue_tx_patient` | Continuing treatment records | Target model not implemented                                                |
+| `doctor_fee_rates`    | Dentist fee rules            | Target default/override schema implemented; import pending                  |
+| `feedback_surveys`    | Feedback                     | Target model not implemented                                                |
+| `image_urls`          | Patient images               | Storage and ownership decision required                                     |
+| `io_exam_patient`     | Intraoral examination        | Target model not implemented                                                |
+| `io_finding_list`     | Examination findings         | Target model not implemented                                                |
 
 ## First-batch conclusion
 

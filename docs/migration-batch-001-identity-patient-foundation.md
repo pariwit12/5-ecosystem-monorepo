@@ -1,6 +1,6 @@
 # Migration batch 001: identity and patient foundation
 
-สถานะ: Implemented — target schema และ application workflow พร้อมแล้ว แต่ยังไม่เริ่ม legacy data import
+สถานะ: Implemented and rehearsed — target schema, application workflow, guarded importer และ sanitized Neon rehearsal พร้อมแล้ว; legacy snapshot import ยังไม่เริ่ม
 
 ## Scope
 
@@ -52,7 +52,7 @@
 - [x] เพิ่ม target model สำหรับ dentist/staff role และ clinic affiliations
 - [x] แยก `UserAccount` ออกจาก `Person`
 - [x] สร้าง staff invitation และ patient-number allocation ที่ปลอดภัยต่อ concurrency
-- [ ] กำหนด organization/clinic แรกและ timezone
+- [x] กำหนด rehearsal organization/clinic และ timezone
 - [x] กำหนดวิธีเชื่อมบัญชีบุคลากรผ่าน invitation โดยไม่ย้าย password เดิม
 - [x] เขียน read-only aggregate audit สำหรับ row count/duplicate ภายในแต่ละ source table
 - [ ] รัน aggregate audit กับ legacy snapshot และทบทวนรายงาน
@@ -61,7 +61,7 @@
 - [x] สร้าง dry-run target planner สำหรับ insert/reuse/manual review โดยไม่มี database write
 - [x] สร้าง read-only target-state extractor โดยไม่อ่าน Clerk identity หรือ profile
 - [ ] สร้าง mapping report จาก legacy snapshot โดยเก็บข้อมูลส่วนบุคคลไว้นอก Git
-- [ ] ทดสอบ import บน database สำเนาแบบ idempotent
+- [x] ทดสอบ sanitized import บน disposable target แบบ idempotent และ reconciliation ผ่าน
 
 ## Acceptance checks
 

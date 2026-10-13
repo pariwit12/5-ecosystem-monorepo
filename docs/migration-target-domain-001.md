@@ -24,18 +24,18 @@ UserAccount (Clerk authentication)
 
 ## Proposed models
 
-| Model | Purpose | Key fields |
-|---|---|---|
-| `UserAccount` | บัญชี authentication | UUID, unique Clerk identity |
-| `Person` | บุคคลจริงและข้อมูลทั่วไป | UUID, optional profile fields, optional user account |
-| `PersonIdentityDocument` | เอกสารระบุตัวบุคคลหลายชนิด | person id, type, issuing country, normalized value, expiry |
-| `PersonLegacyIdentity` | trace source identity | source system, entity type, legacy integer id, target id |
-| `PersonDentist` | บทบาททันตแพทย์ | person id, license number |
-| `PersonStaff` | ระบุว่าบุคคลเป็นเจ้าหน้าที่ | person id |
-| `PersonStaffAffiliation` | บทบาทและสิทธิ์ของเจ้าหน้าที่ต่อคลินิก | person id, clinic id, role, legacy role |
-| `DentalPatient` | บทบาทคนไข้ระดับระบบ | person id |
-| `DentalPatientAffiliation` | ความเป็นคนไข้และเลข HN ต่อคลินิก | patient id, clinic id, running patient number |
-| `DentalPatientLegacyIdentity` | trace คนไข้จากระบบเก่า | source system, legacy patient id, patient id |
+| Model                         | Purpose                               | Key fields                                                 |
+| ----------------------------- | ------------------------------------- | ---------------------------------------------------------- |
+| `UserAccount`                 | บัญชี authentication                  | UUID, unique Clerk identity                                |
+| `Person`                      | บุคคลจริงและข้อมูลทั่วไป              | UUID, optional profile fields, optional user account       |
+| `PersonIdentityDocument`      | เอกสารระบุตัวบุคคลหลายชนิด            | person id, type, issuing country, normalized value, expiry |
+| `PersonLegacyIdentity`        | trace source identity                 | source system, entity type, legacy integer id, target id   |
+| `PersonDentist`               | บทบาททันตแพทย์                        | person id, license number                                  |
+| `PersonStaff`                 | ระบุว่าบุคคลเป็นเจ้าหน้าที่           | person id                                                  |
+| `PersonStaffAffiliation`      | บทบาทและสิทธิ์ของเจ้าหน้าที่ต่อคลินิก | person id, clinic id, role, legacy role                    |
+| `DentalPatient`               | บทบาทคนไข้ระดับระบบ                   | person id                                                  |
+| `DentalPatientAffiliation`    | ความเป็นคนไข้และเลข HN ต่อคลินิก      | patient id, clinic id, running patient number              |
+| `DentalPatientLegacyIdentity` | trace คนไข้จากระบบเก่า                | source system, legacy patient id, patient id               |
 
 ## Rules
 

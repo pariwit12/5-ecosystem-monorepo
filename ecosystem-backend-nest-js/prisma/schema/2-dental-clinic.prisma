@@ -8,7 +8,7 @@ model OrganizationDentalClinic {
   // subscriptionEndDate DateTime?    @map("subscription_end_date")
 
   // 🌟 บังคับใส่ Timezone มาตรฐาน IANA เสมอ (เช่น "Asia/Bangkok", "Europe/London")
-  timezone String // @default("Asia/Bangkok") // เอาไว้บอกว่าต้องแสดงข้อมูล ในโมดูลนี้ด้วย timezone ไหน
+  timezone      String // @default("Asia/Bangkok") // เอาไว้บอกว่าต้องแสดงข้อมูล ในโมดูลนี้ด้วย timezone ไหน
   name          String
   licenseNumber String? @unique @map("license_number")
 
@@ -27,7 +27,9 @@ model OrganizationDentalClinic {
   personDentalPatientAffiliations PersonDentalPatientAffiliation[]
   personStaffAffiliations         PersonStaffAffiliation[]
   patientNumberSequence           PatientNumberSequence?
-  staffInvitations               StaffInvitation[]
+  staffInvitations                StaffInvitation[]
+  dentalProcedures                DentalProcedure[]
+  clinicPaymentMethods            ClinicPaymentMethod[]
   // ActivationCodeOrganizationDentalClinics ActivationCodeOrganizationDentalClinic[]
 
   // อย่าลืมใส่ index ให้ FK ด้วย ไม่งั้น JOIN ช้า (ถ้าตัว FK ไม่ได้เป็น id หรือ unique ที่เป็น index อยู่แล้วในตัว)
@@ -44,11 +46,11 @@ model PatientNumberSequence {
 }
 
 model PersonDentalPatientAffiliation {
-  personDentalPatientId      String               @map("person_dental_patient_id") @db.Uuid
-  personDentalPatient        PersonDentalPatient  @relation(fields: [personDentalPatientId], references: [personId], onDelete: Restrict)
-  organizationDentalClinicId String               @map("organization_dental_clinic_id") @db.Uuid
+  personDentalPatientId      String                   @map("person_dental_patient_id") @db.Uuid
+  personDentalPatient        PersonDentalPatient      @relation(fields: [personDentalPatientId], references: [personId], onDelete: Restrict)
+  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
-  patientNumber              String               @map("patient_number")
+  patientNumber              String                   @map("patient_number")
 
   @@id([personDentalPatientId, organizationDentalClinicId])
   @@unique([organizationDentalClinicId, patientNumber])
@@ -57,14 +59,73 @@ model PersonDentalPatientAffiliation {
 }
 
 model PersonDentistAffiliation {
-  personDentistId            String                   @map("person_dentist_id") @db.Uuid
-  personDentist              PersonDentist            @relation(fields: [personDentistId], references: [personId], onDelete: Restrict)
-  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
-  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  personDentistId            String                    @map("person_dentist_id") @db.Uuid
+  personDentist              PersonDentist             @relation(fields: [personDentistId], references: [personId], onDelete: Restrict)
+  organizationDentalClinicId String                    @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic   OrganizationDentalClinic  @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  procedureFeeRates          DentistProcedureFeeRate[]
 
   @@id([personDentistId, organizationDentalClinicId])
   @@index([organizationDentalClinicId])
   @@map("person_dentist_affiliation")
+}
+
+model DentalProcedure {
+  id                         String                   @id @default(uuid(7)) @db.Uuid
+  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict, map: "dental_procedure_clinic_fkey")
+  name                       String                   @db.VarChar(255)
+  category                   String?                  @db.VarChar(100)
+  defaultPrice               Decimal?                 @map("default_price") @db.Decimal(10, 2)
+  minPrice                   Decimal?                 @map("min_price") @db.Decimal(10, 2)
+  maxPrice                   Decimal?                 @map("max_price") @db.Decimal(10, 2)
+  defaultDentistFeePercent   Decimal?                 @map("default_dentist_fee_percent") @db.Decimal(5, 2)
+  active                     Boolean                  @default(true)
+  version                    Int                      @default(1)
+  legacySource               String?                  @map("legacy_source") @db.VarChar(100)
+  legacyId                   Int?                     @map("legacy_id")
+
+  dentistFeeRates DentistProcedureFeeRate[]
+
+  @@unique([id, organizationDentalClinicId], map: "dental_procedure_id_clinic_key")
+  @@unique([organizationDentalClinicId, legacySource, legacyId], map: "dental_procedure_clinic_legacy_key")
+  @@index([organizationDentalClinicId, active], map: "dental_procedure_clinic_active_idx")
+  @@index([organizationDentalClinicId, category], map: "dental_procedure_clinic_category_idx")
+  @@map("dental_procedure")
+}
+
+model ClinicPaymentMethod {
+  id                         String                   @id @default(uuid(7)) @db.Uuid
+  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict, map: "clinic_payment_method_clinic_fkey")
+  name                       String                   @db.VarChar(100)
+  active                     Boolean                  @default(true)
+  version                    Int                      @default(1)
+  legacySource               String?                  @map("legacy_source") @db.VarChar(100)
+  legacyId                   Int?                     @map("legacy_id")
+
+  @@unique([organizationDentalClinicId, name], map: "clinic_payment_method_clinic_name_key")
+  @@unique([organizationDentalClinicId, legacySource, legacyId], map: "clinic_payment_method_clinic_legacy_key")
+  @@index([organizationDentalClinicId, active], map: "clinic_payment_method_clinic_active_idx")
+  @@map("clinic_payment_method")
+}
+
+model DentistProcedureFeeRate {
+  id                         String                   @id @default(uuid(7)) @db.Uuid
+  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+  personDentistId            String                   @map("person_dentist_id") @db.Uuid
+  dentalProcedureId          String                   @map("dental_procedure_id") @db.Uuid
+  feePercent                 Decimal                  @map("fee_percent") @db.Decimal(5, 2)
+  legacySource               String?                  @map("legacy_source") @db.VarChar(100)
+  legacyId                   Int?                     @map("legacy_id")
+  dentistAffiliation         PersonDentistAffiliation @relation(fields: [personDentistId, organizationDentalClinicId], references: [personDentistId, organizationDentalClinicId], onDelete: Restrict, map: "dentist_procedure_fee_rate_dentist_affiliation_fkey")
+  dentalProcedure            DentalProcedure          @relation(fields: [dentalProcedureId, organizationDentalClinicId], references: [id, organizationDentalClinicId], onDelete: Restrict, map: "dentist_procedure_fee_rate_procedure_fkey")
+
+  @@unique([personDentistId, organizationDentalClinicId, dentalProcedureId], map: "dentist_procedure_fee_rate_dentist_clinic_procedure_key")
+  @@unique([organizationDentalClinicId, legacySource, legacyId], map: "dentist_procedure_fee_rate_clinic_legacy_key")
+  @@index([dentalProcedureId, organizationDentalClinicId], map: "dentist_procedure_fee_rate_procedure_clinic_idx")
+  @@index([organizationDentalClinicId], map: "dentist_procedure_fee_rate_clinic_idx")
+  @@map("dentist_procedure_fee_rate")
 }
 
 model PersonStaffAffiliation {
@@ -72,8 +133,8 @@ model PersonStaffAffiliation {
   personStaff                PersonStaff              @relation(fields: [personStaffId], references: [personId], onDelete: Restrict)
   organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
   organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
-  role                        StaffRole                 @default(OTHER)
-  legacyRole                  String?                   @map("legacy_role")
+  role                       StaffRole                @default(OTHER)
+  legacyRole                 String?                  @map("legacy_role")
 
   @@id([personStaffId, organizationDentalClinicId])
   @@index([organizationDentalClinicId])
@@ -81,20 +142,20 @@ model PersonStaffAffiliation {
 }
 
 model StaffInvitation {
-  id                              String                   @id @default(uuid(7)) @db.Uuid
-  codeHash                        String                   @unique @map("code_hash")
-  organizationDentalClinicId      String                   @map("organization_dental_clinic_id") @db.Uuid
-  organizationDentalClinic        OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
-  role                            StaffRole
-  targetPersonId                  String?                  @map("target_person_id") @db.Uuid
-  targetPerson                    Person?                  @relation("StaffInvitationTarget", fields: [targetPersonId], references: [id], onDelete: Restrict)
-  createdByPersonId               String                   @map("created_by_person_id") @db.Uuid
-  createdByPerson                 Person                   @relation("StaffInvitationCreator", fields: [createdByPersonId], references: [id], onDelete: Restrict)
-  usedByPersonId                  String?                  @map("used_by_person_id") @db.Uuid
-  usedByPerson                    Person?                  @relation("StaffInvitationUser", fields: [usedByPersonId], references: [id], onDelete: Restrict)
-  createdAt                       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
-  expiresAt                       DateTime                 @map("expires_at") @db.Timestamptz
-  usedAt                          DateTime?                @map("used_at") @db.Timestamptz
+  id                         String                   @id @default(uuid(7)) @db.Uuid
+  codeHash                   String                   @unique @map("code_hash")
+  organizationDentalClinicId String                   @map("organization_dental_clinic_id") @db.Uuid
+  organizationDentalClinic   OrganizationDentalClinic @relation(fields: [organizationDentalClinicId], references: [id], onDelete: Restrict)
+  role                       StaffRole
+  targetPersonId             String?                  @map("target_person_id") @db.Uuid
+  targetPerson               Person?                  @relation("StaffInvitationTarget", fields: [targetPersonId], references: [id], onDelete: Restrict)
+  createdByPersonId          String                   @map("created_by_person_id") @db.Uuid
+  createdByPerson            Person                   @relation("StaffInvitationCreator", fields: [createdByPersonId], references: [id], onDelete: Restrict)
+  usedByPersonId             String?                  @map("used_by_person_id") @db.Uuid
+  usedByPerson               Person?                  @relation("StaffInvitationUser", fields: [usedByPersonId], references: [id], onDelete: Restrict)
+  createdAt                  DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt                  DateTime                 @map("expires_at") @db.Timestamptz
+  usedAt                     DateTime?                @map("used_at") @db.Timestamptz
 
   @@index([organizationDentalClinicId])
   @@index([targetPersonId])

@@ -27,8 +27,8 @@ model Person {
   userAccountId String?      @unique @map("user_account_id") @db.Uuid
   userAccount   UserAccount? @relation(fields: [userAccountId], references: [id], onDelete: Restrict)
 
-  firstName String? @map("first_name")
-  lastName  String? @map("last_name")
+  firstName String?   @map("first_name")
+  lastName  String?   @map("last_name")
   nickname  String?
   phone     String?
   birthDate DateTime? @map("birth_date") @db.Date
@@ -39,17 +39,17 @@ model Person {
   // 2. สร้าง + เปลี่ยนแปลงข้อมูล Organization (หน้าจัดการองค์กร)
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
-  legacyIdentities              PersonLegacyIdentity[]
-  identityDocuments             PersonIdentityDocument[]
-  dentist                       PersonDentist?
-  staff                         PersonStaff?
-  dentalPatient                 PersonDentalPatient?
+  legacyIdentities               PersonLegacyIdentity[]
+  identityDocuments              PersonIdentityDocument[]
+  dentist                        PersonDentist?
+  staff                          PersonStaff?
+  dentalPatient                  PersonDentalPatient?
   // workScheduleAdminInvitationRequests WorkScheduleAdminInvitationRequest[] (ระบบเชิญ admin ค่อยทำทีหลัง)
   workScheduleAdmins             WorkScheduleAdmin[]
   workScheduleStaffs             WorkScheduleStaff[]
-  staffInvitationsCreated        StaffInvitation[] @relation("StaffInvitationCreator")
-  staffInvitationsTargeted       StaffInvitation[] @relation("StaffInvitationTarget")
-  staffInvitationsUsed           StaffInvitation[] @relation("StaffInvitationUser")
+  staffInvitationsCreated        StaffInvitation[]               @relation("StaffInvitationCreator")
+  staffInvitationsTargeted       StaffInvitation[]               @relation("StaffInvitationTarget")
+  staffInvitationsUsed           StaffInvitation[]               @relation("StaffInvitationUser")
   // personDentist       PersonDentist?
   // personDentalPatient PersonDentalPatient?
 
@@ -77,18 +77,18 @@ model PersonIdentityDocument {
 }
 
 model UserAccount {
-  id      String @id @default(uuid(7)) @db.Uuid
-  clerkId String @unique @map("clerk_id")
+  id      String  @id @default(uuid(7)) @db.Uuid
+  clerkId String  @unique @map("clerk_id")
   person  Person?
 
   @@map("user_account")
 }
 
 model PersonDentist {
-  personId      String   @id @map("person_id") @db.Uuid
-  person        Person   @relation(fields: [personId], references: [id], onDelete: Restrict)
-  licenseNumber String?  @unique @map("license_number")
-  legacyRole    String?  @map("legacy_role")
+  personId      String  @id @map("person_id") @db.Uuid
+  person        Person  @relation(fields: [personId], references: [id], onDelete: Restrict)
+  licenseNumber String? @unique @map("license_number")
+  legacyRole    String? @map("legacy_role")
 
   clinicAffiliations PersonDentistAffiliation[]
 
@@ -114,21 +114,21 @@ enum StaffRole {
 }
 
 model PersonDentalPatient {
-  personId       String                       @id @map("person_id") @db.Uuid
-  person         Person                       @relation(fields: [personId], references: [id], onDelete: Restrict)
-  legacyPatientId Int?                       @unique @map("legacy_patient_id")
+  personId           String                           @id @map("person_id") @db.Uuid
+  person             Person                           @relation(fields: [personId], references: [id], onDelete: Restrict)
+  legacyPatientId    Int?                             @unique @map("legacy_patient_id")
   clinicAffiliations PersonDentalPatientAffiliation[]
 
   @@map("person_dental_patient")
 }
 
 model PersonLegacyIdentity {
-  id         String   @id @default(uuid(7)) @db.Uuid
-  personId   String   @map("person_id") @db.Uuid
-  person     Person   @relation(fields: [personId], references: [id], onDelete: Restrict)
+  id         String @id @default(uuid(7)) @db.Uuid
+  personId   String @map("person_id") @db.Uuid
+  person     Person @relation(fields: [personId], references: [id], onDelete: Restrict)
   source     String
-  entityType String   @map("entity_type")
-  legacyId   Int      @map("legacy_id")
+  entityType String @map("entity_type")
+  legacyId   Int    @map("legacy_id")
 
   @@unique([source, entityType, legacyId])
   @@index([personId])
@@ -136,10 +136,10 @@ model PersonLegacyIdentity {
 }
 
 model PersonOrganizationAffiliation {
-  personId       String       @map("person_id") @db.Uuid
-  person         Person       @relation(fields: [personId], references: [id], onDelete: Restrict)
-  organizationId String       @map("organization_id") @db.Uuid
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  personId       String           @map("person_id") @db.Uuid
+  person         Person           @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organizationId String           @map("organization_id") @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   role           OrganizationRole @default(MEMBER)
 
   // 🔥 ใช้ id เป็น Composite PK (ป้องกันการแอดซ้ำ และเป็นดัชนีที่เร็วที่สุด)

@@ -4,36 +4,36 @@ Copy this template for each migration batch. Do not mark a row as ready until th
 
 ## Batch metadata
 
-| Field | Value |
-|---|---|
-| Batch name | |
-| Source project/database | |
-| Target migration/release | |
-| Owner | |
-| Status | Draft / Review / Rehearsed / Ready / Complete |
-| Rehearsal date | |
+| Field                    | Value                                         |
+| ------------------------ | --------------------------------------------- |
+| Batch name               |                                               |
+| Source project/database  |                                               |
+| Target migration/release |                                               |
+| Owner                    |                                               |
+| Status                   | Draft / Review / Rehearsed / Ready / Complete |
+| Rehearsal date           |                                               |
 
 ## Table and field mapping
 
 | Source table.field | Target table.field | Transformation | Null/default rule | Validation | Decision/owner |
-|---|---|---|---|---|---|
-| | | | | | |
+| ------------------ | ------------------ | -------------- | ----------------- | ---------- | -------------- |
+|                    |                    |                |                   |            |                |
 
 ## Relationship mapping
 
 | Source relationship | Target relationship | Key mapping | Validation |
-|---|---|---|---|
-| | | | |
+| ------------------- | ------------------- | ----------- | ---------- |
+|                     |                     |             |            |
 
 ## Identity and deduplication
 
 Document the stable key used to identify an existing target record. Never use a display name alone for identity matching.
 
-| Entity | Source key | Target key | Duplicate rule | Manual review rule |
-|---|---|---|---|---|
-| Person | | | | |
-| Patient | | | | |
-| Organization | | | | |
+| Entity       | Source key | Target key | Duplicate rule | Manual review rule |
+| ------------ | ---------- | ---------- | -------------- | ------------------ |
+| Person       |            |            |                |                    |
+| Patient      |            |            |                |                    |
+| Organization |            |            |                |                    |
 
 ## Reconciliation checklist
 
