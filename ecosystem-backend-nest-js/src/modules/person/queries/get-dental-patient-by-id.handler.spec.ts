@@ -14,6 +14,7 @@ describe('GetDentalPatientByIdHandler', () => {
       personDentalPatient: {
         person: {
           id: 'person-1',
+          version: 3,
           firstName: 'สมหญิง',
           lastName: 'ใจดี',
           nickname: 'หญิง',
@@ -34,6 +35,7 @@ describe('GetDentalPatientByIdHandler', () => {
       ),
     ).resolves.toMatchObject({
       personId: 'person-1',
+      version: 3,
       patientNumber: '5',
       cid: '1234567890123',
     });

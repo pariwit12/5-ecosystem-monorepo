@@ -27,6 +27,7 @@ export class GetDentalPatientByIdQuery {
 
 export interface GetDentalPatientByIdResponse {
   personId: string;
+  version: number;
   patientNumber: string;
   firstName: string | null;
   lastName: string | null;

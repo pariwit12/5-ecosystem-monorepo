@@ -9,12 +9,14 @@ import { PatientNumberService } from './services/patient-number.service';
 import { DentalClinicStaffAccessService } from './services/dental-clinic-staff-access.service';
 import { GetDentalPatientsHandler } from './queries/get-dental-patients.handler';
 import { GetDentalPatientByIdHandler } from './queries/get-dental-patient-by-id.handler';
+import { UpdateDentalPatientHandler } from './commands/update-dental-patient.handler';
 
 // มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา
 const CommandHandlers = [
   CreatePersonHandler,
   CreateDentalPatientHandler,
   ClaimStaffInvitationHandler,
+  UpdateDentalPatientHandler,
 ];
 const QueryHandlers = [GetDentalPatientsHandler, GetDentalPatientByIdHandler];
 

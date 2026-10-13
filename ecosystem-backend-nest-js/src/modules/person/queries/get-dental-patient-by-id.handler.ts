@@ -40,6 +40,7 @@ export class GetDentalPatientByIdHandler implements IQueryHandler<
               person: {
                 select: {
                   id: true,
+                  version: true,
                   firstName: true,
                   lastName: true,
                   nickname: true,
@@ -57,6 +58,7 @@ export class GetDentalPatientByIdHandler implements IQueryHandler<
 
     return {
       personId: affiliation.personDentalPatient.person.id,
+      version: affiliation.personDentalPatient.person.version,
       patientNumber: affiliation.patientNumber,
       firstName: affiliation.personDentalPatient.person.firstName,
       lastName: affiliation.personDentalPatient.person.lastName,

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -35,6 +36,11 @@ import {
   GetDentalPatientByIdQuery,
   type GetDentalPatientByIdResponse,
 } from './queries/get-dental-patient-by-id.query';
+import {
+  UpdateDentalPatientBody,
+  UpdateDentalPatientCommand,
+  type UpdateDentalPatientResponse,
+} from './commands/update-dental-patient.command';
 
 @Controller('api/person')
 export class PersonController {
@@ -94,6 +100,27 @@ export class PersonController {
         clerkUser.sub,
         param.person_id,
         query.organizationDentalClinicId,
+      ),
+    );
+  }
+
+  @Patch('dental-patients/:person_id')
+  @UseGuards(ClerkAuthGuard)
+  async updateDentalPatient(
+    @ClerkUser() clerkUser: ClerkUserData,
+    @Param() param: GetDentalPatientByIdDtoParam,
+    @Query() query: GetDentalPatientByIdDtoQuery,
+    @Body() body: UpdateDentalPatientBody,
+  ): Promise<UpdateDentalPatientResponse> {
+    return this.commandBus.execute<
+      UpdateDentalPatientCommand,
+      UpdateDentalPatientResponse
+    >(
+      new UpdateDentalPatientCommand(
+        clerkUser.sub,
+        param.person_id,
+        query.organizationDentalClinicId,
+        body,
       ),
     );
   }
