@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "containsPersonalData": false,
+  "persons": [
+    {
+      "id": "00000000-0000-7000-8000-000000000001",
+      "identityDocuments": [
+        {
+          "type": "THAI_CID",
+          "issuingCountry": "TH",
+          "normalizedValue": "1111111111111"
+        }
+      ],
+      "legacyIdentities": [],
+      "roles": ["PATIENT"]
+    }
+  ]
+}

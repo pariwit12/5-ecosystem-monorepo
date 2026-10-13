@@ -63,3 +63,17 @@ pnpm run migration:rehearse:identity
 - มี row limit ก่อนอ่านข้อมูล โดยตั้งค่าเพิ่มได้ผ่าน `MIGRATION_MAX_ROWS`
 - ไม่ยอมเขียนไฟล์ PII ภายใน repository และไม่เขียนทับไฟล์เดิม
 - ไม่มี target database connection และไม่มีโหมด apply
+
+## Target import planning
+
+```powershell
+pnpm run migration:plan:identity
+```
+
+คำสั่งนี้ใช้ sanitized source/target fixtures โดยค่าเริ่มต้น และทำงานใน memory เท่านั้น ผลลัพธ์จำแนกเป็น:
+
+- `INSERT_PERSON` เมื่อไม่พบ identity ใน target
+- `REUSE_PERSON` เมื่อ document หรือ legacy identity ชี้ไปยัง Person เดิมเพียงคนเดียว
+- `MANUAL_REVIEW` เมื่อ source มี warning หรือ document กับ legacy identity ชี้ไปคนละ Person
+
+Planner คำนวณ role และ legacy identity ที่ยังขาด แต่ไม่มีโค้ดเขียนฐานข้อมูล และ output แสดงเฉพาะจำนวนรวม

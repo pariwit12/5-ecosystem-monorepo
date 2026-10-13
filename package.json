@@ -23,6 +23,7 @@
     "migration:audit:legacy": "pnpm --dir ecosystem-backend-nest-js run migration:audit:legacy",
     "migration:extract:legacy-identities": "pnpm --dir ecosystem-backend-nest-js run migration:extract:legacy-identities",
     "migration:rehearse:identity": "pnpm --dir ecosystem-backend-nest-js run migration:rehearse:identity",
+    "migration:plan:identity": "pnpm --dir ecosystem-backend-nest-js run migration:plan:identity",
     "migration:test": "pnpm --dir ecosystem-backend-nest-js run migration:test"
   },
   "keywords": [],
