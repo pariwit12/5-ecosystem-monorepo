@@ -8,9 +8,9 @@ The legacy Prisma schema currently contains these domains:
 
 | Legacy model | Domain | Target status |
 |---|---|---|
-| `patients` | Patient records | Target model not finalized |
-| `doctors` | Dentist records | Map to `Person` plus a dentist role/affiliation |
-| `staff` | Staff records | Map to `Person` plus staff role/affiliation |
+| `patients` | Patient records | Target foundation implemented; import pending |
+| `doctors` | Dentist records | Target role and clinic affiliation implemented; import pending |
+| `staff` | Staff records | Target role, clinic affiliation, and invitation implemented; import pending |
 | `appointments` | Appointments | Target model not implemented |
 | `doctor_schedules` | Dentist schedules | Target model not finalized |
 | `clinic_queue` | Clinic queue | Target model not implemented |
@@ -29,7 +29,7 @@ The legacy Prisma schema currently contains these domains:
 
 ## First-batch conclusion
 
-The first migration batch should be identity and patient foundation, but it is not ready for implementation yet. The target `Person` model currently only contains `clerkId`; it does not yet have profile, legacy-id, dentist, staff, or patient fields. Therefore the next implementation step is to finalize the target domain models and identity rules, not to write an import script.
+The identity and patient foundation is implemented. Authentication lives in `UserAccount`; real-person profile and globally unique CID live in `Person`; dentist, staff, and patient roles use separate tables and clinic affiliations. The next migration step is a read-only legacy extractor and reconciliation report, not a direct production import.
 
 ## Legacy application modules
 
@@ -45,11 +45,9 @@ The legacy NestJS application contains modules for patients, staff, doctors, app
 6. Visits, treatment procedures, and payments.
 7. Queue, images, examinations, feedback, and continuing treatment.
 
-## Open decisions before implementation
+## Deferred decisions
 
-- The canonical patient identifier and duplicate-patient matching rule.
-- Whether dentists and staff share the `Person` table or use separate role tables.
-- How old usernames/passwords map to Clerk identities.
+- Patient self-service account linking will be designed with the patient portal; CID alone must never authorize linking.
 - Whether historical payments and visits are imported as immutable history.
 - Where patient images will be stored and how old URLs are validated.
 - Which legacy fields are required for the first production release.

@@ -28,6 +28,10 @@
 ## Decisions still required
 
 - Which old modules are in scope for the first migration release.
-- The canonical identity mapping between old users and Clerk/Person records.
 - Whether legacy records should be imported into the new domain tables or retained in legacy tables.
 - The cutover date and read-only period for the old application.
+
+## Deferred scope
+
+- Patient account linking belongs to the patient portal phase. It must use a clinic-mediated, expiring verification mechanism and must never rely on CID alone.
+- Legacy usernames and password hashes are not migrated to Clerk. Staff accounts are linked through the invitation workflow.

@@ -1,6 +1,6 @@
 # Migration batch 001: identity and patient foundation
 
-สถานะ: Approved for implementation — ยังไม่ใช่ data import และยังไม่ควรรันกับ production
+สถานะ: Implemented — target schema และ application workflow พร้อมแล้ว แต่ยังไม่เริ่ม legacy data import
 
 ## Scope
 
@@ -8,10 +8,10 @@
 
 | Source | Target | Status |
 |---|---|---|
-| `doctors` | `Person` + ตารางบทบาททันตแพทย์ที่ต้องสร้าง | Target schema ยังไม่พร้อม |
-| `staff` | `Person` + affiliation/บทบาทเจ้าหน้าที่ | Target schema ยังไม่พร้อม |
-| `patients` | ตารางคนไข้ที่ต้องสร้าง โดยอาจเชื่อมกับ `Person` ภายหลัง | Target schema ยังไม่พร้อม |
-| `organizations` (ไม่มีในระบบเก่า) | `Organization` + `OrganizationDentalClinic` | ต้องกำหนด organization แรกจาก deployment |
+| `doctors` | `Person` + `PersonDentist` + clinic affiliation | Target schema พร้อม; ยังไม่ import |
+| `staff` | `Person` + `PersonStaff` + clinic affiliation | Target schema และ invitation workflow พร้อม; ยังไม่ import |
+| `patients` | `Person` + `PersonDentalPatient` + clinic affiliation | Target schema และ HN allocation พร้อม; ยังไม่ import |
+| `organizations` (ไม่มีในระบบเก่า) | `Organization` + `OrganizationDentalClinic` | สร้างผ่าน application ก่อนเลือกเป้าหมาย import |
 
 ## Confirmed decisions
 
@@ -22,14 +22,16 @@
 - ยังไม่ทำ full legacy-data import ในระยะนี้ ใช้ข้อมูลใหม่และ fixture ขนาดเล็กสำหรับพัฒนา
 - legacy snapshot จะถูกใช้ภายหลังเพื่อวัดจำนวนข้อมูล, ตรวจ duplicate และ rehearsal mapping เท่านั้น
 - เมื่อ `cid` ตรงกับ `Person` เดิม ให้ใช้ข้อมูลเดิมและห้าม overwrite profile จาก request ใหม่
+- แยกบัญชี Clerk เป็น `UserAccount`; `Person` มีหรือไม่มีบัญชีก็ได้
+- เลื่อนการเชื่อมบัญชีคนไข้ไปทำพร้อม patient portal และต้องไม่ยืนยันตัวตนด้วย CID เพียงอย่างเดียว
 
 ## Source fields and decisions
 
 | Source field | Proposed target | Transformation / rule | Decision |
 |---|---|---|---|
 | `doctors.id` / `staff.id` | legacy reference ของ Person/role record | เก็บเป็น integer เดิม ห้ามใช้แทน UUID | พร้อมเป็นหลักการ |
-| `username` | external identity mapping | ห้ามนำ password เดิมไปใช้กับ Clerk โดยตรง | ต้องกำหนดวิธีเชิญ/ผูกบัญชี |
-| `first_name`, `last_name` | Person profile fields | target `Person` ยังไม่มี field เหล่านี้ | ต้องเพิ่ม schema ก่อน import |
+| `username` | migration reference only | ห้ามนำ username/password เดิมไปใช้เป็น Clerk credential | บุคลากรใช้ staff invitation; คนไข้เลื่อนไปพร้อม patient portal |
+| `first_name`, `last_name` | `Person.firstName`, `Person.lastName` | trim; คงค่า null; ห้ามใช้เป็น identity | พร้อม |
 | `cid` / `id_number` | identity document field | trim, normalize และตรวจค่าซ้ำก่อน import | ต้องกำหนดสิทธิ์และการเก็บข้อมูลอ่อนไหว |
 | `telephone` | phone field | normalize รูปแบบเบอร์ แต่ห้าม dedupe ด้วยเบอร์เพียงอย่างเดียว | ต้องกำหนดกฎ duplicate |
 | `patients.id` | patient legacy id | เก็บเพื่อ traceability และ idempotent re-run | ต้องมี target field/index |
@@ -43,12 +45,14 @@
 3. สำหรับคนไข้ ให้พิจารณา `id_number` ก่อน หากไม่มีให้ใช้กฎหลายฟิลด์ร่วมกัน (`ชื่อ`, `นามสกุล`, `วันเกิด`, `โทรศัพท์`) และส่งรายการกำกวมให้ตรวจด้วยมือ
 4. การสร้าง Clerk identity ต้องเป็นขั้นตอนแยกจาก data import และต้องไม่ copy password hash เดิม
 
-## Required target work before rehearsal
+## Remaining work before rehearsal
 
-- [ ] เพิ่ม target model สำหรับ patient profile และ legacy identifiers
-- [ ] เพิ่ม target model สำหรับ dentist/staff role หรือกำหนดรูปแบบ affiliation ให้ชัดเจน
+- [x] เพิ่ม target model สำหรับ patient profile และ legacy identifiers
+- [x] เพิ่ม target model สำหรับ dentist/staff role และ clinic affiliations
+- [x] แยก `UserAccount` ออกจาก `Person`
+- [x] สร้าง staff invitation และ patient-number allocation ที่ปลอดภัยต่อ concurrency
 - [ ] กำหนด organization/clinic แรกและ timezone
-- [ ] กำหนดวิธี map ผู้ใช้เก่ากับ Clerk
+- [x] กำหนดวิธีเชื่อมบัญชีบุคลากรผ่าน invitation โดยไม่ย้าย password เดิม
 - [ ] เขียน read-only source extractor และรายงาน row count/duplicate
 - [ ] สร้าง mapping table จริงจาก sample data โดยไม่ใส่ข้อมูลส่วนบุคคลลง Git
 - [ ] ทดสอบ import บน database สำเนาแบบ idempotent
