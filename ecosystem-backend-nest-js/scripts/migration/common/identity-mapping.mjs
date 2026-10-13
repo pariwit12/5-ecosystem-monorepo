@@ -1,4 +1,5 @@
 const sources = new Set(['patients', 'staff', 'doctors']);
+const documentTypes = new Set(['THAI_CID', 'PASSPORT', 'FOREIGN_ID', 'OTHER']);
 
 const cleanText = (value) => {
   if (value === null || value === undefined) return null;
@@ -6,18 +7,67 @@ const cleanText = (value) => {
   return cleaned === '' ? null : cleaned;
 };
 
-const normalizeRecord = (record) => ({
-  source: record.source,
-  legacyId: record.legacyId,
-  cid: cleanText(record.cid),
-  firstName: cleanText(record.firstName),
-  lastName: cleanText(record.lastName),
-  nickname: cleanText(record.nickname),
-  phone: cleanText(record.phone),
-  birthDate: cleanText(record.birthDate),
-  licenseNumber: cleanText(record.licenseNumber),
-  legacyRole: cleanText(record.legacyRole),
-});
+const normalizeDocument = (document) => {
+  if (!document) return null;
+  return {
+    type: cleanText(document.type)?.toUpperCase() ?? null,
+    issuingCountry: cleanText(document.issuingCountry)?.toUpperCase() ?? null,
+    normalizedValue: cleanText(document.value)?.toUpperCase() ?? null,
+    expiresAt: cleanText(document.expiresAt),
+  };
+};
+
+const normalizeRecord = (record) => {
+  const legacyIdentityValue = cleanText(record.cid);
+  const explicitDocument = normalizeDocument(record.identityDocument);
+  const inferredThaiCid =
+    !explicitDocument && /^\d{13}$/.test(legacyIdentityValue ?? '')
+      ? {
+          type: 'THAI_CID',
+          issuingCountry: 'TH',
+          normalizedValue: legacyIdentityValue,
+          expiresAt: null,
+        }
+      : null;
+
+  return {
+    source: record.source,
+    legacyId: record.legacyId,
+    identityDocument: explicitDocument ?? inferredThaiCid,
+    hasAmbiguousIdentityInput: Boolean(explicitDocument && legacyIdentityValue),
+    hasUnclassifiedLegacyIdentity: Boolean(
+      legacyIdentityValue && !explicitDocument && !inferredThaiCid,
+    ),
+    firstName: cleanText(record.firstName),
+    lastName: cleanText(record.lastName),
+    nickname: cleanText(record.nickname),
+    phone: cleanText(record.phone),
+    birthDate: cleanText(record.birthDate),
+    licenseNumber: cleanText(record.licenseNumber),
+    legacyRole: cleanText(record.legacyRole),
+  };
+};
+
+const documentValidationError = (document) => {
+  if (!documentTypes.has(document.type)) return 'INVALID_DOCUMENT_TYPE';
+  if (!/^[A-Z]{2}$/.test(document.issuingCountry ?? ''))
+    return 'INVALID_ISSUING_COUNTRY';
+  if (!document.normalizedValue) return 'MISSING_DOCUMENT_VALUE';
+  if (
+    document.type === 'THAI_CID' &&
+    (document.issuingCountry !== 'TH' ||
+      !/^\d{13}$/.test(document.normalizedValue))
+  ) {
+    return 'INVALID_THAI_CID';
+  }
+  if (
+    document.type === 'PASSPORT' &&
+    !/^[A-Z0-9]{5,20}$/.test(document.normalizedValue)
+  ) {
+    return 'INVALID_PASSPORT';
+  }
+  return null;
+};
 
 const profileConflictFields = ['firstName', 'lastName', 'birthDate', 'phone'];
 
@@ -57,17 +107,25 @@ export const buildIdentityPlan = (inputRecords) => {
       continue;
     }
     seenLegacyIdentities.add(identity);
-    if (record.cid !== null && !/^\d{13}$/.test(record.cid)) {
-      rejected.push({ identity, reason: 'INVALID_CID' });
+    if (record.hasAmbiguousIdentityInput) {
+      rejected.push({ identity, reason: 'AMBIGUOUS_IDENTITY_INPUT' });
       continue;
+    }
+    if (record.identityDocument) {
+      const error = documentValidationError(record.identityDocument);
+      if (error) {
+        rejected.push({ identity, reason: error });
+        continue;
+      }
     }
     valid.push(record);
   }
 
   const groups = new Map();
   for (const record of valid) {
-    const key = record.cid
-      ? `cid:${record.cid}`
+    const document = record.identityDocument;
+    const key = document
+      ? `document:${document.type}:${document.issuingCountry}:${document.normalizedValue}`
       : `legacy:${record.source}:${record.legacyId}`;
     const group = groups.get(key) ?? [];
     group.push(record);
@@ -79,14 +137,20 @@ export const buildIdentityPlan = (inputRecords) => {
   for (const [identityKey, records] of groups) {
     const conflicts = findConflicts(records);
     const warnings = [];
-    if (!records[0].cid) warnings.push('MISSING_CID_NO_AUTOMATIC_MERGE');
+    if (records.some((record) => record.hasUnclassifiedLegacyIdentity)) {
+      warnings.push('UNCLASSIFIED_LEGACY_IDENTITY_DOCUMENT');
+    } else if (!records[0].identityDocument) {
+      warnings.push('MISSING_IDENTITY_DOCUMENT_NO_AUTOMATIC_MERGE');
+    }
     if (conflicts.length > 0) warnings.push('CONFLICTING_PROFILE_FIELDS');
 
     const firstValue = (field) =>
       records.find((record) => record[field] !== null)?.[field] ?? null;
     const person = {
       identityKey,
-      cid: records[0].cid,
+      identityDocuments: records[0].identityDocument
+        ? [records[0].identityDocument]
+        : [],
       profile: {
         firstName: firstValue('firstName'),
         lastName: firstValue('lastName'),

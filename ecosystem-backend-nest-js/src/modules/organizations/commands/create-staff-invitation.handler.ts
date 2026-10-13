@@ -3,6 +3,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateStaffInvitationCommand } from './create-staff-invitation.command';
+import { legacyCidDocument } from '../../person/identity-document';
 
 @CommandHandler(CreateStaffInvitationCommand)
 export class CreateStaffInvitationHandler implements ICommandHandler<
@@ -54,13 +55,18 @@ export class CreateStaffInvitationHandler implements ICommandHandler<
     const createdByPersonId = person.id;
 
     let targetPersonId: string | undefined;
-    if (body.cid) {
+    const identityDocument = body.identityDocument
+      ? body.identityDocument
+      : body.cid
+        ? legacyCidDocument(body.cid)
+        : null;
+    if (identityDocument) {
       const identity = await this.prisma.personIdentityDocument.findUnique({
         where: {
           type_issuingCountry_normalizedValue: {
-            type: 'THAI_CID',
-            issuingCountry: 'TH',
-            normalizedValue: body.cid,
+            type: identityDocument.type,
+            issuingCountry: identityDocument.issuingCountry,
+            normalizedValue: identityDocument.value,
           },
         },
         select: { personId: true },
@@ -74,9 +80,10 @@ export class CreateStaffInvitationHandler implements ICommandHandler<
             lastName: body.lastName,
             identityDocuments: {
               create: {
-                type: 'THAI_CID',
-                issuingCountry: 'TH',
-                normalizedValue: body.cid,
+                type: identityDocument.type,
+                issuingCountry: identityDocument.issuingCountry,
+                normalizedValue: identityDocument.value,
+                expiresAt: identityDocument.expiresAt,
               },
             },
           },

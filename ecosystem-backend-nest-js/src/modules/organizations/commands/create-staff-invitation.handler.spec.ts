@@ -50,4 +50,69 @@ describe('CreateStaffInvitationHandler', () => {
     expect(storedData).not.toHaveProperty('code');
     expect(storedData.createdByPersonId).toBe('admin-1');
   });
+
+  it('pre-registers a foreign staff member by passport', async () => {
+    let createdIdentity:
+      | {
+          type: string;
+          issuingCountry: string;
+          normalizedValue: string;
+        }
+      | undefined;
+    const createPerson = jest.fn(
+      (args: {
+        data: {
+          identityDocuments: {
+            create: {
+              type: string;
+              issuingCountry: string;
+              normalizedValue: string;
+            };
+          };
+        };
+      }) => {
+        createdIdentity = args.data.identityDocuments.create;
+        return Promise.resolve({ id: 'person-foreign' });
+      },
+    );
+    const prisma = {
+      organizationDentalClinic: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'clinic-1' }),
+      },
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
+            id: 'admin-1',
+            personOrganizationAffiliations: [{ organizationId: 'org-1' }],
+            staff: null,
+          },
+        }),
+      },
+      personIdentityDocument: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      person: { create: createPerson },
+      staffInvitation: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const handler = new CreateStaffInvitationHandler(prisma as never);
+
+    await handler.execute(
+      new CreateStaffInvitationCommand('clerk-1', 'org-1', 'clinic-1', {
+        role: 'DENTAL_ASSISTANT',
+        firstName: 'Foreign',
+        lastName: 'Staff',
+        identityDocument: {
+          type: 'PASSPORT',
+          issuingCountry: 'GB',
+          value: 'AB12345',
+        },
+      }),
+    );
+
+    expect(createdIdentity).toMatchObject({
+      type: 'PASSPORT',
+      issuingCountry: 'GB',
+      normalizedValue: 'AB12345',
+    });
+  });
 });

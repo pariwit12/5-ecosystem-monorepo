@@ -36,8 +36,8 @@
   {
     "source": "patients",
     "legacyId": 3,
-    "cid": "invalid",
-    "firstName": "Rejected",
-    "lastName": "Fixture"
+    "cid": "FOREIGN-123",
+    "firstName": "Needs",
+    "lastName": "Classification"
   }
 ]
