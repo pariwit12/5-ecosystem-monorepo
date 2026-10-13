@@ -5,6 +5,9 @@ export const mapTargetIdentityState = ({
   patientRoles,
   staffRoles,
   dentistRoles,
+  patientAffiliations = [],
+  staffAffiliations = [],
+  dentistAffiliations = [],
 }) => {
   const byId = new Map(
     persons.map((person) => [
@@ -14,6 +17,11 @@ export const mapTargetIdentityState = ({
         identityDocuments: [],
         legacyIdentities: [],
         roles: [],
+        clinicAffiliations: {
+          patients: [],
+          staff: [],
+          dentists: [],
+        },
       },
     ]),
   );
@@ -38,6 +46,27 @@ export const mapTargetIdentityState = ({
   addRole(patientRoles, 'PATIENT');
   addRole(staffRoles, 'STAFF');
   addRole(dentistRoles, 'DENTIST');
+
+  for (const affiliation of patientAffiliations) {
+    byId
+      .get(affiliation.person_dental_patient_id)
+      ?.clinicAffiliations.patients.push({
+        clinicId: affiliation.organization_dental_clinic_id,
+        patientNumber: affiliation.patient_number,
+      });
+  }
+  for (const affiliation of staffAffiliations) {
+    byId.get(affiliation.person_staff_id)?.clinicAffiliations.staff.push({
+      clinicId: affiliation.organization_dental_clinic_id,
+      role: affiliation.role,
+      legacyRole: affiliation.legacy_role,
+    });
+  }
+  for (const affiliation of dentistAffiliations) {
+    byId.get(affiliation.person_dentist_id)?.clinicAffiliations.dentists.push({
+      clinicId: affiliation.organization_dental_clinic_id,
+    });
+  }
 
   return { persons: [...byId.values()] };
 };

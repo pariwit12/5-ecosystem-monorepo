@@ -3,6 +3,7 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import pg from 'pg';
+import { databaseTargetFingerprint } from './common/database-target.mjs';
 import { mapLegacyIdentityRows } from './common/legacy-extraction.mjs';
 
 const { Client } = pg;
@@ -41,13 +42,19 @@ if (process.env.LEGACY_SNAPSHOT_ACK !== 'READ_ONLY_SNAPSHOT') {
   );
   process.exit(1);
 }
-if (
-  process.env.DATABASE_URL &&
-  connectionString.trim() === process.env.DATABASE_URL.trim()
-) {
-  process.stderr.write(
-    'Refusing extraction because LEGACY_DATABASE_URL matches DATABASE_URL.\n',
-  );
+try {
+  if (
+    process.env.DATABASE_URL &&
+    databaseTargetFingerprint(connectionString) ===
+      databaseTargetFingerprint(process.env.DATABASE_URL)
+  ) {
+    process.stderr.write(
+      'Refusing extraction because LEGACY_DATABASE_URL matches DATABASE_URL.\n',
+    );
+    process.exit(1);
+  }
+} catch {
+  process.stderr.write('Legacy database URL is invalid.\n');
   process.exit(1);
 }
 

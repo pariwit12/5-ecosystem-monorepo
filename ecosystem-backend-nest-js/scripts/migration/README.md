@@ -160,3 +160,24 @@ Environment และ acknowledgement ที่รองรับ:
 - error report ใช้เฉพาะรหัสที่ sanitize แล้ว ไม่บันทึก connection string หรือข้อมูลส่วนบุคคล
 
 ก่อน staging หรือ production ต้อง extract target state ใหม่ทุกครั้ง และเปลี่ยนทั้ง environment กับ acknowledgement ให้ตรงกัน ห้ามใช้ report path เดิมซ้ำ
+
+## Post-apply reconciliation
+
+หลัง apply ให้ extract target state เป็นไฟล์ใหม่ แล้วตรวจผลโดยไม่เชื่อมฐานข้อมูลเพิ่ม:
+
+```powershell
+$env:MIGRATION_IDENTITY_INPUT = 'D:\migration-private\identity-input.json'
+$env:MIGRATION_TARGET_STATE = 'D:\migration-private\target-state-after-apply.json'
+$env:MIGRATION_CLINIC_ID = '<target clinic UUID>'
+pnpm run migration:verify:identity
+```
+
+Verifier ตรวจว่า:
+
+- identity document และ legacy identity ทุกชุดชี้ไปยัง Person เดียวกัน
+- role และ affiliation ของคลินิกเป้าหมายครบตาม source
+- patient affiliation มี HN
+- HN ไม่ซ้ำภายในคลินิกเป้าหมาย
+- source ไม่มี rejected record หรือรายการที่ยังต้อง manual review
+
+ผลลัพธ์ stdout มีเฉพาะจำนวนรวมและรหัสปัญหา ไม่แสดงชื่อ, เลขเอกสาร หรือ identity value คำสั่งคืน exit code 1 หาก reconciliation ไม่ผ่าน เพื่อใช้เป็น deployment gate ได้

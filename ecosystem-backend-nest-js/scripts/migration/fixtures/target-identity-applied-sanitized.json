@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "containsPersonalData": false,
+  "persons": [
+    {
+      "id": "00000000-0000-7000-8000-000000000001",
+      "identityDocuments": [
+        {
+          "type": "THAI_CID",
+          "issuingCountry": "TH",
+          "normalizedValue": "1111111111111"
+        }
+      ],
+      "legacyIdentities": [
+        {
+          "source": "legacy-dental-clinic",
+          "entityType": "patients",
+          "legacyId": 1
+        },
+        {
+          "source": "legacy-dental-clinic",
+          "entityType": "staff",
+          "legacyId": 7
+        }
+      ],
+      "roles": ["PATIENT", "STAFF"],
+      "clinicAffiliations": {
+        "patients": [
+          {
+            "clinicId": "00000000-0000-7000-8000-000000000010",
+            "patientNumber": "1"
+          }
+        ],
+        "staff": [
+          {
+            "clinicId": "00000000-0000-7000-8000-000000000010",
+            "role": "OTHER",
+            "legacyRole": "staff"
+          }
+        ],
+        "dentists": []
+      }
+    },
+    {
+      "id": "00000000-0000-7000-8000-000000000002",
+      "identityDocuments": [
+        {
+          "type": "THAI_CID",
+          "issuingCountry": "TH",
+          "normalizedValue": "2222222222222"
+        }
+      ],
+      "legacyIdentities": [
+        {
+          "source": "legacy-dental-clinic",
+          "entityType": "doctors",
+          "legacyId": 3
+        }
+      ],
+      "roles": ["DENTIST"],
+      "clinicAffiliations": {
+        "patients": [],
+        "staff": [],
+        "dentists": [
+          {
+            "clinicId": "00000000-0000-7000-8000-000000000010"
+          }
+        ]
+      }
+    }
+  ]
+}

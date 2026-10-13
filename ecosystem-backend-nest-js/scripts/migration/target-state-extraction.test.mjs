@@ -26,6 +26,19 @@ test('builds minimal target matching state without account or profile data', () 
     patientRoles: [{ person_id: 'person-1' }],
     staffRoles: [],
     dentistRoles: [{ person_id: 'person-1' }],
+    patientAffiliations: [
+      {
+        person_dental_patient_id: 'person-1',
+        organization_dental_clinic_id: 'clinic-1',
+        patient_number: '8',
+      },
+    ],
+    dentistAffiliations: [
+      {
+        person_dentist_id: 'person-1',
+        organization_dental_clinic_id: 'clinic-1',
+      },
+    ],
   });
 
   assert.deepEqual(state.persons[0], {
@@ -45,6 +58,11 @@ test('builds minimal target matching state without account or profile data', () 
       },
     ],
     roles: ['PATIENT', 'DENTIST'],
+    clinicAffiliations: {
+      patients: [{ clinicId: 'clinic-1', patientNumber: '8' }],
+      staff: [],
+      dentists: [{ clinicId: 'clinic-1' }],
+    },
   });
   assert.ok(!('clerkId' in state.persons[0]));
   assert.ok(!('firstName' in state.persons[0]));

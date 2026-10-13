@@ -27,6 +27,7 @@
     "migration:plan:identity": "pnpm --dir ecosystem-backend-nest-js run migration:plan:identity",
     "migration:prepare:identity-apply": "pnpm --dir ecosystem-backend-nest-js run migration:prepare:identity-apply",
     "migration:apply:identity": "pnpm --dir ecosystem-backend-nest-js run migration:apply:identity",
+    "migration:verify:identity": "pnpm --dir ecosystem-backend-nest-js run migration:verify:identity",
     "migration:test": "pnpm --dir ecosystem-backend-nest-js run migration:test"
   },
   "keywords": [],
