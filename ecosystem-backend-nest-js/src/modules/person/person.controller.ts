@@ -1,4 +1,12 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import {
@@ -16,6 +24,17 @@ import {
   ClaimStaffInvitationBody,
   ClaimStaffInvitationCommand,
 } from './commands/claim-staff-invitation.command';
+import {
+  GetDentalPatientsDtoQuery,
+  GetDentalPatientsQuery,
+  type GetDentalPatientsResponse,
+} from './queries/get-dental-patients.query';
+import {
+  GetDentalPatientByIdDtoParam,
+  GetDentalPatientByIdDtoQuery,
+  GetDentalPatientByIdQuery,
+  type GetDentalPatientByIdResponse,
+} from './queries/get-dental-patient-by-id.query';
 
 @Controller('api/person')
 export class PersonController {
@@ -46,6 +65,37 @@ export class PersonController {
       CreateDentalPatientCommand,
       CreateDentalPatientResponse
     >(new CreateDentalPatientCommand(clerkUser.sub, body));
+  }
+
+  @Get('dental-patients')
+  @UseGuards(ClerkAuthGuard)
+  async getDentalPatients(
+    @ClerkUser() clerkUser: ClerkUserData,
+    @Query() query: GetDentalPatientsDtoQuery,
+  ): Promise<GetDentalPatientsResponse> {
+    return this.queryBus.execute<
+      GetDentalPatientsQuery,
+      GetDentalPatientsResponse
+    >(new GetDentalPatientsQuery(clerkUser.sub, query));
+  }
+
+  @Get('dental-patients/:person_id')
+  @UseGuards(ClerkAuthGuard)
+  async getDentalPatientById(
+    @ClerkUser() clerkUser: ClerkUserData,
+    @Param() param: GetDentalPatientByIdDtoParam,
+    @Query() query: GetDentalPatientByIdDtoQuery,
+  ): Promise<GetDentalPatientByIdResponse> {
+    return this.queryBus.execute<
+      GetDentalPatientByIdQuery,
+      GetDentalPatientByIdResponse
+    >(
+      new GetDentalPatientByIdQuery(
+        clerkUser.sub,
+        param.person_id,
+        query.organizationDentalClinicId,
+      ),
+    );
   }
 
   @Post('staff-invitations/claim')
