@@ -108,20 +108,18 @@ try {
     );
   }
 
-  const [patients, staff, doctors] = await Promise.all([
-    client.query(
-      `SELECT id, id_number, first_name, last_name, telephone, birth_day
-       FROM ${table('patients')} ORDER BY id`,
-    ),
-    client.query(
-      `SELECT id, cid, first_name, last_name, nickname, telephone, birth_day, role
-       FROM ${table('staff')} ORDER BY id`,
-    ),
-    client.query(
-      `SELECT id, cid, first_name, last_name, nickname, telephone, birth_day, license_number
-       FROM ${table('doctors')} ORDER BY id`,
-    ),
-  ]);
+  const patients = await client.query(
+    `SELECT id, id_number, first_name, last_name, telephone, birth_day
+     FROM ${table('patients')} ORDER BY id`,
+  );
+  const staff = await client.query(
+    `SELECT id, cid, first_name, last_name, nickname, telephone, birth_day, role
+     FROM ${table('staff')} ORDER BY id`,
+  );
+  const doctors = await client.query(
+    `SELECT id, cid, first_name, last_name, nickname, telephone, birth_day, license_number
+     FROM ${table('doctors')} ORDER BY id`,
+  );
   await client.query('ROLLBACK');
 
   const payload = {

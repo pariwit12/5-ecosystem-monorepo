@@ -100,45 +100,41 @@ try {
     );
   }
 
-  const [
-    persons,
-    documents,
-    legacy,
-    patients,
-    staff,
-    dentists,
-    patientAffiliations,
-    staffAffiliations,
-    dentistAffiliations,
-  ] = await Promise.all([
-    client.query(`SELECT id FROM ${table('person')} ORDER BY id`),
-    client.query(
-      `SELECT person_id, type, issuing_country, normalized_value
-         FROM ${table('person_identity_document')} ORDER BY person_id`,
-    ),
-    client.query(
-      `SELECT person_id, source, entity_type, legacy_id
-         FROM ${table('person_legacy_identity')} ORDER BY person_id`,
-    ),
-    client.query(`SELECT person_id FROM ${table('person_dental_patient')}`),
-    client.query(`SELECT person_id FROM ${table('person_staff')}`),
-    client.query(`SELECT person_id FROM ${table('person_dentist')}`),
-    client.query(
-      `SELECT person_dental_patient_id, organization_dental_clinic_id, patient_number
-         FROM ${table('person_dental_patient_affiliation')}
-         ORDER BY person_dental_patient_id, organization_dental_clinic_id`,
-    ),
-    client.query(
-      `SELECT person_staff_id, organization_dental_clinic_id, role, legacy_role
-         FROM ${table('person_staff_affiliation')}
-         ORDER BY person_staff_id, organization_dental_clinic_id`,
-    ),
-    client.query(
-      `SELECT person_dentist_id, organization_dental_clinic_id
-         FROM ${table('person_dentist_affiliation')}
-         ORDER BY person_dentist_id, organization_dental_clinic_id`,
-    ),
-  ]);
+  const persons = await client.query(
+    `SELECT id FROM ${table('person')} ORDER BY id`,
+  );
+  const documents = await client.query(
+    `SELECT person_id, type, issuing_country, normalized_value
+     FROM ${table('person_identity_document')} ORDER BY person_id`,
+  );
+  const legacy = await client.query(
+    `SELECT person_id, source, entity_type, legacy_id
+     FROM ${table('person_legacy_identity')} ORDER BY person_id`,
+  );
+  const patients = await client.query(
+    `SELECT person_id FROM ${table('person_dental_patient')}`,
+  );
+  const staff = await client.query(
+    `SELECT person_id FROM ${table('person_staff')}`,
+  );
+  const dentists = await client.query(
+    `SELECT person_id FROM ${table('person_dentist')}`,
+  );
+  const patientAffiliations = await client.query(
+    `SELECT person_dental_patient_id, organization_dental_clinic_id, patient_number
+     FROM ${table('person_dental_patient_affiliation')}
+     ORDER BY person_dental_patient_id, organization_dental_clinic_id`,
+  );
+  const staffAffiliations = await client.query(
+    `SELECT person_staff_id, organization_dental_clinic_id, role, legacy_role
+     FROM ${table('person_staff_affiliation')}
+     ORDER BY person_staff_id, organization_dental_clinic_id`,
+  );
+  const dentistAffiliations = await client.query(
+    `SELECT person_dentist_id, organization_dental_clinic_id
+     FROM ${table('person_dentist_affiliation')}
+     ORDER BY person_dentist_id, organization_dental_clinic_id`,
+  );
   await client.query('ROLLBACK');
 
   const state = mapTargetIdentityState({
