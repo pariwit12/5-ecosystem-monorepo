@@ -1,0 +1,43 @@
+[
+  {
+    "source": "patients",
+    "legacyId": 1,
+    "cid": "1111111111111",
+    "firstName": "Sample",
+    "lastName": "Person",
+    "phone": "0800000001",
+    "birthDate": "1990-01-01"
+  },
+  {
+    "source": "staff",
+    "legacyId": 7,
+    "cid": "1111111111111",
+    "firstName": "Sample",
+    "lastName": "Person",
+    "phone": "0800000001",
+    "birthDate": "1990-01-01",
+    "legacyRole": "staff"
+  },
+  {
+    "source": "doctors",
+    "legacyId": 3,
+    "cid": "2222222222222",
+    "firstName": "Example",
+    "lastName": "Dentist",
+    "licenseNumber": "SYNTHETIC-001"
+  },
+  {
+    "source": "patients",
+    "legacyId": 2,
+    "cid": null,
+    "firstName": "No",
+    "lastName": "Identity"
+  },
+  {
+    "source": "patients",
+    "legacyId": 3,
+    "cid": "invalid",
+    "firstName": "Rejected",
+    "lastName": "Fixture"
+  }
+]

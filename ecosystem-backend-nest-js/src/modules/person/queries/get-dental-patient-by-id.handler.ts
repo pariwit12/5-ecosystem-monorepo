@@ -45,8 +45,15 @@ export class GetDentalPatientByIdHandler implements IQueryHandler<
                   lastName: true,
                   nickname: true,
                   phone: true,
-                  cid: true,
                   birthDate: true,
+                  identityDocuments: {
+                    select: {
+                      type: true,
+                      issuingCountry: true,
+                      normalizedValue: true,
+                      expiresAt: true,
+                    },
+                  },
                 },
               },
             },
@@ -64,7 +71,19 @@ export class GetDentalPatientByIdHandler implements IQueryHandler<
       lastName: affiliation.personDentalPatient.person.lastName,
       nickname: affiliation.personDentalPatient.person.nickname,
       phone: affiliation.personDentalPatient.person.phone,
-      cid: affiliation.personDentalPatient.person.cid,
+      cid:
+        affiliation.personDentalPatient.person.identityDocuments.find(
+          (document) => document.type === 'THAI_CID',
+        )?.normalizedValue ?? null,
+      identityDocuments:
+        affiliation.personDentalPatient.person.identityDocuments.map(
+          (document) => ({
+            type: document.type,
+            issuingCountry: document.issuingCountry,
+            value: document.normalizedValue,
+            expiresAt: document.expiresAt,
+          }),
+        ),
       birthDate: affiliation.personDentalPatient.person.birthDate,
     };
   }

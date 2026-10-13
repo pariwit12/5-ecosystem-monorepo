@@ -24,3 +24,20 @@ pnpm run migration:audit:legacy
 - ห้ามตั้ง `LEGACY_DATABASE_URL` ให้เป็นค่าเดียวกับ `DATABASE_URL`
 - report ที่มีข้อมูลจริงต้องอยู่นอก repository
 - การไม่มี duplicate ในตารางเดียวไม่ได้แปลว่าไม่มีบุคคลซ้ำข้าม `patients`, `staff`, และ `doctors`; การตรวจข้าม role จะทำใน mapping rehearsal โดยไม่บันทึก identity values ลง Git
+
+## In-memory identity rehearsal
+
+```powershell
+pnpm run migration:test
+pnpm run migration:rehearse:identity
+```
+
+สองคำสั่งนี้ใช้ sanitized fixture และไม่มีการเชื่อมฐานข้อมูล กฎปัจจุบันคือ:
+
+- record ที่มี CID ถูกต้องและตรงกันจะรวมเป็น Person เดียวพร้อมหลาย role
+- record ที่ไม่มี CID จะไม่ถูกจับคู่ด้วยชื่อ แต่แยกเป็นคนละ Person และติดธงให้ตรวจด้วยมือ
+- CID ที่ไม่ใช่ตัวเลข 13 หลักถูก reject
+- profile ที่ขัดแย้งกันภายใต้ CID เดียวกันถูกส่งให้ตรวจด้วยมือ
+- ทุก source record ที่ผ่าน validation เก็บ legacy identity เพื่อรองรับ idempotent import
+
+ไฟล์ input จริงอาจมีข้อมูลส่วนบุคคลและต้องอยู่นอก Git ส่วน report จากคำสั่ง rehearsal มีเฉพาะตัวเลขรวม

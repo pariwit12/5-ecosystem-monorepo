@@ -38,7 +38,11 @@ export class GetDentalPatientsHandler implements IQueryHandler<
                       { lastName: { contains: search, mode: 'insensitive' } },
                       { nickname: { contains: search, mode: 'insensitive' } },
                       { phone: { contains: search } },
-                      { cid: { equals: search } },
+                      {
+                        identityDocuments: {
+                          some: { normalizedValue: search.toUpperCase() },
+                        },
+                      },
                     ],
                   },
                 },

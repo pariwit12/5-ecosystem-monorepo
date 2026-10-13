@@ -55,17 +55,35 @@ export class CreateStaffInvitationHandler implements ICommandHandler<
 
     let targetPersonId: string | undefined;
     if (body.cid) {
-      const person = await this.prisma.person.upsert({
-        where: { cid: body.cid },
-        update: {},
-        create: {
-          cid: body.cid,
-          firstName: body.firstName,
-          lastName: body.lastName,
+      const identity = await this.prisma.personIdentityDocument.findUnique({
+        where: {
+          type_issuingCountry_normalizedValue: {
+            type: 'THAI_CID',
+            issuingCountry: 'TH',
+            normalizedValue: body.cid,
+          },
         },
-        select: { id: true },
+        select: { personId: true },
       });
-      targetPersonId = person.id;
+      if (identity) {
+        targetPersonId = identity.personId;
+      } else {
+        const person = await this.prisma.person.create({
+          data: {
+            firstName: body.firstName,
+            lastName: body.lastName,
+            identityDocuments: {
+              create: {
+                type: 'THAI_CID',
+                issuingCountry: 'TH',
+                normalizedValue: body.cid,
+              },
+            },
+          },
+          select: { id: true },
+        });
+        targetPersonId = person.id;
+      }
     }
 
     const code = randomBytes(18).toString('base64url');

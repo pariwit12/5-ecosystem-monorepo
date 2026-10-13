@@ -31,7 +31,6 @@ model Person {
   lastName  String? @map("last_name")
   nickname  String?
   phone     String?
-  cid       String? @unique @db.VarChar(13)
   birthDate DateTime? @map("birth_date") @db.Date
 
   version Int @default(1)
@@ -41,6 +40,7 @@ model Person {
 
   personOrganizationAffiliations PersonOrganizationAffiliation[]
   legacyIdentities              PersonLegacyIdentity[]
+  identityDocuments             PersonIdentityDocument[]
   dentist                       PersonDentist?
   staff                         PersonStaff?
   dentalPatient                 PersonDentalPatient?
@@ -54,6 +54,26 @@ model Person {
   // personDentalPatient PersonDentalPatient?
 
   @@map("person")
+}
+
+enum IdentityDocumentType {
+  THAI_CID
+  PASSPORT
+  FOREIGN_ID
+  OTHER
+}
+
+model PersonIdentityDocument {
+  personId        String               @map("person_id") @db.Uuid
+  person          Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
+  type            IdentityDocumentType
+  issuingCountry  String               @map("issuing_country") @db.Char(2)
+  normalizedValue String               @map("normalized_value") @db.VarChar(100)
+  expiresAt       DateTime?            @map("expires_at") @db.Date
+
+  @@id([personId, type, issuingCountry, normalizedValue])
+  @@unique([type, issuingCountry, normalizedValue])
+  @@map("person_identity_document")
 }
 
 model UserAccount {

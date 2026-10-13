@@ -87,8 +87,10 @@ describe('CreateDentalPatientHandler', () => {
         }),
       },
       person: {
-        findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'person-2' }),
+      },
+      personIdentityDocument: {
+        findUnique: jest.fn().mockResolvedValue(null),
       },
       personDentalPatient: {
         findUnique: jest.fn().mockResolvedValue(null),
@@ -134,7 +136,6 @@ describe('CreateDentalPatientHandler', () => {
       id: 'person-1',
       firstName: 'Existing',
       lastName: 'Patient',
-      cid: '1234567890123',
       phone: '0800000000',
       birthDate: new Date('1990-01-01'),
     };
@@ -147,8 +148,10 @@ describe('CreateDentalPatientHandler', () => {
         }),
       },
       person: {
-        findUnique: jest.fn().mockResolvedValue(person),
         create: jest.fn(),
+      },
+      personIdentityDocument: {
+        findUnique: jest.fn().mockResolvedValue({ person }),
       },
       personDentalPatient: {
         findUnique: jest.fn().mockResolvedValue({ personId: 'person-1' }),

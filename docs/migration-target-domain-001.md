@@ -28,6 +28,7 @@ UserAccount (Clerk authentication)
 |---|---|---|
 | `UserAccount` | บัญชี authentication | UUID, unique Clerk identity |
 | `Person` | บุคคลจริงและข้อมูลทั่วไป | UUID, optional profile fields, optional user account |
+| `PersonIdentityDocument` | เอกสารระบุตัวบุคคลหลายชนิด | person id, type, issuing country, normalized value, expiry |
 | `PersonLegacyIdentity` | trace source identity | source system, entity type, legacy integer id, target id |
 | `PersonDentist` | บทบาททันตแพทย์ | person id, license number |
 | `PersonStaff` | ระบุว่าบุคคลเป็นเจ้าหน้าที่ | person id |
@@ -41,7 +42,9 @@ UserAccount (Clerk authentication)
 - `legacy_id` ต้องมี unique constraint ร่วมกับ source system และ entity type
 - ห้ามใช้ชื่อหรือเบอร์โทรเป็น primary identity
 - ห้าม migrate password hash ไปเป็น Clerk credential
-- ข้อมูล `cid`/เลขบัตรประชาชนต้องไม่อยู่ใน log และควรกำหนดสิทธิ์การเข้าถึงแยกต่างหาก
+- CID, Passport และเลขเอกสารต่างประเทศเก็บใน `PersonIdentityDocument` และต้องไม่อยู่ใน log
+- Thai CID ต้องเป็นตัวเลข 13 หลักและใช้ประเทศ `TH`; Passport/Foreign ID ไม่ถูกบังคับเป็นรูปแบบ CID
+- บุคคลที่ยังไม่มีเอกสารสามารถเป็นคนไข้ได้ แต่ห้ามจับคู่ด้วยชื่ออัตโนมัติ
 - `DentalPatient` ต้องเชื่อมกับ `Person` แต่ `Person` ไม่จำเป็นต้องมี `UserAccount`; คนไข้จึงไม่จำเป็นต้องสมัครบัญชี
 - webhook ต้องสร้างหรืออัปเดตเฉพาะ `UserAccount` และห้ามสร้าง `Person` เปล่าโดยอัตโนมัติ
 - ห้ามใช้ข้อมูลโปรไฟล์จาก Clerk เขียนทับข้อมูล `Person` โดยอัตโนมัติ
@@ -53,7 +56,7 @@ UserAccount (Clerk authentication)
 
 1. ข้อมูลทั่วไปอยู่ที่ `Person`; role-specific data อยู่ในตารางของแต่ละ role
 2. บุคคลหนึ่งเป็นคนไข้ได้หลายคลินิกผ่าน `DentalPatientAffiliation`
-3. `cid` unique ทั้งระบบและเป็น identity หลัก; ห้ามใช้ชื่อ deduplicate และห้าม overwrite บุคคลที่ match ด้วย CID
+3. เอกสารชนิดเดียวกันจากประเทศเดียวกันและเลขเดียวกัน unique ทั้งระบบ; ห้ามใช้ชื่อ deduplicate และห้าม overwrite บุคคลที่ match ด้วยเอกสาร
 4. HN เป็น running number แยกต่อคลินิกและจัดสรรใน transaction เดียวกับการสร้าง affiliation
 5. Staff role อยู่ที่ `PersonStaffAffiliation`; พนักงานไม่จำเป็นต้องเป็นสมาชิก Organization
 6. ผู้สร้าง Organization เป็น Organization admin เริ่มต้น

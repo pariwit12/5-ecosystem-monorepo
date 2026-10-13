@@ -15,13 +15,14 @@
 
 ## Confirmed decisions
 
-- `Person` เป็นข้อมูลบุคคลกลางหนึ่งคน และ `cid` unique ระดับระบบ
+- `Person` เป็นข้อมูลบุคคลกลางหนึ่งคน เอกสารระบุตัวเก็บแยกใน `PersonIdentityDocument` และ unique ตามชนิด/ประเทศ/เลขเอกสาร
 - คนไข้เชื่อมได้หลายคลินิกผ่าน `PersonDentalPatientAffiliation`
 - `patientNumber` เป็น running number แยกตามคลินิก โดยเริ่มจากเลขธรรมดา
 - การสร้าง patient number ต้องทำใน transaction ที่ป้องกันเลขซ้ำเมื่อมีการสร้างพร้อมกัน
 - ยังไม่ทำ full legacy-data import ในระยะนี้ ใช้ข้อมูลใหม่และ fixture ขนาดเล็กสำหรับพัฒนา
 - legacy snapshot จะถูกใช้ภายหลังเพื่อวัดจำนวนข้อมูล, ตรวจ duplicate และ rehearsal mapping เท่านั้น
-- เมื่อ `cid` ตรงกับ `Person` เดิม ให้ใช้ข้อมูลเดิมและห้าม overwrite profile จาก request ใหม่
+- เมื่อเอกสารระบุตัวตรงกับ `Person` เดิม ให้ใช้ข้อมูลเดิมและห้าม overwrite profile จาก request ใหม่
+- คนต่างชาติและผู้ไม่มี Thai CID เป็นคนไข้ได้ โดยใช้ Passport/Foreign ID หรือไม่มีเอกสารชั่วคราว
 - แยกบัญชี Clerk เป็น `UserAccount`; `Person` มีหรือไม่มีบัญชีก็ได้
 - เลื่อนการเชื่อมบัญชีคนไข้ไปทำพร้อม patient portal และต้องไม่ยืนยันตัวตนด้วย CID เพียงอย่างเดียว
 
@@ -55,7 +56,8 @@
 - [x] กำหนดวิธีเชื่อมบัญชีบุคลากรผ่าน invitation โดยไม่ย้าย password เดิม
 - [x] เขียน read-only aggregate audit สำหรับ row count/duplicate ภายในแต่ละ source table
 - [ ] รัน aggregate audit กับ legacy snapshot และทบทวนรายงาน
-- [ ] สร้าง mapping table จริงจาก sample data โดยไม่ใส่ข้อมูลส่วนบุคคลลง Git
+- [x] สร้างและทดสอบ identity mapping ด้วย sanitized fixture โดยไม่เชื่อมฐานข้อมูล
+- [ ] สร้าง mapping report จาก legacy snapshot โดยเก็บข้อมูลส่วนบุคคลไว้นอก Git
 - [ ] ทดสอบ import บน database สำเนาแบบ idempotent
 
 ## Acceptance checks

@@ -1,0 +1,2 @@
+ALTER INDEX "person_identity_document_type_issuing_country_normalized_value_"
+RENAME TO "person_identity_document_type_issuing_country_normalized_va_key";

@@ -12,6 +12,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "migration:audit:legacy": "node scripts/migration/audit-legacy.mjs",
+    "migration:rehearse:identity": "node scripts/migration/rehearse-identity.mjs",
+    "migration:test": "node --test scripts/migration/*.test.mjs",
     "prebuild": "pnpm run prisma:generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

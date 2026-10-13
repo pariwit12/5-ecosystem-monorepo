@@ -11,7 +11,11 @@ export const CreateStaffInvitationBodySchema = z
       'ACCOUNTING',
       'OTHER',
     ]),
-    cid: z.string().trim().length(13).optional(),
+    cid: z
+      .string()
+      .trim()
+      .regex(/^\d{13}$/)
+      .optional(),
     firstName: z.string().trim().min(1).optional(),
     lastName: z.string().trim().min(1).optional(),
   })

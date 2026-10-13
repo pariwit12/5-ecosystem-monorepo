@@ -7,6 +7,7 @@ import {
   CreateDentalPatientCommand,
   CreateDentalPatientResponse,
 } from './create-dental-patient.command';
+import { legacyCidDocument } from '../identity-document';
 
 @Injectable()
 @CommandHandler(CreateDentalPatientCommand)
@@ -73,9 +74,24 @@ export class CreateDentalPatientHandler implements ICommandHandler<
           throw new ForbiddenException('ผู้สร้างต้องเป็นพนักงานของคลินิกนี้');
         }
 
-        let person = body.cid
-          ? await tx.person.findUnique({ where: { cid: body.cid } })
+        const identityDocument = body.identityDocument
+          ? body.identityDocument
+          : body.cid
+            ? legacyCidDocument(body.cid)
+            : null;
+        const existingIdentity = identityDocument
+          ? await tx.personIdentityDocument.findUnique({
+              where: {
+                type_issuingCountry_normalizedValue: {
+                  type: identityDocument.type,
+                  issuingCountry: identityDocument.issuingCountry,
+                  normalizedValue: identityDocument.value,
+                },
+              },
+              include: { person: true },
+            })
           : null;
+        let person = existingIdentity?.person ?? null;
         let createdPerson = false;
 
         if (!person) {
@@ -83,9 +99,18 @@ export class CreateDentalPatientHandler implements ICommandHandler<
             data: {
               firstName: body.firstName,
               lastName: body.lastName,
-              cid: body.cid,
               phone: body.phone,
               birthDate: body.birthDate,
+              identityDocuments: identityDocument
+                ? {
+                    create: {
+                      type: identityDocument.type,
+                      issuingCountry: identityDocument.issuingCountry,
+                      normalizedValue: identityDocument.value,
+                      expiresAt: identityDocument.expiresAt,
+                    },
+                  }
+                : undefined,
             },
           });
           createdPerson = true;

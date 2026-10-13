@@ -19,8 +19,15 @@ describe('GetDentalPatientByIdHandler', () => {
           lastName: 'ใจดี',
           nickname: 'หญิง',
           phone: '0899999999',
-          cid: '1234567890123',
           birthDate: null,
+          identityDocuments: [
+            {
+              type: 'THAI_CID',
+              issuingCountry: 'TH',
+              normalizedValue: '1234567890123',
+              expiresAt: null,
+            },
+          ],
         },
       },
     });
@@ -38,6 +45,14 @@ describe('GetDentalPatientByIdHandler', () => {
       version: 3,
       patientNumber: '5',
       cid: '1234567890123',
+      identityDocuments: [
+        {
+          type: 'THAI_CID',
+          issuingCountry: 'TH',
+          value: '1234567890123',
+          expiresAt: null,
+        },
+      ],
     });
     expect(findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
