@@ -61,7 +61,7 @@ export class GetDentalPatientsHandler implements IQueryHandler<
       ...(search
         ? {
             OR: [
-              { patientNumber: { contains: search, mode: 'insensitive' } },
+              { patientNumber: { contains: search ?? '', mode: 'insensitive' } },
               {
                 personDentalPatient: {
                   person: { OR: searchFields },
