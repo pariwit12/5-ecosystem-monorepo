@@ -31,14 +31,14 @@ export interface GetDentalPatientByIdResponse {
   patientNumber: string;
   firstName: string | null;
   lastName: string | null;
-  nickname: string | null;
-  phone: string | null;
-  cid: string | null;
-  identityDocuments: {
+  nickname?: string | null;
+  phone?: string | null;
+  cid?: string | null;
+  identityDocuments?: {
     type: 'THAI_CID' | 'PASSPORT' | 'FOREIGN_ID' | 'OTHER';
     issuingCountry: string;
     value: string;
     expiresAt: Date | null;
   }[];
-  birthDate: Date | null;
+  birthDate?: Date | null;
 }
