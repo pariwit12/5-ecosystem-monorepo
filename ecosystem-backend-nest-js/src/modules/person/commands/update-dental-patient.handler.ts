@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { DentalClinicStaffAccessService } from '../services/dental-clinic-staff-access.service';
@@ -20,10 +20,27 @@ export class UpdateDentalPatientHandler implements ICommandHandler<
   async execute(
     command: UpdateDentalPatientCommand,
   ): Promise<UpdateDentalPatientResponse> {
-    await this.staffAccess.verify(
+    const { role } = await this.staffAccess.verify(
       command.clerkId,
       command.organizationDentalClinicId,
     );
+
+    const { version, ...profile } = command.body;
+    const fields = Object.keys(profile);
+    const receptionistFields = new Set([
+      'firstName',
+      'lastName',
+      'nickname',
+      'phone',
+    ]);
+
+    if (
+      role !== 'ADMIN' &&
+      (role !== 'RECEPTIONIST' ||
+        fields.some((field) => !receptionistFields.has(field)))
+    ) {
+      throw new ForbiddenException('ไม่มีสิทธิ์แก้ไขข้อมูลคนไข้');
+    }
 
     const affiliation =
       await this.prisma.personDentalPatientAffiliation.findUnique({
@@ -37,7 +54,6 @@ export class UpdateDentalPatientHandler implements ICommandHandler<
       });
     if (!affiliation) throw new NotFoundException('ไม่พบคนไข้ในคลินิกนี้');
 
-    const { version, ...profile } = command.body;
     const updated = await this.prisma.person.updateMany({
       where: { id: command.personId, version },
       data: { ...profile, version: { increment: 1 } },
