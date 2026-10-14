@@ -13,6 +13,7 @@ describe('DentalClinicStaffAccessService', () => {
     findUnique.mockResolvedValue({
       person: {
         staff: { clinicAffiliations: [{ role: 'RECEPTIONIST' }] },
+        dentist: { clinicAffiliations: [] },
       },
     });
 
@@ -21,9 +22,25 @@ describe('DentalClinicStaffAccessService', () => {
     });
   });
 
-  it('rejects an account without a staff affiliation at the clinic', async () => {
+  it('recognizes a dentist through the separate dentist affiliation', async () => {
     findUnique.mockResolvedValue({
-      person: { staff: { clinicAffiliations: [] } },
+      person: {
+        staff: { clinicAffiliations: [] },
+        dentist: { clinicAffiliations: [{ personDentistId: 'person-1' }] },
+      },
+    });
+
+    await expect(service.verify('clerk-1', 'clinic-1')).resolves.toEqual({
+      role: 'DENTIST',
+    });
+  });
+
+  it('rejects an account without an active staff or dentist affiliation', async () => {
+    findUnique.mockResolvedValue({
+      person: {
+        staff: { clinicAffiliations: [] },
+        dentist: { clinicAffiliations: [] },
+      },
     });
 
     await expect(service.verify('clerk-1', 'clinic-1')).rejects.toBeInstanceOf(
