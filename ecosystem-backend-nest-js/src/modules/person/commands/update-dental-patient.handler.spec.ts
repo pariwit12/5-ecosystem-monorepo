@@ -79,7 +79,6 @@ describe('UpdateDentalPatientHandler', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-
   it('rejects profile updates by managers before writing', async () => {
     staffAccess.verify.mockResolvedValue({ role: 'MANAGER' });
     const findUnique = jest.fn();
