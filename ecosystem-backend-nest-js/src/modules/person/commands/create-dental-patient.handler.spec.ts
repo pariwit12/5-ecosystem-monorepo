@@ -222,4 +222,75 @@ describe('CreateDentalPatientHandler', () => {
     }))).rejects.toMatchObject({ status: 403 });
   });
 
+
+  it('allows a dentist to create a patient without identity-document fields', async () => {
+    const tx = {
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
+            staff: { clinicAffiliations: [] },
+            dentist: {
+              clinicAffiliations: [{ personDentistId: 'dentist-1' }],
+            },
+          },
+        }),
+      },
+      personIdentityDocument: { findUnique: jest.fn() },
+      person: { create: jest.fn().mockResolvedValue({ id: 'person-2' }) },
+      personDentalPatient: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ personId: 'person-2' }),
+      },
+      personDentalPatientAffiliation: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+    };
+    tx.personIdentityDocument.findUnique.mockResolvedValue(null);
+    const patientNumberService = {
+      allocateNextInTransaction: jest.fn().mockResolvedValue('2'),
+    };
+    const handler = new CreateDentalPatientHandler({
+      $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never, patientNumberService as never);
+
+    await expect(handler.execute(new CreateDentalPatientCommand('dentist', {
+      organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+      firstName: 'New',
+      lastName: 'Patient',
+    }))).resolves.toMatchObject({
+      personId: 'person-2',
+      patientNumber: '2',
+      createdPerson: true,
+      createdPatient: true,
+      createdAffiliation: true,
+    });
+  });
+
+  it('rejects patient creation by receptionists', async () => {
+    const tx = {
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
+            staff: { clinicAffiliations: [{ role: 'RECEPTIONIST' }] },
+            dentist: { clinicAffiliations: [] },
+          },
+        }),
+      },
+    };
+    const handler = new CreateDentalPatientHandler({
+      $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never, {} as never);
+
+    await expect(handler.execute(new CreateDentalPatientCommand('receptionist', {
+      organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+      firstName: 'New',
+      lastName: 'Patient',
+    }))).rejects.toMatchObject({ status: 403 });
+  });
+
 });
