@@ -88,7 +88,6 @@ describe('GetDentalPatientByIdHandler', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-
   it('returns only permitted profile fields to dentists', async () => {
     staffAccess.verify.mockResolvedValue({ role: 'DENTIST' });
     const findUnique = jest.fn().mockResolvedValue({
