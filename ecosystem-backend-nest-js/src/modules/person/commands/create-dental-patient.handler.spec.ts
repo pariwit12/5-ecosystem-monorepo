@@ -212,8 +212,8 @@ describe('CreateDentalPatientHandler', () => {
     };
     const handler = new CreateDentalPatientHandler(
       {
-        $transaction: jest.fn(
-          (callback: (client: typeof tx) => unknown) => callback(tx),
+        $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+          callback(tx),
         ),
       } as never,
       {} as never,
