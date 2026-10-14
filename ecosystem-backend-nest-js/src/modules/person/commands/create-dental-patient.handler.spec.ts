@@ -82,7 +82,9 @@ describe('CreateDentalPatientHandler', () => {
       userAccount: {
         findUnique: jest.fn().mockResolvedValue({
           person: {
-            staff: { clinicAffiliations: [{ personStaffId: 'staff-1' }] },
+            staff: {
+              clinicAffiliations: [{ personStaffId: 'staff-1', role: 'ADMIN' }],
+            },
           },
         }),
       },
@@ -143,7 +145,9 @@ describe('CreateDentalPatientHandler', () => {
       userAccount: {
         findUnique: jest.fn().mockResolvedValue({
           person: {
-            staff: { clinicAffiliations: [{ personStaffId: 'staff-1' }] },
+            staff: {
+              clinicAffiliations: [{ personStaffId: 'staff-1', role: 'ADMIN' }],
+            },
           },
         }),
       },
@@ -193,5 +197,36 @@ describe('CreateDentalPatientHandler', () => {
     expect(
       patientNumberService.allocateNextInTransaction,
     ).not.toHaveBeenCalled();
+  });
+
+  it('rejects patient creation by receptionists', async () => {
+    const tx = {
+      userAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          person: {
+            staff: { clinicAffiliations: [{ role: 'RECEPTIONIST' }] },
+            dentist: { clinicAffiliations: [] },
+          },
+        }),
+      },
+    };
+    const handler = new CreateDentalPatientHandler(
+      {
+        $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+          callback(tx),
+        ),
+      } as never,
+      {} as never,
+    );
+
+    await expect(
+      handler.execute(
+        new CreateDentalPatientCommand('receptionist', {
+          organizationDentalClinicId: '00000000-0000-0000-0000-000000000001',
+          firstName: 'New',
+          lastName: 'Patient',
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
   });
 });

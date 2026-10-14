@@ -16,6 +16,7 @@ export const CreateDentalPatientBodySchema = z
     phone: z.string().trim().min(1).optional(),
     birthDate: z.coerce.date().optional(),
   })
+  .strict()
   .refine((body) => !(body.cid && body.identityDocument), {
     message: 'ระบุ cid หรือ identityDocument อย่างใดอย่างหนึ่งเท่านั้น',
   });

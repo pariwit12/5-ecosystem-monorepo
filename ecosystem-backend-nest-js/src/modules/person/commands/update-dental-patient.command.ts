@@ -15,6 +15,7 @@ export const UpdateDentalPatientBodySchema = z
       )
       .optional(),
   })
+  .strict()
   .refine(
     (body) =>
       body.firstName !== undefined ||

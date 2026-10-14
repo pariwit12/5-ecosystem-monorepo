@@ -78,4 +78,28 @@ describe('UpdateDentalPatientHandler', () => {
       ),
     ).rejects.toBeInstanceOf(ConflictException);
   });
+
+  it('rejects profile updates by managers before writing', async () => {
+    staffAccess.verify.mockResolvedValue({ role: 'MANAGER' });
+    const findUnique = jest.fn();
+    const updateMany = jest.fn();
+    const handler = new UpdateDentalPatientHandler(
+      {
+        personDentalPatientAffiliation: { findUnique },
+        person: { updateMany },
+      } as never,
+      staffAccess as never,
+    );
+
+    await expect(
+      handler.execute(
+        new UpdateDentalPatientCommand('manager', 'person-1', 'clinic-1', {
+          version: 1,
+          firstName: 'Not allowed',
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(findUnique).not.toHaveBeenCalled();
+    expect(updateMany).not.toHaveBeenCalled();
+  });
 });
