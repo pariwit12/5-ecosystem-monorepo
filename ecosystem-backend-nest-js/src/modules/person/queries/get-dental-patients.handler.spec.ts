@@ -90,4 +90,46 @@ describe('GetDentalPatientsHandler', () => {
     ).rejects.toBe(error);
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
+
+  it('does not return or search private profile fields for dentists', async () => {
+    const findMany = jest.fn().mockResolvedValue([{
+      patientNumber: '12',
+      personDentalPatient: {
+        person: {
+          id: 'person-1',
+          firstName: 'Alice',
+          lastName: 'Example',
+        },
+      },
+    }]);
+    const count = jest.fn().mockResolvedValue(1);
+    const prisma = {
+      personDentalPatientAffiliation: { findMany, count },
+      $transaction: jest.fn().mockImplementation((operations: Promise<unknown>[]) =>
+        Promise.all(operations),
+      ),
+    };
+    const staffAccess = { verify: jest.fn().mockResolvedValue({ role: 'DENTIST' }) };
+    const handler = new GetDentalPatientsHandler(prisma as never, staffAccess as never);
+
+    const result = await handler.execute(new GetDentalPatientsQuery('dentist', {
+      organizationDentalClinicId: 'clinic-1',
+      search: 'Alice',
+      page: 1,
+      pageSize: 20,
+    }));
+
+    expect(result.patients).toEqual([{
+      personId: 'person-1',
+      patientNumber: '12',
+      firstName: 'Alice',
+      lastName: 'Example',
+    }]);
+    const args = findMany.mock.calls[0][0];
+    expect(args.select.personDentalPatient.select.person.select).not.toHaveProperty('phone');
+    expect(args.select.personDentalPatient.select.person.select).not.toHaveProperty('birthDate');
+    expect(JSON.stringify(args.where)).not.toContain('identityDocuments');
+    expect(JSON.stringify(args.where)).not.toContain('phone');
+  });
+
 });
