@@ -46,7 +46,7 @@ export class GetDentalPatientsHandler implements IQueryHandler<
     ];
     if (!isDentist) {
       searchFields.push(
-        { nickname: { contains: search, mode: 'insensitive' } },
+        { nickname: { contains: search ?? '', mode: 'insensitive' } },
         { phone: { contains: search ?? '' } },
         {
           identityDocuments: {
