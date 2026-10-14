@@ -41,16 +41,16 @@ export class GetDentalPatientsHandler implements IQueryHandler<
     const isDentist = role === 'DENTIST';
     const search = query.search || undefined;
     const searchFields: Prisma.PersonWhereInput[] = [
-      { firstName: { contains: search, mode: 'insensitive' } },
+      { firstName: { contains: search ?? '', mode: 'insensitive' } },
       { lastName: { contains: search, mode: 'insensitive' } },
     ];
     if (!isDentist) {
       searchFields.push(
         { nickname: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
+        { phone: { contains: search ?? '' } },
         {
           identityDocuments: {
-            some: { normalizedValue: search?.toUpperCase() },
+            some: { normalizedValue: (search ?? '').toUpperCase() },
           },
         },
       );
