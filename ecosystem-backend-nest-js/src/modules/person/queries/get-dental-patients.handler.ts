@@ -42,7 +42,7 @@ export class GetDentalPatientsHandler implements IQueryHandler<
     const search = query.search || undefined;
     const searchFields: Prisma.PersonWhereInput[] = [
       { firstName: { contains: search ?? '', mode: 'insensitive' } },
-      { lastName: { contains: search, mode: 'insensitive' } },
+      { lastName: { contains: search ?? '', mode: 'insensitive' } },
     ];
     if (!isDentist) {
       searchFields.push(
