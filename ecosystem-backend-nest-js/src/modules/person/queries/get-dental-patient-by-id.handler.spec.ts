@@ -88,7 +88,8 @@ describe('GetDentalPatientByIdHandler', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('returns only name and clinic patient number to dentists', async () => {
+
+  it('returns only permitted profile fields to dentists', async () => {
     staffAccess.verify.mockResolvedValue({ role: 'DENTIST' });
     const findUnique = jest.fn().mockResolvedValue({
       patientNumber: '5',
@@ -96,17 +97,19 @@ describe('GetDentalPatientByIdHandler', () => {
         person: {
           id: 'person-1',
           version: 3,
-          firstName: 'สมหญิง',
-          lastName: 'ใจดี',
-          nickname: 'หญิง',
+          firstName: 'Alice',
+          lastName: 'Example',
+          nickname: 'Ali',
           phone: '0899999999',
-          birthDate: new Date('1990-01-01'),
-          identityDocuments: [{
-            type: 'THAI_CID',
-            issuingCountry: 'TH',
-            normalizedValue: '1234567890123',
-            expiresAt: null,
-          }],
+          birthDate: null,
+          identityDocuments: [
+            {
+              type: 'THAI_CID',
+              issuingCountry: 'TH',
+              normalizedValue: '1234567890123',
+              expiresAt: null,
+            },
+          ],
         },
       },
     });
@@ -115,15 +118,16 @@ describe('GetDentalPatientByIdHandler', () => {
       staffAccess as never,
     );
 
-    await expect(handler.execute(
-      new GetDentalPatientByIdQuery('clerk-dentist', 'person-1', 'clinic-1'),
-    )).resolves.toEqual({
+    await expect(
+      handler.execute(
+        new GetDentalPatientByIdQuery('dentist', 'person-1', 'clinic-1'),
+      ),
+    ).resolves.toEqual({
       personId: 'person-1',
       version: 3,
       patientNumber: '5',
-      firstName: 'สมหญิง',
-      lastName: 'ใจดี',
+      firstName: 'Alice',
+      lastName: 'Example',
     });
   });
-
 });
