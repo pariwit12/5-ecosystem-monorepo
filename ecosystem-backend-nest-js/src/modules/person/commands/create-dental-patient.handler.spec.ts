@@ -197,7 +197,7 @@ describe('CreateDentalPatientHandler', () => {
     expect(
       patientNumberService.allocateNextInTransaction,
     ).not.toHaveBeenCalled();
-
+  });
 
   it('rejects patient creation by receptionists', async () => {
     const tx = {
