@@ -82,7 +82,11 @@ describe('CreateDentalPatientHandler', () => {
       userAccount: {
         findUnique: jest.fn().mockResolvedValue({
           person: {
-            staff: { clinicAffiliations: [{ personStaffId: 'staff-1', role: 'ADMIN' }] },
+            staff: {
+              clinicAffiliations: [
+                { personStaffId: 'staff-1', role: 'ADMIN' },
+              ],
+            },
           },
         }),
       },
@@ -143,7 +147,11 @@ describe('CreateDentalPatientHandler', () => {
       userAccount: {
         findUnique: jest.fn().mockResolvedValue({
           person: {
-            staff: { clinicAffiliations: [{ personStaffId: 'staff-1', role: 'ADMIN' }] },
+            staff: {
+              clinicAffiliations: [
+                { personStaffId: 'staff-1', role: 'ADMIN' },
+              ],
+            },
           },
         }),
       },
