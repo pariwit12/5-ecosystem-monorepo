@@ -87,4 +87,43 @@ describe('GetDentalPatientByIdHandler', () => {
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('returns only name and clinic patient number to dentists', async () => {
+    staffAccess.verify.mockResolvedValue({ role: 'DENTIST' });
+    const findUnique = jest.fn().mockResolvedValue({
+      patientNumber: '5',
+      personDentalPatient: {
+        person: {
+          id: 'person-1',
+          version: 3,
+          firstName: 'สมหญิง',
+          lastName: 'ใจดี',
+          nickname: 'หญิง',
+          phone: '0899999999',
+          birthDate: new Date('1990-01-01'),
+          identityDocuments: [{
+            type: 'THAI_CID',
+            issuingCountry: 'TH',
+            normalizedValue: '1234567890123',
+            expiresAt: null,
+          }],
+        },
+      },
+    });
+    const handler = new GetDentalPatientByIdHandler(
+      { personDentalPatientAffiliation: { findUnique } } as never,
+      staffAccess as never,
+    );
+
+    await expect(handler.execute(
+      new GetDentalPatientByIdQuery('clerk-dentist', 'person-1', 'clinic-1'),
+    )).resolves.toEqual({
+      personId: 'person-1',
+      version: 3,
+      patientNumber: '5',
+      firstName: 'สมหญิง',
+      lastName: 'ใจดี',
+    });
+  });
+
 });
