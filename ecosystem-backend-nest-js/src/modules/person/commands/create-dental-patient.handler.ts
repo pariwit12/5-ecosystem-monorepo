@@ -61,7 +61,24 @@ export class CreateDentalPatientHandler implements ICommandHandler<
                           organization: { deletedAt: null },
                         },
                       },
-                      select: { personStaffId: true },
+                      select: { role: true },
+                      take: 1,
+                    },
+                  },
+                },
+                dentist: {
+                  select: {
+                    clinicAffiliations: {
+                      where: {
+                        organizationDentalClinicId:
+                          body.organizationDentalClinicId,
+                        organizationDentalClinic: {
+                          deletedAt: null,
+                          organization: { deletedAt: null },
+                        },
+                      },
+                      select: { personDentistId: true },
+                      take: 1,
                     },
                   },
                 },
@@ -70,8 +87,23 @@ export class CreateDentalPatientHandler implements ICommandHandler<
           },
         });
 
-        if (!creator?.person?.staff?.clinicAffiliations.length) {
-          throw new ForbiddenException('ผู้สร้างต้องเป็นพนักงานของคลินิกนี้');
+        const staffRole = creator?.person?.staff?.clinicAffiliations[0]?.role;
+        const isAdmin = staffRole === 'ADMIN';
+        const isDentist =
+          (creator?.person?.dentist?.clinicAffiliations.length ?? 0) > 0;
+
+        if (!isAdmin && !isDentist) {
+          throw new ForbiddenException(
+            'เฉพาะทันตแพทย์หรือผู้ดูแลระบบของคลินิกนี้เท่านั้นที่สร้างคนไข้ได้',
+          );
+        }
+
+        // Dentists can create the patient profile, but identity numbers remain
+        // restricted to admins until a more specific product rule is approved.
+        if (!isAdmin && (body.cid || body.identityDocument)) {
+          throw new ForbiddenException(
+            'ทันตแพทย์ไม่มีสิทธิ์บันทึกเลขเอกสารยืนยันตัวตน',
+          );
         }
 
         const identityDocument = body.identityDocument
