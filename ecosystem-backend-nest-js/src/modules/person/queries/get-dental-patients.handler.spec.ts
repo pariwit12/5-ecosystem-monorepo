@@ -91,7 +91,6 @@ describe('GetDentalPatientsHandler', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-
   it('returns only permitted profile fields to dentists', async () => {
     const findMany = jest.fn().mockResolvedValue([
       {
@@ -108,9 +107,11 @@ describe('GetDentalPatientsHandler', () => {
     const count = jest.fn().mockResolvedValue(1);
     const prisma = {
       personDentalPatientAffiliation: { findMany, count },
-      $transaction: jest.fn().mockImplementation(
-        (operations: Promise<unknown>[]) => Promise.all(operations),
-      ),
+      $transaction: jest
+        .fn()
+        .mockImplementation((operations: Promise<unknown>[]) =>
+          Promise.all(operations),
+        ),
     };
     const staffAccess = {
       verify: jest.fn().mockResolvedValue({ role: 'DENTIST' }),
