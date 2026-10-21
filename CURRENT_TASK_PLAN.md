@@ -76,7 +76,7 @@
 ### ไฟล์ที่ไม่ควรแก้โดยไม่มีหลักฐานว่าจำเป็น
 
 - Backend, Prisma schema/migrations, API contracts และ access-control
-- `VERIFICATION_TABLE.md` ในรอบนี้ไม่ต้องลงเครื่องหมายอนุมัติ เพราะแผนกำลังถูกแก้ไข; ตรวจแล้วแถว `Approve CURRENT_TASK_PLAN` ว่างทุกช่องอยู่แล้ว ให้คงว่างทั้งหมด
+- `VERIFICATION_TABLE.md`: เนื่องจากมีการแก้ไขแผนในรอบนี้ ให้ reset เครื่องหมายทุกช่องในแถว `Approve CURRENT_TASK_PLAN` เป็นว่างทั้งหมด และห้ามลงอนุมัติในรอบเดียวกับการแก้แผน
 - เอกสาร migration ที่ไม่เกี่ยวข้อง
 - `docs/snippets/work-schedule/*` เว้นแต่ต้องแก้ตัวอย่างเพื่อให้เอกสารอธิบาย implementation ปัจจุบันได้ถูกต้อง โดยไม่ย้าย snippet เข้า `src/`
 
@@ -160,4 +160,4 @@ pnpm run verify
 - [ ] เอกสารที่แก้มีความจำเป็นและสอดคล้องกับโค้ดจริง
 - [ ] ตรวจ diff แล้วไม่มีการเปลี่ยนแปลงนอกขอบเขต
 - [ ] รายงานผล typecheck/lint/build/test ตามที่รันจริง
-- [ ] `VERIFICATION_TABLE.md` แถว `Approve CURRENT_TASK_PLAN` ยังคงว่างทั้งหมดในรอบที่แก้แผน
+- [ ] `VERIFICATION_TABLE.md` แถว `Approve CURRENT_TASK_PLAN` ถูก reset เป็นช่องว่างทั้งหมดในรอบที่แก้แผน
