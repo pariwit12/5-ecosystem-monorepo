@@ -24,9 +24,9 @@ export interface DentalPatientListItem {
   patientNumber: string;
   firstName: string | null;
   lastName: string | null;
-  nickname: string | null;
-  phone: string | null;
-  birthDate: Date | null;
+  nickname?: string | null;
+  phone?: string | null;
+  birthDate?: Date | null;
 }
 
 export interface GetDentalPatientsResponse {

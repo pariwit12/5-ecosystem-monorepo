@@ -90,4 +90,54 @@ describe('GetDentalPatientsHandler', () => {
     ).rejects.toBe(error);
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
+
+  it('returns only permitted profile fields to dentists', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        patientNumber: '12',
+        personDentalPatient: {
+          person: {
+            id: 'person-1',
+            firstName: 'Alice',
+            lastName: 'Example',
+          },
+        },
+      },
+    ]);
+    const count = jest.fn().mockResolvedValue(1);
+    const prisma = {
+      personDentalPatientAffiliation: { findMany, count },
+      $transaction: jest
+        .fn()
+        .mockImplementation((operations: Promise<unknown>[]) =>
+          Promise.all(operations),
+        ),
+    };
+    const staffAccess = {
+      verify: jest.fn().mockResolvedValue({ role: 'DENTIST' }),
+    };
+    const handler = new GetDentalPatientsHandler(
+      prisma as never,
+      staffAccess as never,
+    );
+
+    await expect(
+      handler.execute(
+        new GetDentalPatientsQuery('dentist', {
+          organizationDentalClinicId: 'clinic-1',
+          page: 1,
+          pageSize: 20,
+        }),
+      ),
+    ).resolves.toMatchObject({
+      patients: [
+        {
+          personId: 'person-1',
+          patientNumber: '12',
+          firstName: 'Alice',
+          lastName: 'Example',
+        },
+      ],
+    });
+  });
 });
