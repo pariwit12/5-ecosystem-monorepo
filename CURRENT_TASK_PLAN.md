@@ -230,3 +230,12 @@ pnpm run verify
 - ตรวจ `package.json` และ `.github/workflows/ci.yml` ยืนยันว่า `pnpm run verify` ครอบคลุม Prisma validate/generate, backend/frontend typecheck, backend/frontend lint, backend/frontend build, backend tests และ migration tests
 - ดังนั้นผล CI นี้ยืนยัน checks เหล่านั้นผ่านบน Ubuntu/Node.js 22 สำหรับ commit ข้างต้น; ไม่ใช่การยืนยัน visual/responsive browser testing ซึ่งยังไม่ได้ทำ
 - ไม่พบเหตุให้เปลี่ยน Business Logic เพิ่มเติมหลัง CI ผ่าน; การแก้ path safety และ regression test ที่ได้รับอนุญาตก่อนหน้านี้ยังคงเป็นการแก้เฉพาะความถูกต้องของการตรวจ path ข้าม platform
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบและบันทึกผลรอบปัจจุบัน)
+
+- อ่านแผนและตรวจไฟล์ runtime จริงจาก branch `main` อีกครั้ง: `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx` และ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`; ยืนยันว่า UI ตามแผนมีอยู่แล้ว และ href, role grouping, query/auth/error behavior และการส่งต่อ `placeId` ยังตรงตามข้อกำหนด
+- ไม่แก้ runtime เพิ่ม เพราะไม่พบปัญหาที่มีหลักฐานรองรับ และการแก้เพิ่มไม่จำเป็นต่อเกณฑ์งานในแผน
+- ใช้หลักฐาน CI ที่บันทึกไว้ในรอบก่อน: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify` ซึ่งครอบคลุม typecheck/lint/build และ tests ตาม workflow; หลักฐานนี้ผูกกับ commit ดังกล่าว ไม่ใช่การรันใหม่ในรอบนี้
+- ไม่ได้รันคำสั่ง CLI หรือ browser visual/responsive test ใน environment นี้ จึงไม่อ้างว่ามีการทดสอบเหล่านั้นในรอบปัจจุบัน
+- ทำเครื่องหมายช่องที่ 2 ของแถว `Coding Agent Check Complete Implement` สำหรับรอบ Implementor นี้ โดยอาศัย implementation ที่ตรวจยืนยันและผล CI ที่มีบันทึกไว้; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`
