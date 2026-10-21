@@ -162,7 +162,6 @@ pnpm run verify
 - [ ] รายงานผล typecheck/lint/build/test ตามที่รันจริง
 - [ ] `VERIFICATION_TABLE.md` แถว `Approve CURRENT_TASK_PLAN` ถูก reset เป็นช่องว่างทั้งหมดในรอบที่แก้แผน
 
-
 ## Implementation Progress
 
 ### รอบ Implementor: 2026-10-21
@@ -175,3 +174,10 @@ pnpm run verify
 - การเปลี่ยนแปลงถูกบันทึกเป็น commits บน `main`: `86ccc51` (หน้าเลือกสถานที่) และ `c72e7b1` (หน้า Admin menu).
 - ข้อจำกัดการตรวจสอบ: environment นี้ไม่มี working copy/local CLI จึงยังไม่ได้รัน typecheck, lint, build หรือ `pnpm run verify`; GitHub status ที่ตรวจหลัง commit `c72e7b1` แสดง Vercel เป็น `pending`. ยังไม่อ้างว่าการทดสอบผ่าน และยังไม่ทำเครื่องหมาย Coding Agent Check Complete จนกว่าจะมีผลตรวจที่ยืนยันได้.
 - ยังไม่ได้แก้เอกสารอื่นหรือเพิ่ม tests เนื่องจากไม่พบ test script ใน `ecosystem-frontend-next-js/package.json` และไม่มี local environment สำหรับรัน checks.
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบต่อ)
+
+- อ่านซ้ำไฟล์ runtime ทั้งสองหน้า, `layout.tsx`, route `page.tsx`, `globals.css`, `AGENTS.md` และ frontend `package.json` จาก `main`; ยืนยันว่าหน้า UI ที่แผนระบุถูกปรับแล้ว และ UUIDv7 validation/redirect กับ navigation destinations ยังอยู่ตามเดิม
+- ตรวจ branch head ปัจจุบัน: `fb374682327caa35fdfac1d2ca33af15344e7960` (commit บันทึก progress) และตรวจ combined status ของ `c72e7b1`; พบ Vercel ยังเป็น `pending`
+- ไม่มี working copy หรือ CLI ใน environment นี้ จึงไม่สามารถรัน typecheck/lint/build/verify หรือยืนยันผล visual browser ได้; ไม่ทำเครื่องหมาย Coding Agent Check Complete เพราะเกณฑ์ตรวจสอบยังไม่มีหลักฐานว่าผ่าน
+- ไม่พบประเด็น Business Logic ใหม่ที่ต้องถามผู้ใช้ และไม่ได้เปลี่ยนโค้ด runtime ในรอบตรวจสอบนี้
