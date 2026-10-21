@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve } from 'node:path';
+import path, { win32 } from 'node:path';
 import { databaseTargetFingerprint } from './database-target.mjs';
 
 const acknowledgements = {
@@ -8,13 +8,22 @@ const acknowledgements = {
 };
 
 const outsideRepository = (repositoryRoot, setting) => {
-  const path = resolve(setting);
-  const relativePath = relative(repositoryRoot, path);
+  // Migration configuration may be validated on a different OS from the one
+  // whose paths it describes (for example, Windows paths in Linux CI tests).
+  const pathApi =
+    win32.isAbsolute(repositoryRoot) || win32.isAbsolute(setting)
+      ? win32
+      : path;
+  const resolvedRepositoryRoot = pathApi.resolve(repositoryRoot);
+  const resolvedPath = pathApi.resolve(setting);
+  const relativePath = pathApi.relative(resolvedRepositoryRoot, resolvedPath);
   return {
-    path,
+    path: resolvedPath,
     outside:
       relativePath !== '' &&
-      (relativePath.startsWith('..') || isAbsolute(relativePath)),
+      (relativePath === '..' ||
+        relativePath.startsWith(`..${pathApi.sep}`) ||
+        pathApi.isAbsolute(relativePath)),
   };
 };
 
