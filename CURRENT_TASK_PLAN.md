@@ -267,3 +267,14 @@ pnpm run verify
 - อ้างอิงผล CI ที่มีบันทึกในแผน: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; ผลนี้เป็นหลักฐานของ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
 - ไม่ได้รัน CLI หรือ browser visual/responsive tests ใน environment นี้; จึงไม่อ้างว่าทดสอบเหล่านั้นแล้ว และไม่ถือ Vercel status เป็นหลักฐานแทน CI
 - บันทึก progress รอบนี้โดยไม่แก้เนื้อหาแผนส่วนอื่น และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบและบันทึกผลรอบนี้)
+
+- อ่านแผนและไฟล์ runtime จริงจาก `main`: `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`, `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`, `layout.tsx` และ `ecosystem-frontend-next-js/package.json`
+- ยืนยันว่า UI ตามแผนมีอยู่แล้ว: หน้าเลือกสถานที่มี header, empty state, responsive card grids, แยก Admin/Staff และ focus states; หน้า Admin มี header, Admin Mode และเมนู Position/Staff แบบ responsive
+- ยืนยันว่า query/auth, `PERSON_NOT_FOUND` redirect, toast เมื่อ refresh ล้มเหลวแต่มีข้อมูลเดิม, `DataStateWrapper`, role grouping, Staff href `/`, Admin routes และ UUIDv7 validation/redirect ยังอยู่ตามเดิม; ไม่พบเหตุที่มีหลักฐานรองรับให้แก้ runtime code หรือ Business Logic เพิ่ม
+- ตรวจ combined status ของ commit ล่าสุดที่พบ `bd225cbd5919e690b0b0059400fca30b772dba76`; พบเพียง Vercel `success` จึงไม่นับเป็นหลักฐาน CI/test ใหม่
+- อ้างอิงผล CI ที่บันทึกไว้ก่อนหน้า: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; ผลนี้เป็นของ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
+- ไม่ได้รัน CLI หรือ browser visual/responsive tests ใน environment นี้; จึงไม่อ้างว่าทดสอบเหล่านั้นแล้ว
+- บันทึก progress โดยไม่แก้รายละเอียดส่วนอื่นของแผน และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
