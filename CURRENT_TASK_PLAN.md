@@ -222,3 +222,11 @@ pnpm run verify
 - เพิ่ม regression test ใน `ecosystem-backend-nest-js/scripts/migration/identity-apply-safety.test.mjs` สำหรับ repository-local POSIX path ขณะที่คง test Windows path ที่ล้มเหลวใน Ubuntu CI
 - บันทึก runtime fix และ regression test บน `main` ใน commits `13cce9b186eb568c9d8ea83e9ea17813f6816955` และ `f7868108754e4d882185b11570410a6de062aaa4` ตามลำดับ
 - ต้องตรวจ GitHub Actions run ที่เกิดจาก commits เหล่านี้ก่อนสรุปผล; ยังไม่อ้างว่า tests ผ่านและยังไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` จนกว่าจะมีผล CI ที่ยืนยันได้
+
+
+### รอบ Implementor: 2026-10-21 (ยืนยัน CI หลังแก้ migration path safety)
+
+- ตรวจ GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c`: workflow `CI` และ job `Verify monorepo` จบด้วย `success`; ขั้นติดตั้ง dependencies และ `pnpm run verify` ผ่าน
+- ตรวจ `package.json` และ `.github/workflows/ci.yml` ยืนยันว่า `pnpm run verify` ครอบคลุม Prisma validate/generate, backend/frontend typecheck, backend/frontend lint, backend/frontend build, backend tests และ migration tests
+- ดังนั้นผล CI นี้ยืนยัน checks เหล่านั้นผ่านบน Ubuntu/Node.js 22 สำหรับ commit ข้างต้น; ไม่ใช่การยืนยัน visual/responsive browser testing ซึ่งยังไม่ได้ทำ
+- ไม่พบเหตุให้เปลี่ยน Business Logic เพิ่มเติมหลัง CI ผ่าน; การแก้ path safety และ regression test ที่ได้รับอนุญาตก่อนหน้านี้ยังคงเป็นการแก้เฉพาะความถูกต้องของการตรวจ path ข้าม platform
