@@ -199,3 +199,10 @@ pnpm run verify
 - ตรวจ GitHub commit ล่าสุดที่พบ `cd2882c4cf3a7a8f073eaa0c620a5f3851bf9b32`; combined status แสดง Vercel `success`. สถานะนี้ยืนยันเฉพาะ check ของ Vercel ไม่ใช่ผล typecheck/lint/build โดยตรง
 - Environment นี้ไม่มี working copy/local CLI จึงยังรัน `pnpm run typecheck:frontend`, `pnpm run lint:frontend`, `pnpm run build:frontend` หรือ `pnpm run verify` ไม่ได้ และยังยืนยัน responsive behavior ใน browser ไม่ได้
 - ไม่เปลี่ยน Business Logic, API, auth, redirect, role grouping, UUIDv7 validation หรือ navigation; ไม่ทำเครื่องหมาย Coding Agent Check Complete เพราะยังไม่มีหลักฐานผลตรวจครบตามเกณฑ์แผน
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบเบื้องต้นผ่าน GitHub Actions)
+
+- ตามคำขอผู้ใช้ ให้ใช้ workflow CI ที่มีอยู่ใน `.github/workflows/ci.yml` ซึ่ง trigger เมื่อ push ไป `main` หรือเปิด PR เข้า `main`; workflow ติดตั้ง dependencies ด้วย `pnpm install --frozen-lockfile` แล้วรัน `pnpm run verify`.
+- บันทึก progress นี้บน `main` เพื่อให้ CI workflow ที่กำหนด trigger แบบ push เริ่มตรวจสอบ repository ได้ โดยไม่ได้แก้ runtime code หรือเปลี่ยน Business Logic.
+- ต้องตรวจสอบผล run/check ของ commit นี้ก่อนสรุปว่า test ผ่าน; Vercel status เพียงอย่างเดียวไม่ใช่หลักฐานของ `pnpm run verify` และยังไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` จนกว่าจะเห็นผล CI ที่ยืนยันได้.
