@@ -4,4 +4,160 @@
 
 ปรับหน้า UI ของโปรแกรม Work-Schedule ให้เรียบร้อยพร้อมสำหรับใช้งานจริง
 
-## 2.
+## 2. ขอบเขตงานและข้อจำกัด
+
+- เป้าหมายหลักคือปรับปรุง UI ของ Work-Schedule ใน Next.js Frontend ปัจจุบัน ไม่ใช่แอป Express/React รุ่นเก่า
+- ผู้ใช้อนุญาตให้ปรับ `AGENTS.md` และเอกสารใน `docs/` ได้ทั้งหมด แต่ให้แก้เฉพาะเอกสารที่จำเป็นต่อการอธิบายหรือรักษาขอบเขตงานนี้ ห้ามแก้เอกสาร migration ที่ไม่เกี่ยวข้องเพียงเพราะได้รับอนุญาตให้แก้ได้
+- เน้นงานนำเสนอ (layout, spacing, responsive behavior, typography, visual consistency, accessible controls) และรักษา Business Logic, API calls, authentication, redirects, role grouping, query/cache behavior และเส้นทาง navigation เดิม เว้นแต่จำเป็นต้องแก้เพื่อให้ UI ใช้งานได้และมีหลักฐานรองรับ
+- ห้ามเพิ่ม backend endpoint, เปลี่ยน schema/database, เปลี่ยน access-control, เปลี่ยนสิทธิ์ของ Admin/Staff หรือสร้างฟังก์ชันการทำงานใหม่ที่ไม่ได้มีอยู่ในโค้ด
+- ใช้ component และ styling convention ที่มีอยู่ใน frontend ก่อนเพิ่ม dependency หรือสร้าง design system ใหม่
+- ไม่แก้ตัวอย่างใน `docs/snippets/work-schedule/` ให้กลายเป็น runtime implementation; snippets เป็นตัวอย่างเอกสารและอยู่นอก `src/`
+- หากระหว่างตรวจโค้ดพบว่าการปรับ UI ต้องตัดสินใจเรื่อง Business Logic, ปลายทางของลิงก์ Staff หรือพฤติกรรมที่ยังไม่ชัดเจน ให้หยุดและถามผู้ใช้ก่อน ไม่ให้ Implementor คิดแทน
+
+## 3. Business Logic ก่อนเริ่ม
+
+### หน้าเลือกสถานที่ทำงาน
+
+ไฟล์ `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx` ทำงานดังนี้ตามโค้ดที่ตรวจแล้ว:
+
+1. ใช้ Clerk `useAuth()` เพื่ออ่าน `getToken`, `userId`, `isLoaded` และเรียก React Query ผ่าน `workScheduleLogInQueries.userRolesByClerkId(userId, getToken, [ErrorCode.PERSON_NOT_FOUND])`
+2. หาก query พบ `PERSON_NOT_FOUND` จะ redirect ไป `/person/new?error=...` และแสดงข้อความระหว่าง redirect เพื่อป้องกัน UI flash
+3. แสดง `DataStateWrapper` ตามสถานะ auth/query; เมื่อ fetch ซ้ำล้มเหลวแต่มีข้อมูลเดิม จะแสดง toast แจ้งผู้ใช้ว่าดูข้อมูลเดิมได้
+4. แยกข้อมูลเป็น `placesAsAdmin` และ `placesAsStaff` โดย fallback เป็น array ว่าง
+5. ถ้าไม่มีสถานที่ทั้งสองกลุ่ม แสดง empty state
+6. ถ้ามีข้อมูล แสดงการ์ด Admin และ Staff แยกกลุ่มกัน การ์ด Admin นำไป `/work-schedule/admin/${place.id}`; ลิงก์ Staff ปัจจุบันชี้ไป `/` และมี comment ว่าให้ปรับตามการใช้งานจริง จึงห้ามเปลี่ยนปลายทางเองโดยไม่มีข้อกำหนดเพิ่ม
+
+### หน้าเมนูผู้ดูแลของสถานที่
+
+ไฟล์ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/page.tsx` อ่าน `placeId` จาก route params แล้วส่งให้ client component โดยไม่ได้เพิ่ม logic อื่น
+
+ไฟล์ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/layout.tsx` ตรวจรูปแบบ `placeId` ด้วย regex UUIDv7 และ redirect ไป `/work-schedule?error=${PageErrorList.INVALID_ID}` เมื่อไม่ถูกต้อง ต้องรักษาการตรวจนี้ไว้
+
+ไฟล์ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx` แสดงหน้า Admin Mode และลิงก์หลักสองรายการ:
+- จัดการตารางเวร: `/work-schedule/admin/${placeId}/position`
+- จัดการพนักงาน: `/work-schedule/admin/${placeId}/staff`
+
+ต้องคง href และค่า `placeId` ที่ส่งต่อไว้เหมือนเดิม
+
+### รูปแบบโครงการที่เกี่ยวข้อง
+
+- Frontend คือ Next.js App Router, React และ TypeScript; package มี Tailwind CSS, `lucide-react`, shadcn/Radix UI และ Sonner อยู่แล้ว
+- Root scripts ที่ยืนยันจาก `package.json`: `pnpm run typecheck:frontend`, `pnpm run lint:frontend`, `pnpm run build:frontend` และ `pnpm run verify`
+- `AGENTS.md` กำหนดให้รักษา behavior เดิม, เพิ่ม/ปรับ test สำหรับ behavior ที่ไม่ trivial, รัน checks ที่เกี่ยวข้อง และไม่ commit โดยอัตโนมัติใน workflow ที่แก้ไฟล์ local
+- `docs/README.md` อธิบายว่า `docs/snippets/` เก็บตัวอย่างที่ยังไม่สมบูรณ์และอยู่นอก application compilation
+
+## 4. Business Logic ที่คาดหวังหลัง Implement
+
+- ข้อมูลและการแบ่งกลุ่ม Admin/Staff ต้องมาจาก query และ fields เดิม ไม่สร้างข้อมูลจำลองเพื่อใช้แทนข้อมูลจริง
+- Authentication loading, query loading/error, redirect เมื่อ `PERSON_NOT_FOUND`, toast เมื่อ refresh ล้มเหลวแต่ยังมีข้อมูลเดิม และ empty state ต้องยังทำงานเหมือนเดิม
+- การ์ดสถานที่ Admin ยังคงเปิดหน้า admin ของสถานที่ที่เลือก; การ์ดเมนู Admin ยังคงเปิด route ของ position และ staff ตามเดิม
+- ลิงก์ Staff คงปลายทางปัจจุบัน `/` จนกว่าจะมีการตัดสินใจจากผู้ใช้
+- การเปลี่ยนแปลงหลักเป็นการปรับความอ่านง่าย ความสม่ำเสมอ การจัดวาง และ responsive UI ไม่ใช่การเปลี่ยน workflow หรือสิทธิ์
+- เหตุผล: ลดความเสี่ยงที่งาน UI จะทำให้ authentication, route protection, data fetching หรือ workflow ตารางงานที่มีอยู่เสียหาย
+
+## 5. โครงสร้างไฟล์ที่คาดหวัง
+
+### ไฟล์ที่คาดว่าต้องแก้
+
+1. `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`
+   - ปรับ UI ของหน้าเลือกสถานที่ทำงาน, header, empty state และการ์ด Admin/Staff ให้เป็นระบบและ responsive
+   - รักษา query, redirect, toast, DataStateWrapper, data fields และ href เดิม
+2. `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`
+   - ปรับ UI หน้าเมนูผู้ดูแลให้มี header, card hierarchy, spacing และ responsive layout ที่สอดคล้องกับหน้า Work-Schedule
+   - รักษาข้อความ/ความหมายของเมนู, `placeId` และ href เดิม เว้นแต่การเปลี่ยนข้อความเป็นเพียงการปรับความชัดเจนโดยไม่เปลี่ยนความหมาย
+
+### ไฟล์ที่อาจแก้เมื่อมีเหตุผลจากการตรวจโค้ด
+
+- `AGENTS.md`: เพิ่มข้อกำหนดเฉพาะสำหรับงาน UI/การรักษา behavior ได้หากจำเป็นและไม่ขัดกับคำสั่งเดิม
+- `docs/README.md` หรือ `docs/development.md`: อัปเดตเฉพาะเมื่อจำเป็นต้องบันทึก workflow หรือคำสั่งตรวจสอบที่เปลี่ยนจริง
+- test files ที่มีอยู่ของหน้า/feature ที่ได้รับผลกระทบ: ปรับหรือเพิ่มเฉพาะตามโครงสร้าง test ที่พบจริง
+- shared component หรือ stylesheet: แก้ได้เมื่อยืนยันแล้วว่าหน้าทั้งสองใช้ร่วมกันและการแก้ไม่ทำให้หน้าอื่นเสียหาย
+
+### ไฟล์ที่ไม่ควรแก้โดยไม่มีหลักฐานว่าจำเป็น
+
+- Backend, Prisma schema/migrations, API contracts และ access-control
+- `VERIFICATION_TABLE.md` ในรอบนี้ไม่ต้องลงเครื่องหมายอนุมัติ เพราะแผนกำลังถูกแก้ไข; ตรวจแล้วแถว `Approve CURRENT_TASK_PLAN` ว่างทุกช่องอยู่แล้ว ให้คงว่างทั้งหมด
+- เอกสาร migration ที่ไม่เกี่ยวข้อง
+- `docs/snippets/work-schedule/*` เว้นแต่ต้องแก้ตัวอย่างเพื่อให้เอกสารอธิบาย implementation ปัจจุบันได้ถูกต้อง โดยไม่ย้าย snippet เข้า `src/`
+
+## 6. รายละเอียดงานตามลำดับ
+
+### ขั้นที่ 1: ตรวจ UI และส่วนประกอบที่ใช้ร่วมกัน
+
+- อ่านไฟล์หน้า Work-Schedule, หน้า Admin, shared layout/styles และ UI components ที่จะใช้จริงก่อนแก้
+- ตรวจ route ย่อยและ tests ที่เกี่ยวข้อง เพื่อไม่ให้การปรับ UI ไปเปลี่ยนเส้นทางหรือ flow ที่มีอยู่
+- เลือกใช้ component/style convention ที่มีอยู่; หลีกเลี่ยงการเพิ่ม dependency
+- **เกณฑ์ผ่าน:** รายการไฟล์ที่จะเปลี่ยนมีเหตุผลจากโค้ดจริง และไม่มีการสมมติ API/field/route ใหม่
+
+### ขั้นที่ 2: ปรับหน้าเลือกสถานที่ทำงาน
+
+- จัด header และเนื้อหาให้มีลำดับชั้นชัดเจนและแสดงผลได้ดีทั้งจอเล็กและจอใหญ่
+- ปรับ empty state ให้สื่อว่าผู้ใช้ยังไม่มีสถานที่ทำงาน โดยไม่แสดงปุ่มสร้างที่ไม่มี handler/route รองรับ
+- ปรับการ์ด Admin/Staff ให้ชื่อสถานที่และ action อ่านง่าย, พื้นที่กดเหมาะสม และมี focus state ที่มองเห็นได้
+- รักษาสถานะ loading/fetching/error และการแยกกลุ่ม Admin/Staff
+- **เกณฑ์ผ่าน:** สถานะทั้ง empty, loading, error, stale data และมีสถานที่ยังสื่อสารได้ครบ; href และ data mapping ไม่เปลี่ยน
+
+### ขั้นที่ 3: ปรับหน้าเมนู Admin
+
+- ทำให้ header, ปุ่มกลับ, badge Admin Mode และเมนูทั้งสองมีลำดับชั้นและการจัดวางสอดคล้องกัน
+- ตรวจ responsive layout, keyboard focus, contrast และข้อความที่ไม่ล้นใน viewport แคบ
+- รักษาลิงก์ไป position/staff และไม่เพิ่มเมนูที่ไม่มี route/implementation
+- **เกณฑ์ผ่าน:** ทั้งสองเมนูยังไป route เดิมด้วย `placeId` ที่ถูกต้อง และหน้าใช้งานได้ในขนาดหน้าจอแคบ/กว้าง
+
+### ขั้นที่ 4: เอกสารและคำแนะนำสำหรับ Agent
+
+- แก้ `AGENTS.md` หรือเอกสารใน `docs/` เฉพาะเมื่อช่วยให้ขอบเขต UI, วิธีตรวจสอบ หรือข้อจำกัดที่ค้นพบชัดเจนขึ้น
+- ห้ามเขียนว่า test ผ่านหากไม่ได้รันจริง และห้ามบันทึกคำสั่งที่ไม่มีใน package scripts
+- **เกณฑ์ผ่าน:** เอกสารตรงกับโค้ดและคำสั่งจริง ไม่มีการเปลี่ยนเนื้อหา migration ที่ไม่เกี่ยวข้อง
+
+### ขั้นที่ 5: ตรวจสอบผลลัพธ์
+
+- ดู `git diff` และ `git status` เพื่อยืนยันว่าไม่มีไฟล์ไม่เกี่ยวข้องถูกเปลี่ยน
+- รัน checks ตามลำดับในหัวข้อ 8
+- **เกณฑ์ผ่าน:** typecheck, lint และ build ของ frontend ผ่าน; ไม่มี regression ของ routes, query, redirect หรือ role grouping; ถ้าคำสั่งใดรันไม่ได้ ให้รายงานเหตุผลจริงและอย่าอ้างว่าผ่าน
+
+## 7. ข้อควรระวังสำหรับ Implementor
+
+- ห้ามย้าย query หรือ auth logic เพียงเพื่อจัด markup ใหม่ หากไม่จำเป็น
+- ห้ามลบ `DataStateWrapper`, error handling, redirect, toast หรือ fetching indicator
+- ห้ามเปลี่ยน `ErrorCode.PERSON_NOT_FOUND`, `PageErrorList.INVALID_ID` หรือ regex UUIDv7 ในงาน UI นี้
+- ห้ามเปลี่ยน URL ของลิงก์ Admin, Staff, Position หรือ Staff management โดยพลการ
+- ห้ามทำให้การ์ด/ปุ่มที่ดูเหมือนกดได้ไม่มี action จริง และห้ามเพิ่ม action ปลอม
+- หากเปลี่ยน native link เป็น component อื่น ต้องรักษา semantics, keyboard navigation และ accessible name
+- หลีกเลี่ยงสี/spacing แบบ hard-code ที่ขัดกับ tokens หรือ patterns ที่มีอยู่; ตรวจ `globals.css` และ shared UI ก่อนเพิ่ม style ใหม่
+- อย่าแก้ shared styles แบบกว้างจนกระทบหน้าระบบอื่น; หากจำเป็นต้องแก้ global style ต้องมีเหตุผลชัดเจนและตรวจผลกระทบ
+- ห้ามเพิ่ม package โดยไม่จำเป็น และไม่แก้ lockfile หากไม่มีการเปลี่ยน dependency
+- อย่าแก้ migration docs, backend หรือ database เพราะอยู่นอกขอบเขต
+- ห้ามเพิ่ม snapshot/visual test framework ใหม่เพียงเพื่อ task นี้ หาก repository ไม่มีอยู่แล้ว; ใช้ checks ที่มีและ tests ที่โครงสร้างปัจจุบันรองรับ
+
+## 8. Tests และคำสั่งตรวจสอบ
+
+รันจาก repository root:
+
+```bash
+pnpm run typecheck:frontend
+pnpm run lint:frontend
+pnpm run build:frontend
+```
+
+จากนั้น หากไม่มีเหตุขัดข้องและสภาพแวดล้อมพร้อม ให้รัน:
+
+```bash
+pnpm run verify
+```
+
+- `pnpm run verify` รวม checks ของ backend, frontend, Prisma และ migration จึงอาจต้องใช้ environment ที่เหมาะสม; ห้ามใช้คำสั่งที่เปลี่ยน shared/production database
+- ตรวจ tests ที่มีอยู่จริงภายใต้ frontend ก่อนเลือกคำสั่ง test เฉพาะ; package frontend ที่ตรวจพบมี scripts `dev`, `build`, `start`, `typecheck`, `lint` แต่ไม่มี script `test` ที่ประกาศใน package.json
+- หากเพิ่ม/แก้ test ให้ใช้ test runner ที่ repository มีอยู่จริง ห้ามสมมติว่ามี runner หรือเพิ่ม dependency โดยไม่มีเหตุผล
+- การทดสอบ responsive/visual ใน browser ที่ environment ไม่มีให้ทำ ให้ระบุเป็นข้อจำกัดและขอให้ผู้ใช้ตรวจด้วยตนเอง แทนการอ้างว่าทดสอบแล้ว
+
+## 9. Definition of Done
+
+- [ ] หน้า `/work-schedule` ได้รับการปรับ UI โดยรักษา query, auth/error behavior, role grouping และ href เดิม
+- [ ] หน้า `/work-schedule/admin/[placeId]` ได้รับการปรับ UI โดยรักษา validation และ navigation เดิม
+- [ ] Layout รองรับ viewport แคบและกว้าง พร้อม keyboard focus ที่มองเห็นได้
+- [ ] ไม่มี backend, schema, access-control หรือ business workflow เปลี่ยนโดยไม่ได้รับอนุญาต
+- [ ] เอกสารที่แก้มีความจำเป็นและสอดคล้องกับโค้ดจริง
+- [ ] ตรวจ diff แล้วไม่มีการเปลี่ยนแปลงนอกขอบเขต
+- [ ] รายงานผล typecheck/lint/build/test ตามที่รันจริง
+- [ ] `VERIFICATION_TABLE.md` แถว `Approve CURRENT_TASK_PLAN` ยังคงว่างทั้งหมดในรอบที่แก้แผน
