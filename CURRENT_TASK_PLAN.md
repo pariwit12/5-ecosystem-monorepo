@@ -278,3 +278,12 @@ pnpm run verify
 - อ้างอิงผล CI ที่บันทึกไว้ก่อนหน้า: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; ผลนี้เป็นของ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
 - ไม่ได้รัน CLI หรือ browser visual/responsive tests ใน environment นี้; จึงไม่อ้างว่าทดสอบเหล่านั้นแล้ว
 - บันทึก progress โดยไม่แก้รายละเอียดส่วนอื่นของแผน และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบโค้ดและสถานะล่าสุด)
+
+- อ่าน `CURRENT_TASK_PLAN.md` และตรวจไฟล์ runtime จริงบน `main`: หน้าเลือกสถานที่ Work-Schedule, หน้าเมนู Admin และ layout ตรวจ UUIDv7
+- ยืนยันว่า UI ที่แผนกำหนดมีอยู่แล้ว ได้แก่ header/empty state, responsive card grids, การแยกกลุ่ม Admin/Staff, focus-visible states และเมนู Admin แบบ responsive; จึงไม่แก้ runtime code ซ้ำโดยไม่มีปัญหาที่มีหลักฐานรองรับ
+- ยืนยันว่า query/auth, redirect `PERSON_NOT_FOUND`, toast เมื่อ refresh ล้มเหลวแต่ยังมีข้อมูลเดิม, `DataStateWrapper`, Staff href `/`, Admin routes, การส่งต่อ `placeId` และ UUIDv7 validation/redirect ยังคงเดิม ไม่เปลี่ยน Business Logic, API หรือ navigation
+- อ้างอิง CI ที่บันทึกไว้ในแผน: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; เป็นผลของ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
+- ไม่มี working copy/CLI ใน environment นี้ จึงไม่ได้รันคำสั่ง CLI หรือ browser visual/responsive tests รอบนี้ และไม่อ้างว่าทำแล้ว
+- บันทึกความคืบหน้าโดยคงรายละเอียดส่วนอื่นของแผนไว้ และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
