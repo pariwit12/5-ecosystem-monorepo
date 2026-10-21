@@ -287,3 +287,15 @@ pnpm run verify
 - อ้างอิง CI ที่บันทึกไว้ในแผน: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; เป็นผลของ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
 - ไม่มี working copy/CLI ใน environment นี้ จึงไม่ได้รันคำสั่ง CLI หรือ browser visual/responsive tests รอบนี้ และไม่อ้างว่าทำแล้ว
 - บันทึกความคืบหน้าโดยคงรายละเอียดส่วนอื่นของแผนไว้ และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบและอัปเดตสถานะรอบปัจจุบัน)
+
+- อ่าน `CURRENT_TASK_PLAN.md` และไฟล์ runtime จริงจาก `main`: `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`, `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`, `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/layout.tsx`, frontend `package.json` และ `.github/workflows/ci.yml`.
+- ยืนยันว่า UI ตามแผนมีอยู่แล้ว: หน้าเลือกสถานที่มี header, empty state, การ์ด responsive แยก Admin/Staff และ focus-visible states; หน้า Admin มี header, Admin Mode และเมนู Position/Staff แบบ responsive.
+- ตรวจ Business Logic ก่อน/หลัง: คง `useAuth`, React Query, redirect `PERSON_NOT_FOUND`, toast เมื่อ refresh ล้มเหลวแต่มีข้อมูลเดิม, `DataStateWrapper`, role grouping, Staff href `/` และ Admin routes ที่ส่ง `placeId` ต่อ; คง UUIDv7 validation/redirect เดิม ไม่เปลี่ยน API, authentication, access control หรือ navigation.
+- ไม่แก้ runtime code เพราะไม่พบปัญหาที่มีหลักฐานรองรับ และการเปลี่ยนเพิ่มเติมจะไม่จำเป็นต่อเกณฑ์แผน
+- ตรวจ combined status ของ commit `bd225cbd5919e690b0b0059400fca30b772dba76`: พบเฉพาะ Vercel `success` ไม่ใช่หลักฐาน GitHub Actions/`pnpm run verify` ใหม่ จึงไม่ถือเป็นผลตรวจสอบ CI รอบนี้
+- อ้างอิงผล CI ที่มีบันทึกไว้ก่อนหน้า: [GitHub Actions run #39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) ผ่าน `pnpm run verify` บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c`; ผลนี้ยืนยันเฉพาะ commit นั้น ไม่ใช่การรันใหม่ในรอบนี้
+- ไม่มี working copy/CLI ใน environment นี้ จึงไม่ได้รัน CLI หรือ browser visual/responsive tests รอบนี้ และไม่อ้างว่าทดสอบแล้ว
+- บันทึก progress นี้โดยไม่แก้รายละเอียดส่วนอื่นของแผน และทำเครื่องหมายเพียงช่องถัดไปช่องเดียวในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
