@@ -206,3 +206,10 @@ pnpm run verify
 - ตามคำขอผู้ใช้ ให้ใช้ workflow CI ที่มีอยู่ใน `.github/workflows/ci.yml` ซึ่ง trigger เมื่อ push ไป `main` หรือเปิด PR เข้า `main`; workflow ติดตั้ง dependencies ด้วย `pnpm install --frozen-lockfile` แล้วรัน `pnpm run verify`.
 - บันทึก progress นี้บน `main` เพื่อให้ CI workflow ที่กำหนด trigger แบบ push เริ่มตรวจสอบ repository ได้ โดยไม่ได้แก้ runtime code หรือเปลี่ยน Business Logic.
 - ต้องตรวจสอบผล run/check ของ commit นี้ก่อนสรุปว่า test ผ่าน; Vercel status เพียงอย่างเดียวไม่ใช่หลักฐานของ `pnpm run verify` และยังไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` จนกว่าจะเห็นผล CI ที่ยืนยันได้.
+
+
+### รอบ Implementor: 2026-10-21 (ผล GitHub Actions ไม่ผ่าน)
+
+- ตรวจ GitHub Actions run [#39565834945](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39565834945) ของ commit `b38310a0a4514b53e5e1d1e9f35e185d6938ac5a`: workflow `CI` จบด้วย `failure`; checkout, setup pnpm, setup Node.js และติดตั้ง dependencies ผ่าน แต่ขั้น `pnpm run verify` ไม่ผ่าน
+- จาก job log, migration tests ผ่าน 35/36; test ที่ล้มคือ `rejects missing acknowledgement and repository-local files` ใน `ecosystem-backend-nest-js/scripts/migration/identity-apply-safety.test.mjs:41`, โดย assertion บรรทัด 50 แจ้ง `Missing expected exception.` การทดสอบส่ง path แบบ Windows (`D:\\repo\\private\\identity.json`) แต่ CI ใช้ `ubuntu-latest`; ฟังก์ชัน `outsideRepository` ใช้ `node:path.resolve/relative` ตาม platform ปัจจุบัน จึงมีแนวโน้มว่า path ตัวอย่างไม่ถูกจำแนกเป็น path ภายใน repository บน Linux
+- Failure นี้อยู่ใน backend migration safety tests ไม่ใช่ Work-Schedule UI checks โดยตรง; ตามขอบเขตแผนนี้จึงยังไม่แก้ backend/migration code ที่ไม่ได้รับอนุญาต และไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` หรืออ้างว่า verify ผ่าน
