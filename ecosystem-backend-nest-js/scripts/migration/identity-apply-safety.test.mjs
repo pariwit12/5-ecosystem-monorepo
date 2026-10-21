@@ -60,6 +60,22 @@ test('rejects missing acknowledgement and repository-local files', () => {
   );
 });
 
+test('rejects repository-local POSIX paths', () => {
+  assert.throws(
+    () =>
+      validateIdentityApplyEnvironment(
+        {
+          ...validEnvironment,
+          MIGRATION_IDENTITY_INPUT: '/repo/private/identity.json',
+          MIGRATION_TARGET_STATE: '/migration-private/target.json',
+          MIGRATION_APPLY_REPORT: '/migration-private/apply-report.json',
+        },
+        '/repo',
+      ),
+    /MIGRATION_FILES_MUST_BE_OUTSIDE_REPOSITORY/,
+  );
+});
+
 test('rejects a target connection equal to the legacy database', () => {
   assert.throws(
     () =>
