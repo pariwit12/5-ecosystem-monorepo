@@ -190,3 +190,12 @@ pnpm run verify
 - ตรวจ combined status ของ commit ปัจจุบัน `fb374682327caa35fdfac1d2ca33af15344e7960`; GitHub แสดง Vercel เป็น `success` (เป็นผล deployment/status check ไม่ใช่หลักฐานว่า typecheck/lint ผ่าน)
 - ไม่เปลี่ยน runtime code เพิ่ม เพราะ implementation ที่แผนระบุมีอยู่แล้ว และไม่พบเหตุผลที่มีหลักฐานรองรับให้เปลี่ยน Business Logic หรือ navigation
 - ยังไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` ใน `VERIFICATION_TABLE.md` เนื่องจากยังไม่มีผลยืนยัน typecheck/lint/build และการตรวจ responsive ใน browser; ไม่อ้างว่าการตรวจเหล่านี้ผ่าน
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจสอบตามคำขอล่าสุด)
+
+- อ่านแผน `CURRENT_TASK_PLAN.md` และไฟล์ runtime จริงจาก `main` อีกครั้ง: หน้าเลือกสถานที่, หน้าเมนู Admin, `layout.tsx` สำหรับ UUIDv7 validation และ `package.json` ของ frontend/root
+- ยืนยันว่า UI ตามขอบเขตแผนมีอยู่ในโค้ดปัจจุบันแล้ว: responsive grids, header/empty state, focus-visible styles, Admin/Staff grouping และ href เดิม; ไม่พบเหตุผลที่มีหลักฐานรองรับให้แก้ runtime เพิ่มในรอบนี้
+- ตรวจ GitHub commit ล่าสุดที่พบ `cd2882c4cf3a7a8f073eaa0c620a5f3851bf9b32`; combined status แสดง Vercel `success`. สถานะนี้ยืนยันเฉพาะ check ของ Vercel ไม่ใช่ผล typecheck/lint/build โดยตรง
+- Environment นี้ไม่มี working copy/local CLI จึงยังรัน `pnpm run typecheck:frontend`, `pnpm run lint:frontend`, `pnpm run build:frontend` หรือ `pnpm run verify` ไม่ได้ และยังยืนยัน responsive behavior ใน browser ไม่ได้
+- ไม่เปลี่ยน Business Logic, API, auth, redirect, role grouping, UUIDv7 validation หรือ navigation; ไม่ทำเครื่องหมาย Coding Agent Check Complete เพราะยังไม่มีหลักฐานผลตรวจครบตามเกณฑ์แผน
