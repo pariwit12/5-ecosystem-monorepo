@@ -213,3 +213,12 @@ pnpm run verify
 - ตรวจ GitHub Actions run [#39565834945](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39565834945) ของ commit `b38310a0a4514b53e5e1d1e9f35e185d6938ac5a`: workflow `CI` จบด้วย `failure`; checkout, setup pnpm, setup Node.js และติดตั้ง dependencies ผ่าน แต่ขั้น `pnpm run verify` ไม่ผ่าน
 - จาก job log, migration tests ผ่าน 35/36; test ที่ล้มคือ `rejects missing acknowledgement and repository-local files` ใน `ecosystem-backend-nest-js/scripts/migration/identity-apply-safety.test.mjs:41`, โดย assertion บรรทัด 50 แจ้ง `Missing expected exception.` การทดสอบส่ง path แบบ Windows (`D:\\repo\\private\\identity.json`) แต่ CI ใช้ `ubuntu-latest`; ฟังก์ชัน `outsideRepository` ใช้ `node:path.resolve/relative` ตาม platform ปัจจุบัน จึงมีแนวโน้มว่า path ตัวอย่างไม่ถูกจำแนกเป็น path ภายใน repository บน Linux
 - Failure นี้อยู่ใน backend migration safety tests ไม่ใช่ Work-Schedule UI checks โดยตรง; ตามขอบเขตแผนนี้จึงยังไม่แก้ backend/migration code ที่ไม่ได้รับอนุญาต และไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` หรืออ้างว่า verify ผ่าน
+
+
+### รอบ Implementor: 2026-10-21 (แก้ migration path safety ตามคำอนุญาตผู้ใช้)
+
+- ผู้ใช้อนุญาตให้ดำเนินการแก้ปัญหาต่อจาก CI failure ใน migration safety test แม้ไฟล์ดังกล่าวอยู่นอกขอบเขต UI เดิม
+- แก้ `ecosystem-backend-nest-js/scripts/migration/common/identity-apply-safety.mjs` ให้ตรวจ path ด้วย path implementation ที่ตรงกับรูปแบบ absolute path (Windows หรือ native platform) และตรวจ containment ด้วย relative path ที่คำนวณจาก root ที่ resolve แล้ว; ปรับการตรวจ parent traversal ให้เทียบกับ path separator ที่ถูกต้อง ไม่ใช้ `startsWith('..')` แบบกว้าง
+- เพิ่ม regression test ใน `ecosystem-backend-nest-js/scripts/migration/identity-apply-safety.test.mjs` สำหรับ repository-local POSIX path ขณะที่คง test Windows path ที่ล้มเหลวใน Ubuntu CI
+- บันทึก runtime fix และ regression test บน `main` ใน commits `13cce9b186eb568c9d8ea83e9ea17813f6816955` และ `f7868108754e4d882185b11570410a6de062aaa4` ตามลำดับ
+- ต้องตรวจ GitHub Actions run ที่เกิดจาก commits เหล่านี้ก่อนสรุปผล; ยังไม่อ้างว่า tests ผ่านและยังไม่ทำเครื่องหมาย `Coding Agent Check Complete Implement` จนกว่าจะมีผล CI ที่ยืนยันได้
