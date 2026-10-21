@@ -239,3 +239,12 @@ pnpm run verify
 - ใช้หลักฐาน CI ที่บันทึกไว้ในรอบก่อน: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify` ซึ่งครอบคลุม typecheck/lint/build และ tests ตาม workflow; หลักฐานนี้ผูกกับ commit ดังกล่าว ไม่ใช่การรันใหม่ในรอบนี้
 - ไม่ได้รันคำสั่ง CLI หรือ browser visual/responsive test ใน environment นี้ จึงไม่อ้างว่ามีการทดสอบเหล่านั้นในรอบปัจจุบัน
 - ทำเครื่องหมายช่องที่ 2 ของแถว `Coding Agent Check Complete Implement` สำหรับรอบ Implementor นี้ โดยอาศัย implementation ที่ตรวจยืนยันและผล CI ที่มีบันทึกไว้; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`
+
+
+### รอบ Implementor: 2026-10-21 (ตรวจยืนยันและอัปเดตสถานะ)
+
+- อ่านแผนและไฟล์ runtime จริงจาก `main`: หน้าเลือกสถานที่ Work-Schedule, หน้าเมนู Admin, layout ที่ตรวจ UUIDv7/redirect, frontend `package.json` และ workflow CI
+- ยืนยันว่า UI ตามแผนอยู่ในโค้ดแล้ว และยังคง query/auth/error handling, role grouping, ลิงก์ Staff ไป `/`, เส้นทาง Admin position/staff และการส่งต่อ `placeId`; ไม่พบเหตุที่มีหลักฐานรองรับให้แก้ runtime หรือ Business Logic เพิ่ม
+- ตรวจผล CI ที่บันทึกไว้: GitHub Actions run [#39566448560](https://github.com/pariwit12/5-ecosystem-monorepo/actions/runs/39566448560) บน commit `ae73f3b424b1183f3a657fe0dd9b76aa3306346c` ผ่าน `pnpm run verify`; commit ล่าสุดบน `main` เป็นการบันทึกเอกสารต่อจากนั้น และ status ที่ตรวจของ commit ล่าสุดแสดงเฉพาะ Vercel success ไม่ใช่ผล CI ใหม่
+- ไม่ได้รัน CLI หรือ browser visual/responsive test ใน environment นี้ จึงไม่อ้างว่าทำการทดสอบเหล่านั้นแล้ว
+- บันทึก progress รอบนี้โดยไม่แก้ส่วนอื่นของแผน และทำเครื่องหมายช่องถัดไปเพียงหนึ่งช่องในแถว `Coding Agent Check Complete Implement`; ไม่แก้แถว `Approve CURRENT_TASK_PLAN` หรือ `Verify Implementation`.
