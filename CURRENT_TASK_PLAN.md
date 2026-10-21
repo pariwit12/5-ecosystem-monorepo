@@ -161,3 +161,17 @@ pnpm run verify
 - [ ] ตรวจ diff แล้วไม่มีการเปลี่ยนแปลงนอกขอบเขต
 - [ ] รายงานผล typecheck/lint/build/test ตามที่รันจริง
 - [ ] `VERIFICATION_TABLE.md` แถว `Approve CURRENT_TASK_PLAN` ถูก reset เป็นช่องว่างทั้งหมดในรอบที่แก้แผน
+
+
+## Implementation Progress
+
+### รอบ Implementor: 2026-10-21
+
+- อ่านแผนและโค้ดจริงจาก branch `main` ของ GitHub เนื่องจากไม่มีไฟล์ repository ใน environment นี้
+- ปรับ `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`: ปรับ header, empty state, responsive card grid, spacing และ focus-visible states; คง Clerk auth, React Query, redirect `PERSON_NOT_FOUND`, toast, `DataStateWrapper`, role grouping, data fields และ href เดิม รวมถึงลิงก์ Staff ไป `/`.
+- ปรับ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`: ปรับ header, Admin Mode badge, menu card hierarchy, responsive layout และ focus-visible states; คงข้อความ/ความหมายเมนู, `placeId` และ href ไป `position` และ `staff` เดิม.
+- ตรวจอ่าน `globals.css`, `DataStateWrapper`, frontend `package.json` และ root `package.json`; ใช้ Tailwind tokens/conventions ที่มีอยู่ ไม่เพิ่ม dependency หรือเปลี่ยน global style.
+- ไม่เปลี่ยน business logic, API, authentication, validation/UUIDv7 redirect, role/access control หรือ navigation destinations.
+- การเปลี่ยนแปลงถูกบันทึกเป็น commits บน `main`: `86ccc51` (หน้าเลือกสถานที่) และ `c72e7b1` (หน้า Admin menu).
+- ข้อจำกัดการตรวจสอบ: environment นี้ไม่มี working copy/local CLI จึงยังไม่ได้รัน typecheck, lint, build หรือ `pnpm run verify`; GitHub status ที่ตรวจหลัง commit `c72e7b1` แสดง Vercel เป็น `pending`. ยังไม่อ้างว่าการทดสอบผ่าน และยังไม่ทำเครื่องหมาย Coding Agent Check Complete จนกว่าจะมีผลตรวจที่ยืนยันได้.
+- ยังไม่ได้แก้เอกสารอื่นหรือเพิ่ม tests เนื่องจากไม่พบ test script ใน `ecosystem-frontend-next-js/package.json` และไม่มี local environment สำหรับรัน checks.
