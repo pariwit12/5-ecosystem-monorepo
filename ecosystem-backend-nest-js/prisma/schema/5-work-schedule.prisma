@@ -68,6 +68,7 @@ model WorkScheduleStaff {
   workScheduleStaffPositions WorkScheduleStaffPosition[]
   workScheduleStaffInvitations WorkScheduleStaffInvitation[]
   workScheduleStaffLinkAudits  WorkScheduleStaffLinkAudit[]
+  workScheduleHolidays         WorkScheduleHoliday[]
 
   @@unique([organizationWorkSchedulePlaceId, personId])
   // 🌟 2. เราไม่ต้องมี @@index ของ organizationWorkSchedulePlaceId แล้ว เพราะตัว unique ข้างบนจัดการให้แล้ว
@@ -236,4 +237,16 @@ model WorkScheduleStaffLinkAudit {
 
   @@index([staffId, createdAt])
   @@map("work_schedule_staff_link_audit")
+}
+
+model WorkScheduleHoliday {
+  id                  String            @id @default(uuid(7)) @db.Uuid
+  workScheduleStaffId String            @map("work_schedule_staff_id") @db.Uuid
+  workScheduleStaff   WorkScheduleStaff @relation(fields: [workScheduleStaffId], references: [id], onDelete: Restrict)
+  startTime           DateTime          @map("start_time") @db.Timestamptz
+  endTime             DateTime          @map("end_time") @db.Timestamptz
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([workScheduleStaffId, startTime, endTime])
+  @@map("work_schedule_holiday")
 }

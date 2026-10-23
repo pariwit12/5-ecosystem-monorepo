@@ -16,6 +16,7 @@ import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
 import { WorkScheduleStaffPositionModule } from './staff-position/work-schedule-staff-position.module';
 import { WorkScheduleStaffInvitationModule } from './staff-invitation/work-schedule-staff-invitation.module';
 import { WorkScheduleStaffPlaceModule } from './staff-place/work-schedule-staff-place.module';
+import { HolidayModule } from './holiday/holiday.module';
 
 // ==========================
 // (จบ) Import Feature Module
@@ -39,6 +40,7 @@ import { WorkScheduleStaffPlaceModule } from './staff-place/work-schedule-staff-
     WorkScheduleStaffPositionModule,
     WorkScheduleStaffInvitationModule,
     WorkScheduleStaffPlaceModule,
+    HolidayModule,
 
     // ==============================
     // (จบ) จุดลงทะเบียน Feature Module

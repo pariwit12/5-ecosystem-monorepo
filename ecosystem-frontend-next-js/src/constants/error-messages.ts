@@ -63,6 +63,12 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE]:
     "ต้องการสิทธิ พนักงาน (STAFF) ของสถานที่ทำงานนี้ในการเข้าถึงข้อมูล",
 
+  // Holiday
+  [ErrorCode.WORK_SCHEDULE_HOLIDAY_NOT_FOUND]:
+    "ไม่พบข้อมูลวันหยุดที่ต้องการ หรือคุณไม่มีสิทธิ์เข้าถึงรายการนี้",
+  [ErrorCode.WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP]:
+    "ไม่สามารถบันทึกวันหยุดได้เนื่องจากช่วงเวลาทับซ้อนกับเวรการทำงานที่คุณมีอยู่",
+
   // ===========================
   // (จบ) PROGRAM: Work-Schedule
   // ===========================

@@ -10,6 +10,8 @@ import { useAuth } from "@clerk/nextjs";
 import { workScheduleStaffPlaceQueries } from "@/features/work-schedule/staff-place/work-schedule-staff-place.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { HolidayForm } from "@/features/work-schedule/holiday/components/holiday-form";
+import { HolidayList } from "@/features/work-schedule/holiday/components/holiday-list";
 
 export default function Client({ placeId }: { placeId: string }) {
   const router = useRouter();
@@ -152,19 +154,27 @@ export default function Client({ placeId }: { placeId: string }) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-6 text-center">
-          <p className="text-sm text-gray-500">
-            ระบบตารางเวรและการลงวันหยุดจะเปิดให้บริการในขั้นตอนถัดไป
-          </p>
-          <div className="mt-4">
-            <Link
-              href="/work-schedule"
-              className="inline-flex rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300 transition"
-            >
-              กลับหน้ารายการสถานที่ทำงาน
-            </Link>
-          </div>
-        </section>
+        {data && (
+          <section className="space-y-6">
+            <HolidayForm
+              placeId={placeId}
+              placeTimezone={data.timezone}
+            />
+            <HolidayList
+              placeId={placeId}
+              placeTimezone={data.timezone}
+            />
+          </section>
+        )}
+
+        <div className="flex justify-center pt-2">
+          <Link
+            href="/work-schedule"
+            className="inline-flex rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300 transition"
+          >
+            กลับหน้ารายการสถานที่ทำงาน
+          </Link>
+        </div>
       </main>
     </DataStateWrapper>
   );

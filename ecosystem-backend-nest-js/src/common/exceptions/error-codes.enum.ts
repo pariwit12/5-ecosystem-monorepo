@@ -40,6 +40,10 @@ export enum ErrorCode {
   // Staff Access
   NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE = 'NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE',
 
+  // Holiday
+  WORK_SCHEDULE_HOLIDAY_NOT_FOUND = 'WORK_SCHEDULE_HOLIDAY_NOT_FOUND',
+  WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP = 'WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP',
+
   // ===========================
   // (จบ) PROGRAM: Work-Schedule
   // ===========================
