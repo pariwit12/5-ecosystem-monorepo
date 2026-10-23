@@ -14,6 +14,8 @@ import { SlotTemplateModule } from './slot-template/slot-template.module';
 import { SlotTypeModule } from './slot-type/work-schedule-slot-type.module';
 import { WorkScheduleStaffModule } from './staff/work-schedule-staff.module';
 import { WorkScheduleStaffPositionModule } from './staff-position/work-schedule-staff-position.module';
+import { WorkScheduleStaffInvitationModule } from './staff-invitation/work-schedule-staff-invitation.module';
+import { WorkScheduleStaffPlaceModule } from './staff-place/work-schedule-staff-place.module';
 
 // ==========================
 // (จบ) Import Feature Module
@@ -35,6 +37,8 @@ import { WorkScheduleStaffPositionModule } from './staff-position/work-schedule-
     SlotTypeModule,
     WorkScheduleStaffModule,
     WorkScheduleStaffPositionModule,
+    WorkScheduleStaffInvitationModule,
+    WorkScheduleStaffPlaceModule,
 
     // ==============================
     // (จบ) จุดลงทะเบียน Feature Module

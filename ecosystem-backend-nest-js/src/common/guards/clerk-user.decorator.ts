@@ -5,9 +5,12 @@ import { RequestFromClerkAuthGuard } from './clerk-auth.guard';
 export type ClerkUserData = RequestFromClerkAuthGuard['user'];
 
 export const ClerkUser = createParamDecorator(
-  // ใส่ _data บอก TS ว่าไม่ได้ใช้ ไม่ต้องเตือน แต่ต้องมีเพราะโครงสร้างของ createParamDecorator กำหนดมาแบบนั้น
-  (_data: unknown, ctx: ExecutionContext): ClerkUserData => {
+  (data: keyof ClerkUserData | undefined, ctx: ExecutionContext): unknown => {
     const request = ctx.switchToHttp().getRequest<RequestFromClerkAuthGuard>();
-    return request.user; // คืนค่าเฉพาะก้อน user ออกไป
+    const user = request.user;
+    if (data && user) {
+      return user[data];
+    }
+    return user;
   },
 );

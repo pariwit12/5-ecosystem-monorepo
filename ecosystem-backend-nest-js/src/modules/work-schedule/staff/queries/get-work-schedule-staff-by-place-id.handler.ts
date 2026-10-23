@@ -24,12 +24,10 @@ export class GetWorkScheduleStaffByPlaceIdHandler implements IQueryHandler<
     const { clerkId, param } = query;
 
     // ตรวจสอบ AccessControl
-    // eslint-disable-next-line
-    const { personId } =
-      await this.accessControlService.verifyWorkScheduleAdminAccess(
-        clerkId,
-        param.place_id,
-      );
+    await this.accessControlService.verifyWorkScheduleAdminAccess(
+      clerkId,
+      param.place_id,
+    );
 
     const workScheduleStaffs = await this.prisma.workScheduleStaff.findMany({
       where: {
@@ -39,6 +37,7 @@ export class GetWorkScheduleStaffByPlaceIdHandler implements IQueryHandler<
       select: {
         id: true,
         name: true,
+        personId: true,
       },
     });
 
@@ -46,6 +45,7 @@ export class GetWorkScheduleStaffByPlaceIdHandler implements IQueryHandler<
       workScheduleStaffs: workScheduleStaffs.map((wss) => ({
         id: wss.id,
         name: wss.name,
+        isLinked: wss.personId !== null,
       })),
     };
   }

@@ -66,6 +66,8 @@ model WorkScheduleStaff {
   name String // ชื่อพนักงาน (สำหรับ OrganizationWorkSchedulePlace)
 
   workScheduleStaffPositions WorkScheduleStaffPosition[]
+  workScheduleStaffInvitations WorkScheduleStaffInvitation[]
+  workScheduleStaffLinkAudits  WorkScheduleStaffLinkAudit[]
 
   @@unique([organizationWorkSchedulePlaceId, personId])
   // 🌟 2. เราไม่ต้องมี @@index ของ organizationWorkSchedulePlaceId แล้ว เพราะตัว unique ข้างบนจัดการให้แล้ว
@@ -179,4 +181,59 @@ model WorkScheduleSlot {
   @@index([positionId, actualStartTime])
   @@index([staffId, actualStartTime])
   @@map("work_schedule_slot")
+}
+
+enum WorkScheduleStaffInvitationStatus {
+  ISSUED
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum WorkScheduleStaffLinkAuditAction {
+  LINK
+  UNLINK
+}
+
+model WorkScheduleStaffInvitation {
+  id                  String                            @id @default(uuid(7)) @db.Uuid
+  staffId             String                            @map("staff_id") @db.Uuid
+  staff               WorkScheduleStaff                 @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  codeHash            String                            @unique @map("code_hash")
+  status              WorkScheduleStaffInvitationStatus @default(ISSUED)
+  createdByPersonId   String                            @map("created_by_person_id") @db.Uuid
+  createdByPerson     Person                            @relation("WorkScheduleStaffInvitationCreator", fields: [createdByPersonId], references: [id], onDelete: Restrict)
+  requestedByPersonId String?                           @map("requested_by_person_id") @db.Uuid
+  requestedByPerson   Person?                           @relation("WorkScheduleStaffInvitationRequester", fields: [requestedByPersonId], references: [id], onDelete: Restrict)
+  decidedByPersonId   String?                           @map("decided_by_person_id") @db.Uuid
+  decidedByPerson     Person?                           @relation("WorkScheduleStaffInvitationDecider", fields: [decidedByPersonId], references: [id], onDelete: Restrict)
+  createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt           DateTime                          @map("expires_at") @db.Timestamptz
+  requestedAt         DateTime?                         @map("requested_at") @db.Timestamptz
+  decidedAt           DateTime?                         @map("decided_at") @db.Timestamptz
+  revokedAt           DateTime?                         @map("revoked_at") @db.Timestamptz
+
+  workScheduleStaffLinkAudits WorkScheduleStaffLinkAudit[]
+
+  @@index([staffId])
+  @@index([requestedByPersonId])
+  @@map("work_schedule_staff_invitation")
+}
+
+model WorkScheduleStaffLinkAudit {
+  id             String                           @id @default(uuid(7)) @db.Uuid
+  staffId        String                           @map("staff_id") @db.Uuid
+  staff          WorkScheduleStaff                @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  personId       String                           @map("person_id") @db.Uuid
+  person         Person                           @relation("WorkScheduleStaffLinkAuditPerson", fields: [personId], references: [id], onDelete: Restrict)
+  actorPersonId  String                           @map("actor_person_id") @db.Uuid
+  actorPerson    Person                           @relation("WorkScheduleStaffLinkAuditActor", fields: [actorPersonId], references: [id], onDelete: Restrict)
+  invitationId   String?                          @map("invitation_id") @db.Uuid
+  invitation     WorkScheduleStaffInvitation?     @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  action         WorkScheduleStaffLinkAuditAction
+  createdAt      DateTime                         @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([staffId, createdAt])
+  @@map("work_schedule_staff_link_audit")
 }

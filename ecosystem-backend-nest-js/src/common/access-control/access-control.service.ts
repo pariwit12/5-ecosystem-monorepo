@@ -153,6 +153,60 @@ export class AccessControlService {
     };
   }
 
+  // 3.1
+  // - ตรวจ placeId -> OrganizationWorkSchedulePlace
+  // - ตรวจ clerkId -> Person -> WorkScheduleStaff (organizationWorkSchedulePlaceId)
+  async verifyWorkScheduleStaffAccess(clerkId: string, placeId: string) {
+    const organizationWorkSchedulePlace =
+      await this.prisma.organizationWorkSchedulePlace.findUnique({
+        where: { id: placeId },
+        select: {
+          deletedAt: true,
+        },
+      });
+
+    if (!organizationWorkSchedulePlace) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
+        'OrganizationWorkSchedulePlaceId นี้ไม่มีในตาราง OrganizationWorkSchedulePlace',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (organizationWorkSchedulePlace.deletedAt !== null) {
+      throw new AppException(
+        ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+        'OrganizationWorkSchedulePlaceId นี้มีข้อมูล deletedAt แล้ว',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const { personId } = await this.verifyPerson(clerkId);
+    const staff = await this.prisma.workScheduleStaff.findFirst({
+      where: {
+        personId,
+        organizationWorkSchedulePlaceId: placeId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!staff) {
+      throw new AppException(
+        ErrorCode.NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE,
+        'PersonId นี้ไม่มี WorkScheduleStaff ที่เชื่อมกับ OrganizationWorkSchedulePlaceId นี้',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return {
+      personId,
+      staffId: staff.id,
+    };
+  }
+
   // 4
   // - ตรวจ positionId -> OrganizationWorkSchedulePlace
   // - ตรวจ clerkId -> WorkScheduleAdmin (organizationWorkSchedulePlaceId)

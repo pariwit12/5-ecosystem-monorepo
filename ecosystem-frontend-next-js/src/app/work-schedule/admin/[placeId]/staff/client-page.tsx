@@ -4,16 +4,26 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { workScheduleStaffQueries } from "@/features/work-schedule/staff/work-schedule-staff.queries";
 import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
+import { useStaffInvitationActions } from "@/features/work-schedule/staff-invitation/hooks/use-staff-invitation-actions";
+import { IssuedInvitationDialog } from "@/features/work-schedule/staff-invitation/components/issued-invitation-dialog";
 
 export default function Client({ placeId }: { placeId: string }) {
   const router = useRouter();
   const { getToken, userId, isLoaded } = useAuth();
+  const { issueMutation, unlinkMutation } = useStaffInvitationActions(placeId);
+
+  const [issuedCode, setIssuedCode] = useState<string | null>(null);
+  const [issuedExpiry, setIssuedExpiry] = useState<string | null>(null);
+  const [unlinkConfirmStaff, setUnlinkConfirmStaff] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const { data, isLoading, isFetching, error } = useQuery(
     workScheduleStaffQueries.listsByPlaceId(userId, getToken, placeId, [
@@ -24,17 +34,12 @@ export default function Client({ placeId }: { placeId: string }) {
     ]),
   );
 
-  // ==========================================
-  // 🌟 2. ด่านดักจับ Error แล้ว Redirect
-  // ==========================================
   useEffect(() => {
-    // เช็คว่ามี Error และเป็น Error จาก Axios (บอก TS ให้ยอมให้เราดึง .response ได้)
     if (error && isAxiosError(error)) {
       const errorCode = error.response?.data?.errorCode;
 
       if ([ErrorCode.PERSON_NOT_FOUND].includes(errorCode)) {
         router.push(`/person/new?error=${errorCode}`);
-
         return;
       }
 
@@ -46,7 +51,6 @@ export default function Client({ placeId }: { placeId: string }) {
         ].includes(errorCode)
       ) {
         router.push(`/work-schedule?error=${errorCode}`);
-
         return;
       }
 
@@ -58,11 +62,6 @@ export default function Client({ placeId }: { placeId: string }) {
     }
   }, [error, router, data]);
 
-  // ===================
-  // Loading / Error UI
-  // ===================
-
-  // ป้องกันหน้าจอกระพริบ (UI Flash):
   if (
     error &&
     isAxiosError(error) &&
@@ -80,30 +79,36 @@ export default function Client({ placeId }: { placeId: string }) {
     );
   }
 
-  // =========================================================
-  // 3. จัดข้อมูลใส่ตัวแปร เพื่อให้นำไปเขียนใน UI ได้เป็นระเบียบและอ่านง่าย
-  // =========================================================
-  // แกะเอา array organizations ออกมาจาก Response (ใส่ fallback เป็น [] กันแครช)
   const staffs = data?.workScheduleStaffs || [];
 
-  // ==================
-  // ส่วนแสดงผล UI หลัก
-  // ==================
+  const handleIssue = async (staffId: string) => {
+    try {
+      const res = await issueMutation.mutateAsync(staffId);
+      setIssuedCode(res.code);
+      setIssuedExpiry(res.expiresAt);
+    } catch {
+      // toast handled in hook
+    }
+  };
+
+  const handleUnlink = async () => {
+    if (!unlinkConfirmStaff) return;
+    try {
+      await unlinkMutation.mutateAsync(unlinkConfirmStaff.id);
+      setUnlinkConfirmStaff(null);
+    } catch {
+      // toast handled in hook
+    }
+  };
+
   return (
     <>
-      {/* =============================== */}
-      {/* Loading / Error UI (By Wrapper) */}
-      {/* =============================== */}
       <DataStateWrapper
         isAuthLoaded={isLoaded}
         isQueryLoading={isLoading}
         errorQuery={error}
       >
-        {/* ================== */}
-        {/* Main UI (children) */}
-        {/* ================== */}
         <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
-          {/* 🟢 ส่วนหัวข้อ และปุ่มย้อนกลับ */}
           <div className="flex items-center gap-4 border-b pb-6">
             <Link
               href={`/work-schedule/admin/${placeId}`}
@@ -131,7 +136,7 @@ export default function Client({ placeId }: { placeId: string }) {
                   รายชื่อพนักงาน
                 </h2>
                 <p className="text-gray-500 mt-1 text-sm">
-                  จัดการข้อมูลพนักงานในระบบตารางงานของคุณ
+                  จัดการข้อมูลพนักงานและการผูกบัญชีในระบบ
                 </p>
                 {isFetching && !isLoading && (
                   <span className="text-sm text-gray-400 flex items-center gap-2 mt-2">
@@ -144,23 +149,29 @@ export default function Client({ placeId }: { placeId: string }) {
                         stroke="currentColor"
                         strokeWidth="4"
                         fill="none"
-                      ></circle>
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                      />
                     </svg>
                     กำลังอัปเดตข้อมูล...
                   </span>
                 )}
               </div>
+              <div>
+                <Link
+                  href={`/work-schedule/admin/${placeId}/staff/invitations`}
+                  className="rounded-xl border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 shadow-sm transition hover:bg-purple-100"
+                >
+                  จัดการคำขอผูกบัญชี 📋
+                </Link>
+              </div>
             </div>
           </div>
 
-          {/* 🟢 โซน Grid แสดงรายชื่อพนักงาน */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* 🌟 การ์ดสำหรับสร้างพนักงานใหม่ (Create Card) */}
             <Link
               href={`/work-schedule/admin/${placeId}/staff/new`}
               className="group flex flex-col items-center justify-center p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all cursor-pointer min-h-40"
@@ -186,46 +197,121 @@ export default function Client({ placeId }: { placeId: string }) {
               </span>
             </Link>
 
-            {/* 🌟 แสดงรายการพนักงานจากการ Map Data */}
             {staffs.map((staff) => (
               <div
                 key={staff.id}
                 className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md transition-shadow relative"
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="overflow-hidden">
-                    <h4
-                      className="text-lg font-bold text-gray-800 truncate"
-                      title={staff.name}
-                    >
-                      {staff.name}
-                    </h4>
-                    <p
-                      className="text-xs text-gray-400 font-mono truncate"
-                      title={staff.id}
-                    >
-                      ID: {staff.id.substring(0, 8)}...
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      staff.isLinked
+                        ? "bg-green-100 text-green-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {staff.isLinked ? "ผูกบัญชีแล้ว" : "ยังไม่ผูกบัญชี"}
+                  </span>
                 </div>
 
-                <div className="mt-auto border-t pt-4 flex justify-end">
-                  <button
-                    // onClick={() =>
-                    //   router.push(
-                    //     `/work-schedule/admin/${placeId}/staff/${staff.id}`,
-                    //   )
-                    // }
-                    className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
+                <div className="overflow-hidden mb-4">
+                  <h4
+                    className="text-lg font-bold text-gray-800 truncate"
+                    title={staff.name}
                   >
-                    ดูรายละเอียด &rarr;
-                  </button>
+                    {staff.name}
+                  </h4>
+                  <p
+                    className="text-xs text-gray-400 font-mono truncate"
+                    title={staff.id}
+                  >
+                    ID: {staff.id.substring(0, 8)}...
+                  </p>
+                </div>
+
+                <div className="mt-auto border-t pt-4 flex items-center justify-between gap-2">
+                  {staff.isLinked ? (
+                    <button
+                      type="button"
+                      disabled={unlinkMutation.isPending}
+                      onClick={() =>
+                        setUnlinkConfirmStaff({
+                          id: staff.id,
+                          name: staff.name,
+                        })
+                      }
+                      className="text-xs font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                    >
+                      ถอดการผูก
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={issueMutation.isPending}
+                      onClick={() => handleIssue(staff.id)}
+                      className="text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                    >
+                      ออกรหัสคำเชิญ
+                    </button>
+                  )}
+                  <span className="text-xs text-gray-400">
+                    {staff.isLinked ? "พร้อมใช้งาน" : "รอผูกบัญชี"}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </DataStateWrapper>
+
+      {/* Dialog ออกรหัสคำเชิญ */}
+      <IssuedInvitationDialog
+        code={issuedCode}
+        expiresAt={issuedExpiry}
+        onClose={() => {
+          setIssuedCode(null);
+          setIssuedExpiry(null);
+        }}
+      />
+
+      {/* Dialog ยืนยันยกเลิกการผูก */}
+      {unlinkConfirmStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900">
+              ยืนยันการยกเลิกผูกบัญชี
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              คุณต้องการยกเลิกการผูกบัญชีของพนักงาน{" "}
+              <strong className="text-gray-900">
+                {unlinkConfirmStaff.name}
+              </strong>{" "}
+              ใช่หรือไม่?
+            </p>
+            <p className="mt-1 text-xs text-red-500">
+              * ข้อมูลตารางเวรเดิมจะยังคงอยู่ แต่พนักงานจะไม่สามารถเข้าถึงสถานที่ทำงานนี้ได้จนกว่าจะผูกบัญชีใหม่
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setUnlinkConfirmStaff(null)}
+                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={unlinkMutation.isPending}
+                onClick={handleUnlink}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition"
+              >
+                {unlinkMutation.isPending ? "กำลังดำเนินการ..." : "ยืนยันยกเลิกผูก"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

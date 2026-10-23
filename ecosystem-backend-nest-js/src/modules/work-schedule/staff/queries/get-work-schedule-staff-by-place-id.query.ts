@@ -22,5 +22,6 @@ export interface GetWorkScheduleStaffByPlaceIdResponse {
   workScheduleStaffs: {
     id: string;
     name: string;
+    isLinked: boolean;
   }[];
 }

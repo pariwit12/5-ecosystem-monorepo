@@ -50,6 +50,11 @@ model Person {
   staffInvitationsCreated        StaffInvitation[]               @relation("StaffInvitationCreator")
   staffInvitationsTargeted       StaffInvitation[]               @relation("StaffInvitationTarget")
   staffInvitationsUsed           StaffInvitation[]               @relation("StaffInvitationUser")
+  workScheduleStaffInvitationsCreated   WorkScheduleStaffInvitation[] @relation("WorkScheduleStaffInvitationCreator")
+  workScheduleStaffInvitationsRequested WorkScheduleStaffInvitation[] @relation("WorkScheduleStaffInvitationRequester")
+  workScheduleStaffInvitationsDecided   WorkScheduleStaffInvitation[] @relation("WorkScheduleStaffInvitationDecider")
+  workScheduleStaffLinkAuditsPerson     WorkScheduleStaffLinkAudit[]  @relation("WorkScheduleStaffLinkAuditPerson")
+  workScheduleStaffLinkAuditsActor      WorkScheduleStaffLinkAudit[]  @relation("WorkScheduleStaffLinkAuditActor")
   // personDentist       PersonDentist?
   // personDentalPatient PersonDentalPatient?
 

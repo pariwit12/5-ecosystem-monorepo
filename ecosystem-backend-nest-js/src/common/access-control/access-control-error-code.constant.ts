@@ -22,6 +22,14 @@ export const AccessControlErrorCode = {
     ErrorCode.NOT_AN_ADMIN_OF_WORK_SCHEDULE_PLACE,
   ],
 
+  // 3.1
+  verifyWorkScheduleStaffAccess: [
+    ErrorCode.WORK_SCHEDULE_PLACE_NOT_FOUND,
+    ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
+    ErrorCode.PERSON_NOT_FOUND,
+    ErrorCode.NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE,
+  ],
+
   // 4
   verifyWorkSchedulePositionByWorkScheduleAdmin: [
     ErrorCode.WORK_SCHEDULE_POSITION_NOT_FOUND,

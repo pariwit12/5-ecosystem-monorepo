@@ -10,6 +10,7 @@ describe('AccessControlService', () => {
     workScheduleAdmin: { findFirst: jest.fn() },
     workSchedulePosition: { findUnique: jest.fn() },
     workScheduleSlotTemplate: { findUnique: jest.fn() },
+    workScheduleStaff: { findFirst: jest.fn() },
   };
 
   const service = new AccessControlService(prisma as never);
@@ -136,6 +137,48 @@ describe('AccessControlService', () => {
       ),
     ).rejects.toMatchObject({
       errorCode: ErrorCode.WORK_SCHEDULE_POSITION_DELETED,
+    });
+  });
+
+  it('returns staffId and personId for a valid work-schedule staff', async () => {
+    prisma.organizationWorkSchedulePlace.findUnique.mockResolvedValue({
+      deletedAt: null,
+    });
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
+    });
+    prisma.workScheduleStaff.findFirst.mockResolvedValue({ id: 'staff-1' });
+
+    await expect(
+      service.verifyWorkScheduleStaffAccess('clerk-1', 'place-1'),
+    ).resolves.toEqual({ personId: 'person-1', staffId: 'staff-1' });
+  });
+
+  it('rejects staff access if user is not a staff member of the place', async () => {
+    prisma.organizationWorkSchedulePlace.findUnique.mockResolvedValue({
+      deletedAt: null,
+    });
+    prisma.userAccount.findUnique.mockResolvedValue({
+      person: { id: 'person-1' },
+    });
+    prisma.workScheduleStaff.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.verifyWorkScheduleStaffAccess('clerk-1', 'place-1'),
+    ).rejects.toMatchObject({
+      errorCode: ErrorCode.NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE,
+    });
+  });
+
+  it('rejects staff access if place is deleted', async () => {
+    prisma.organizationWorkSchedulePlace.findUnique.mockResolvedValue({
+      deletedAt: new Date(),
+    });
+
+    await expect(
+      service.verifyWorkScheduleStaffAccess('clerk-1', 'place-1'),
+    ).rejects.toMatchObject({
+      errorCode: ErrorCode.WORK_SCHEDULE_PLACE_DELETED,
     });
   });
 });

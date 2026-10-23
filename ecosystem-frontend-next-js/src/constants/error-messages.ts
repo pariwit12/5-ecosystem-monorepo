@@ -47,6 +47,22 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND]:
     "ไม่พบรายการแบบร่าง (SLOT TEMPLATE) ที่เกี่ยวข้องในระบบ",
 
+  // Staff & Invitations
+  [ErrorCode.WORK_SCHEDULE_STAFF_NOT_FOUND]:
+    "ไม่พบข้อมูลพนักงานที่เกี่ยวข้องในสถานที่ทำงานนี้ หรือพนักงานถูกลบไปแล้ว",
+  [ErrorCode.WORK_SCHEDULE_INVITATION_NOT_FOUND]:
+    "ไม่พบรหัสคำเชิญ หรือรหัสคำเชิญไม่ถูกต้อง",
+  [ErrorCode.WORK_SCHEDULE_INVITATION_EXPIRED]:
+    "รหัสคำเชิญนี้หมดอายุแล้ว กรุณาติดต่อผู้ดูแลเพื่อขอรหัสใหม่",
+  [ErrorCode.WORK_SCHEDULE_INVITATION_CONFLICT]:
+    "สถานะของคำเชิญไม่ถูกต้องหรือมีผู้อื่นส่งคำขอไปแล้ว",
+  [ErrorCode.WORK_SCHEDULE_STAFF_LINK_CONFLICT]:
+    "ข้อมูลการผูกบัญชีพนักงานมีความขัดแย้ง หรือบัญชีนี้ถูกผูกไว้แล้ว",
+
+  // Staff Access
+  [ErrorCode.NOT_A_STAFF_OF_WORK_SCHEDULE_PLACE]:
+    "ต้องการสิทธิ พนักงาน (STAFF) ของสถานที่ทำงานนี้ในการเข้าถึงข้อมูล",
+
   // ===========================
   // (จบ) PROGRAM: Work-Schedule
   // ===========================
