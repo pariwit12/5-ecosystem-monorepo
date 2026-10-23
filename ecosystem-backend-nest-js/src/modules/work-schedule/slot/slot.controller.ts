@@ -39,6 +39,12 @@ import {
   GetSlotsByPositionIdStartTimeEndTimeDtoParam,
   GetSlotsByPositionIdStartTimeEndTimeDtoQuery,
 } from './queries/get-slots-by-position-id-start-time-end-time.query';
+import {
+  GetMyWorkScheduleSlotsDtoParam,
+  GetMyWorkScheduleSlotsDtoQuery,
+  GetMyWorkScheduleSlotsQuery,
+  GetMyWorkScheduleSlotsResponse,
+} from './queries/get-my-work-schedule-slots.query';
 
 // =========================
 // (จบ) Import Type (Query)
@@ -77,6 +83,20 @@ export class SlotController {
   // ==============================
 
   // 1
+  @Get('my/places/:place_id')
+  @UseGuards(ClerkAuthGuard)
+  async getMyWorkScheduleSlots(
+    @Param() param: GetMyWorkScheduleSlotsDtoParam,
+    @Query() queryFromUrl: GetMyWorkScheduleSlotsDtoQuery,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.queryBus.execute<
+      GetMyWorkScheduleSlotsQuery,
+      GetMyWorkScheduleSlotsResponse
+    >(new GetMyWorkScheduleSlotsQuery(clerkUser.sub, param, queryFromUrl));
+  }
+
+  // 2
   @Get('by-position-id-start-time-end-time/:position_id')
   @UseGuards(ClerkAuthGuard)
   async getSlotsByPositionIdStartTimeEndTime(

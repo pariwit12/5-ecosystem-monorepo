@@ -12,6 +12,7 @@ import { DataStateWrapper } from "@/components/data-state-wrapper";
 import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 import { HolidayForm } from "@/features/work-schedule/holiday/components/holiday-form";
 import { HolidayList } from "@/features/work-schedule/holiday/components/holiday-list";
+import { MyWorkScheduleCalendar } from '@/features/work-schedule/slot/components/my-work-schedule-calendar';
 
 export default function Client({ placeId }: { placeId: string }) {
   const router = useRouter();
@@ -156,6 +157,10 @@ export default function Client({ placeId }: { placeId: string }) {
 
         {data && (
           <section className="space-y-6">
+            <MyWorkScheduleCalendar
+              placeId={placeId}
+              placeTimezone={data.timezone}
+            />
             <HolidayForm
               placeId={placeId}
               placeTimezone={data.timezone}

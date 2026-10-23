@@ -23,4 +23,18 @@ export const workScheduleSlotKeys = {
       startTime,
       endTime,
     ] as const,
+
+  myListsByPlaceIdStartTimeEndTime: (
+    userId: string,
+    placeId: string,
+    startTime: string,
+    endTime: string,
+  ) =>
+    [
+      ...workScheduleSlotKeys.lists(userId),
+      'my-by-place-id',
+      placeId,
+      startTime,
+      endTime,
+    ] as const,
 };

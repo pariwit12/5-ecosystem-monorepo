@@ -18,13 +18,17 @@ import { CreateWorkScheduleSlotHandler } from './commands/create-many.handler';
 // ===========================
 
 import { GetSlotsByPositionIdStartTimeEndTimeHandler } from './queries/get-slots-by-position-id-start-time-end-time.handler';
+import { GetMyWorkScheduleSlotsHandler } from './queries/get-my-work-schedule-slots.handler';
 
 // ===========================
 // (จบ) Import Handler (Query)
 // ===========================
 
 const CommandHandlers = [CreateWorkScheduleSlotHandler];
-const QueryHandlers = [GetSlotsByPositionIdStartTimeEndTimeHandler];
+const QueryHandlers = [
+  GetSlotsByPositionIdStartTimeEndTimeHandler,
+  GetMyWorkScheduleSlotsHandler,
+];
 
 @Module({
   imports: [CqrsModule],
