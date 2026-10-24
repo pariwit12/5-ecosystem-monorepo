@@ -16,7 +16,7 @@
 - หน้าดูกระดานเวร admin อยู่ที่ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/client-page.tsx` และ `component-work-schedule-board.tsx`; API ที่เรียกคือ `GET /api/work-schedule/slot/by-position-id-start-time-end-time/:position_id` ซึ่งปัจจุบันคืน `workScheduleSlots` กับ `minMaxs`
 - แบบฟอร์มสร้างเวรอยู่ที่ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`. ฟอร์มเลือกหลายวัน หลายพนักงาน เวลาเริ่ม และระยะเวลา แล้วสร้าง slot ทุกคู่ของวันกับพนักงานก่อนส่ง `POST /api/work-schedule/slot/:position_id`
 - `src/modules/work-schedule/slot/commands/create-many.handler.ts` ตรวจสิทธิ์ admin, เวรที่ซ้อนกันใน payload, ความสัมพันธ์พนักงานกับตำแหน่ง, เวรเดิมที่ซ้อนกัน และค่า Max ก่อน `createMany` ภายใน transaction แต่ **ยังไม่ได้ตรวจ `WorkScheduleHoliday`** จึงสามารถมีช่องโหว่จากการสร้างเวรทับวันหยุดได้
-- `VERIFICATION_TABLE.md` มีเครื่องหมาย `✓` ในช่องรอบที่ 1 ของแถว `Approve CURRENT_TASK_PLAN`; เมื่อแก้แผนในรอบนี้ต้องล้างเครื่องหมายทุกช่องในแถวดังกล่าว เพื่อให้ตรวจอนุมัติแผนฉบับปรับปรุงใหม่ และห้ามทำเครื่องหมายผ่านในรอบเดียวกัน
+- ตรวจ `VERIFICATION_TABLE.md` บน `main` แล้วพบว่าแถว `Approve CURRENT_TASK_PLAN` ว่างทุกช่องอยู่แล้ว จึงไม่มีเครื่องหมายเดิมที่ต้องล้าง; หลังแก้แผนรอบนี้ต้องคงแถวดังกล่าวว่างทั้งหมดและห้ามทำเครื่องหมายผ่านในรอบเดียวกัน
 
 ## 3. Business Logic ก่อนเริ่ม
 
