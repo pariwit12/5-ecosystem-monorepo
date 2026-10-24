@@ -290,7 +290,7 @@
 - สำหรับทุก route ใน inventory Section 4.2 ให้ใช้เกณฑ์เดียวกันและบันทึกไฟล์ที่แก้ใน commit description/รายงานงาน; ห้ามเลือกไม่ปรับ route เพียงเพราะไม่อยู่ในรายการตัวอย่าง และห้ามสร้าง route ใหม่เพื่อทดแทน route เดิม
 
 เกณฑ์ผ่าน:
-- ทุก route ที่ inventory ได้รับการตรวจบน viewport 320px, 375px, 768px และ 1024px
+- ทุก route ที่ inventory ได้รับการตรวจ source/class/DOM structure โดยอ้างอิง viewport 320px, 375px, 768px และ 1024px; หาก repository มี browser-test harness อยู่แล้ว ให้ใช้ตรวจ rendered layout ที่ viewport เหล่านี้ได้ แต่ห้ามเพิ่ม dependency หรือสร้าง harness ใหม่เพื่องานนี้. หากไม่มี harness ให้รายงานชัดเจนว่าการตรวจผ่าน CLI/Jest ไม่ได้ยืนยัน visual overflow จริงบน browser และแจ้งผู้ใช้ให้ตรวจ visual layout ใน browser ตาม viewport เหล่านี้หลัง Implement; ห้ามอ้างว่าการตรวจ visual browser ผ่านหากไม่ได้ทำ
 - ไม่มี page-level horizontal overflow; หากข้อมูลตารางกว้าง เลื่อนแนวนอนได้เฉพาะพื้นที่ตารางและยังเข้าถึงทุก field/action ได้
 - heading, form labels, error messages, status badges, card titles และ primary actions อ่านได้ครบ ไม่ทับกันหรือถูก clip
 - visual style สม่ำเสมอทั้งหน้า Home, Organizations, person creation, Organization settings และ Work Schedule ทุก role/subroute ที่มีอยู่
