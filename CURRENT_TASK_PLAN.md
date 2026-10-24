@@ -9,7 +9,7 @@
 - ปรับเฉพาะ UI ของ frontend ที่อยู่ใน `ecosystem-frontend-next-js` ให้ responsive สำหรับมือถือและ tablet และใช้ visual style ที่ minimal สบายตาและสม่ำเสมอ
 - ต้องครอบคลุมทุก route/page ที่มีอยู่จริงใน `ecosystem-frontend-next-js/src/app` ไม่ใช่เฉพาะหน้า Home หรือหน้า Work Schedule ที่ตรวจเห็นก่อน แนะนำให้เริ่มด้วยคำสั่งนี้เพื่อยืนยัน inventory จาก working tree จริง:
   ```sh
-  find ecosystem-frontend-next-js/src/app -type f \\( -name 'page.tsx' -o -name 'client-page.tsx' -o -name 'layout.tsx' -o -name 'loading.tsx' -o -name 'error.tsx' -o -name 'not-found.tsx' \\) -print | sort
+  find ecosystem-frontend-next-js/src/app -type f \( -name 'page.tsx' -o -name 'client-page.tsx' -o -name 'layout.tsx' -o -name 'loading.tsx' -o -name 'error.tsx' -o -name 'not-found.tsx' \) -print | sort
   ```
   ตรวจเส้นทางที่ค้นพบทั้งหมดและไล่ตาม component ที่แต่ละ route render ก่อนเริ่มแก้ ห้ามถือว่ารายการตัวอย่างในเอกสารนี้เป็นรายการ route ทั้งหมด
 - ใช้ Tailwind CSS v4, CSS variables/theme tokens และ component system ที่มีอยู่แล้ว ห้ามเพิ่ม UI framework หรือ dependency ใหม่เพียงเพื่อทำ responsive styling
