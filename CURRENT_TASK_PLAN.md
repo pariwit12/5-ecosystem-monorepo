@@ -108,7 +108,7 @@
 
 - เพิ่ม error code ใหม่ที่มีความหมายชัดเจน เช่น `WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP` (อย่าใช้ `WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP` เดิมซึ่งหมายถึงการสร้างวันหยุดทับเวร)
 - เพิ่มข้อความสำหรับ error code ใหม่นี้ใน `API_ERROR_MESSAGES` โดยสื่อว่าจัดเวรไม่ได้เพราะพนักงานมีวันหยุดทับช่วงเวลา
-- ใน `create-many-form.tsx` ให้แสดง error ที่ map ได้สำหรับ conflict จาก backend แทนการแสดงแต่ข้อความทั่วไป ส่วน error อื่นให้คง fallback ที่ไม่เปิดเผยรายละเอียดภายใน
+- เมื่อ mutation ตอบกลับด้วย `ErrorCode.WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP` ให้ตรวจ `error.response.data.errorCode` ใน `onError` และไม่แสดง toast ข้อความทั่วไปซ้ำ เพราะ response interceptor ใน `src/lib/axios.ts` แสดงข้อความที่ map จาก `API_ERROR_MESSAGES` อยู่แล้ว; สำหรับ error อื่นให้คง toast fallback ทั่วไป ห้ามอ่านหรือแสดงรายละเอียดภายในของ server
 
 ### 6.4 Backend: บังคับกฎก่อน insert
 
@@ -142,7 +142,7 @@
 
 - อัปเดต mock response ใน `admin-slot-date-range.test.tsx` ให้มี `workScheduleHolidays: []` และตรวจ prop ใหม่ที่ส่งให้ board โดยไม่ทำให้ test ช่วงเวลา/refresh/error เดิมเสีย
 - `admin-slot-board-holidays.test.tsx`: ทดสอบการแสดงวันหยุดใน row ของพนักงานที่ถูกต้อง, วันหยุดยังแสดงเมื่อกรองประเภทเวร และวันหยุดไม่ถูกนับเป็น slot/คนทำงาน
-- `create-many-holiday-blocking.test.tsx`: ทดสอบกรณีไม่เลือกพนักงานแล้วแสดง alert โดยไม่เรียก preflight query หรือ mutation; preflight ที่พบวันหยุดแล้วแสดง alert และไม่เรียก mutation; conflict ของพนักงานที่ไม่ได้เลือกไม่ขวาง; ช่วงเวลาที่ไม่ทับกันส่ง mutation ได้; และเมื่อ query ตรวจวันหยุดล้มเหลวต้องไม่ส่ง mutation
+- `create-many-holiday-blocking.test.tsx`: ทดสอบกรณีไม่เลือกพนักงานแล้วแสดง alert โดยไม่เรียก preflight query หรือ mutation; preflight ที่พบวันหยุดแล้วแสดง alert และไม่เรียก mutation; conflict ของพนักงานที่ไม่ได้เลือกไม่ขวาง; ช่วงเวลาที่ไม่ทับกันส่ง mutation ได้; เมื่อ query ตรวจวันหยุดล้มเหลวต้องไม่ส่ง mutation; และเมื่อ backend ตอบ `WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP` ต้องไม่แสดง toast ทั่วไปซ้ำกับข้อความเฉพาะที่ Axios interceptor แสดง
 
 ## 7. เกณฑ์ผ่าน / Acceptance Criteria แยกตามขั้นตอน
 
