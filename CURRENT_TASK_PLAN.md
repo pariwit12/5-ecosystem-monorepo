@@ -24,29 +24,208 @@
 
 ## 3. Business Logic ที่เกี่ยวข้องก่อนเริ่ม
 
-1. Root layout ครอบแอปด้วย `ClerkProvider` และ `TanStackProvider`; แสดงปุ่ม Sign In เมื่อ signed out และ `UserButton` เมื่อ signed in, พร้อม `OfflineBanner`, `GlobalErrorModal`, `Toaster` และ `ToastNotifier` ซึ่งมีอยู่แล้ว ต้องคงการทำงานทั้งหมดนี้
-2. Sidebar ถูก import ไว้ใน `src/app/layout.tsx` แต่ JSX ที่ render `<Sidebar />` ถูก comment อยู่ใน source ที่ตรวจแล้ว ห้ามเปิด sidebar หรือเปลี่ยน navigation behavior โดยอัตโนมัติในงานนี้
-3. Home (`src/app/page.tsx`) แยก UI ตามสถานะ signed-in/signed-out; เมื่อ login แล้วมี link ไป `/work-schedule`; card Coming Soon ยัง disabled และ card Toothcraft มี code ที่ comment ไว้ ต้องคงเงื่อนไขและปลายทางเดิม
-4. Organizations (`src/app/organizations/page.tsx`) ใช้ `organizationsQueries.lists`, แสดง loading state, จัดการ query-string error toast และนำไป `/organizations/[orgId]/settings`; `CreateOrgModal` อยู่ในหน้านี้ ต้องไม่เปลี่ยน query, ID ที่แสดง, toast หรือ navigation
-5. Organization settings ตรวจรูปแบบ UUIDv7 ที่ server component ก่อน render และ redirect ไป `/organizations?error=invalid_id` เมื่อไม่ถูกต้อง; client component ใช้ query/error code สำหรับ redirect; general settings ใช้ React Hook Form/Zod และ mutation เพื่อแก้ชื่อองค์กร ต้องคง validation, request, redirect และ success/error handling
-6. Work Schedule (`src/app/work-schedule/page.tsx`) ดึง role/data ผ่าน query; แสดง empty state เมื่อไม่มีสถานที่; แยกสถานที่ของ Admin และ Staff; link ต่อไปยัง admin/staff dashboard และ invitations; เมื่อเจอ `PERSON_NOT_FOUND` จะ redirect ไป `/person/new` ต้องคงการแบ่ง role และ route ทั้งหมด
-7. Invitations ใช้ state ของรหัสเชิญ, preview mutation, submit mutation, เคลียร์ข้อมูลเมื่อสำเร็จและ refetch รายการคำเชิญ ต้องคง flow นี้
-8. Admin/staff dashboard ใช้ `placeId`, query และ error code เพื่อตรวจสิทธิ์/สถานะสถานที่; หน้าย่อย admin มี navigation ไปจัดการ position/staff; staff page แสดงข้อมูลสถานที่, holiday form/list และ calendar ต้องคงสิทธิ์, query, redirect, forms และข้อมูลเดิม
-9. Person creation ใช้ `CreatePersonForm`; เมื่อสำเร็จจะแสดง success toast และกลับ Home; เมื่อผิดพลาดจะแสดง error toast ต้องคง submit, pending/disabled state และปลายทาง
-10. `DataStateWrapper`, loading skeletons, offline banner, global error modal และ toast เป็นสถานะระบบที่ต้องยังอ่านได้และใช้งานได้ทุก viewport
+1. Root layout ครอบแอปด้วย `ClerkProvider` และ `TanStackProvider`; แสดง Sign In เมื่อ signed out และ `UserButton` เมื่อ signed in; มี `OfflineBanner`, `GlobalErrorModal`, `Toaster` และ `ToastNotifier`. Sidebar ถูก import แต่ไม่ render เพราะ JSX ถูก comment; ต้องคงสภาพนี้
+2. Home แยก UI ตาม Clerk auth state; เมื่อ signed in มีลิงก์ไป `/work-schedule`; Coming Soon ยัง disabled และ Toothcraft JSX ถูก comment. ห้ามเปิด feature หรือเปลี่ยนปลายทาง
+3. Organizations page ใช้ `organizationsQueries.lists(userId, getToken)`, แสดง `OrganizationsLoading`, อ่าน query string `error` เพื่อ toast แล้วลบ query string ด้วย `history.replaceState`; เลือกองค์กรแล้วไป `/organizations/${orgId}/settings`; `CreateOrgModal` ใช้ Zod/React Hook Form และ mutation สำหรับสร้างองค์กร. คง query, id, toast, mutation, form validation และ navigation เดิม
+4. Organization settings, general settings, dental-clinic list/new และ organization work-schedule list/new มี server wrappers ที่ตรวจ `orgId` ด้วย regex UUIDv7 ก่อน render และ redirect invalid id ไป `/organizations?error=invalid_id`; อย่าลบหรือย้าย validation นี้ไป client. Settings general ใช้ form schema ที่เลือก `name` จาก `UpdateOrganizationByIdDtoBodySchema`, mutation update และ toast/error redirect เดิม
+5. Dental Clinic list page มีการแสดงสถานะ/empty UI และ link ไปหน้า `/dental-clinic/new`; ตัวอย่าง/mock clinic data ใน client source เป็น comment ไม่ใช่ data fetching ที่ใช้งานอยู่ จึงห้ามเพิ่ม API หรือเปลี่ยนข้อมูลเพื่อให้หน้า responsive. หน้า new clinic เป็น wizard สามขั้น (`StepWelcome`, `StepSetup`, `StepSuccess`) โดย state `currentStep`, query organization details, และ redirect ตาม error code; คงขั้นตอน/ปุ่ม/validation/state ตาม source จริง
+6. Organization Work Schedule list ใช้ `workSchedulePlacesQueries.listByOrganizationId`, แสดงรายการสถานที่/empty/loading/error state และ redirect เมื่อ person/organization/role error; หน้าสร้างใช้ `CreateWorkSchedulePlaceForm(orgId)`. คง `orgId`, query, role access/error handling, submit behavior และปลายทาง
+7. Person creation ผ่าน `CreatePersonForm` และ `useCreatePerson`; submit สำเร็จมี success toast แล้วกลับ `/`, error มี error toast และปุ่มถูก disabled ระหว่าง pending. ห้ามเปลี่ยน mutation, toast, pending state หรือ route
+8. Work Schedule landing ใช้ `workScheduleLogInQueries.userRolesByClerkId`, แยก `placesAsAdmin` กับ `placesAsStaff`, แสดง empty state เมื่อไม่มีสถานที่ และลิงก์ไป invitations/admin/staff destinations; `PERSON_NOT_FOUND` redirect ไป `/person/new`. คงการแบ่ง role, query/error state และลิงก์ทั้งหมด
+9. Admin place layout ตรวจ `placeId` เป็น UUIDv7 และ redirect โดยใช้ `PageErrorList.INVALID_ID` ไปยัง `/work-schedule?error=...` เมื่อไม่ถูกต้อง. Admin place dashboard เป็นเมนูเข้าสู่ position/staff. ห้าม bypass ID validation หรือเปลี่ยน role/access behavior
+10. Admin position list/detail ใช้ query สำหรับ position/list และ position id; position layout ตรวจ `positionId` UUIDv7 ก่อน render. Query error ถูกแปลงเป็น redirect, loading/error UI หรือ toast ผ่าน route-specific helper. คง access control, error-code mapping, query, refetch, navigation และ `placeId/positionId`
+11. Position subroutes มี min-max rules, slot templates, slot types, slots และ staff-position assignments. หน้ารายการใช้ query ที่ตรงกับ resource; หน้า create ใช้ feature forms/checkbox selection และปลายทาง success/cancel ที่กำหนดไว้. ห้ามสลับ query ของ template/type, ลบ access-control/error redirect helper หรือเปลี่ยน payload/validation ของ forms
+12. Slot board ใช้ข้อมูล slots, min-max, staff positions, holidays, place timezone และช่วงวันที่; มี filter ประเภท slot และ board UI. `slot-date-range.ts` แปลง/format datetime โดย timezone; `slot/new/page.tsx` รองรับ query `prefillId` และตรวจ UUIDv7 ก่อนแสดง form; route new/menu/pre-fill เลือก flow สำหรับสร้าง slot. คง timezone/date conversion, min/max rules, filter, holiday/staff counts, prefill, query และ mutation semantics เดิม
+13. Admin staff list ใช้ query รายชื่อ staff และ `useStaffInvitationActions(placeId)` สำหรับออก invitation/unlink staff พร้อม confirmation state/dialog; `staff/new` ใช้ `CreateWorkScheduleStaffForm(placeId)`; `staff/invitations` แสดงคำขอและตัดสินใจ APPROVE/REJECT ด้วย mutation/refetch. คง confirmation, invitation actions, status/expiry, error handling และ role checks
+14. User invitations route ใช้ `workScheduleStaffInvitationQueries.mine`; preview ตรวจ code และแสดงรายละเอียดคำเชิญ; submit สำเร็จเคลียร์ preview/code และ refetch รายการ. Staff place route ใช้ `workScheduleStaffPlaceQueries.detail`, `HolidayForm`, `HolidayList`, และ `MyWorkScheduleCalendar`; เมื่อเจอ person/place/role error ให้ redirect ตามเดิม. ห้ามเปลี่ยน holiday/calendar data flow หรือ invitation flow
+15. `/agent` เป็น interactive chat: เก็บ messages/input/isSending/conversationId, ขอ Clerk token, POST ไป `/api/program/agent/chat` และแสดง response/error ตาม code. ต้องปรับ input/message panel/action ให้ responsive แต่ห้ามเปลี่ยน API URL, Authorization header, request payload, message order หรือ pending/error behavior
+16. Catch-all `/[...notFound]` มีปุ่ม `router.back()` และลิงก์ Home; `src/app/error.tsx` เป็น Error Boundary ที่ log error แล้วเรียก `reset()`. Shared loading/error/offline/modal/toast states ต้องอ่านได้ทุก viewport และคงเงื่อนไขแสดงผลเดิม
+
 
 ## 4. ส่วนของโค้ดที่ตรวจพบก่อนเริ่ม
 
-- `ecosystem-frontend-next-js/src/app/layout.tsx`: header ปัจจุบันใช้ class `bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-50`; shell ด้านล่างใช้ `flex flex-1 overflow-hidden` และ `main.flex-1`. ต้องตรวจ header overflow และป้องกัน shell ตัดเนื้อหา/การ scroll บนจอเล็ก
-- `ecosystem-frontend-next-js/src/app/globals.css`: import Tailwind/shadcn theme และประกาศ semantic tokens ใน `:root` กับ `.dark`; base layer ตั้ง border, outline, background และ foreground ผ่าน token อยู่แล้ว ควรใช้เป็นแหล่ง theme กลาง
-- `ecosystem-frontend-next-js/src/app/page.tsx`: หน้า Home ใช้ `p-8`, fixed heading scale และ card grid `grid grid-cols-1 md:grid-cols-3`; card มีสีและ shadow กำหนดแยกเป็นราย element
-- `ecosystem-frontend-next-js/src/app/organizations/page.tsx` และ `src/app/organizations/loading.tsx`: ใช้ `p-8`, card styles และ skeleton grid; loading layout ต้องสอดคล้องกับหน้า content ทั้งขนาด container และ breakpoint
-- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/client-page.tsx` และ `.../settings/general/client-page.tsx`: มี header ที่แบ่งปุ่มย้อนกลับ/หัวข้อ/action ด้วย flex และมี card/forms; ตรวจ wrap/stack และการย่อข้อความบนมือถือ
-- `ecosystem-frontend-next-js/src/app/person/new/client-page.tsx` กับ `src/features/person/components/create-person-form.tsx`: ใช้ `p-8`, header แบบ flex และ action buttons แบบวางบรรทัดเดียว; จัด padding และ action controls ให้เหมาะกับมือถือโดยรักษา form submit behavior
-- `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`: มี responsive grid อยู่แล้ว (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) แต่ header และ link invitations รวมถึงสีของ Admin/Staff ยังต้องตรวจ overflow/ความสม่ำเสมอ
-- `ecosystem-frontend-next-js/src/app/work-schedule/invitations/client-page.tsx`, `src/app/work-schedule/admin/[placeId]/client-page.tsx`, `src/app/work-schedule/admin/[placeId]/position/client-page.tsx`, `src/app/work-schedule/staff/[placeId]/client-page.tsx` และ route component ที่ค้นพบเพิ่มจาก inventory: ตรวจ header, menu grid, form, calendar, tables/lists และ control ของแต่ละหน้าที่มีอยู่จริง
-- Shared components ที่ตรวจยืนยันแล้ว ได้แก่ `src/components/data-state-wrapper.tsx`, `src/components/use-by-layout/global-error-modal.tsx`, `src/components/use-by-layout/offline-banner.tsx`, `src/components/use-by-layout/sidebar.tsx`, `src/features/organizations/components/create-organization-modal.tsx` และ `src/components/ui/button.tsx`; แก้เฉพาะส่วน presentation ที่จำเป็นและมีผลจริง
-- `package.json` ที่ root มี scripts สำหรับ frontend test/lint/typecheck/build และ `.github/workflows/ci.yml` รัน `pnpm install --frozen-lockfile` ตามด้วย `pnpm run verify`; ใช้ commands ที่มีอยู่เป็นเกณฑ์ตรวจ ไม่เปลี่ยน scripts โดยไม่มีเหตุผลที่จำเป็น
+### 4.1 สภาพจริงของ shared shell, theme และหน้าที่ตรวจแล้ว
+
+- `ecosystem-frontend-next-js/src/app/layout.tsx`: ยืนยันจาก source จริงว่า `html` มี `h-full overflow-y-auto scrollbar-gutter-stable`; `body` มี `min-h-full flex flex-col bg-gray-50`; header ใช้ `bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-50`; ข้อความต้อนรับซ่อนด้วย `hidden sm:block`; shell ด้านล่างใช้ `flex flex-1 overflow-hidden`; main ใช้ `flex-1`. `Sidebar` ถูก import แต่ JSX `<Sidebar />` ถูก comment อยู่ ห้ามเปิดระหว่างงานนี้
+- `ecosystem-frontend-next-js/src/app/globals.css`: Tailwind CSS v4 และ shadcn theme ใช้ CSS variables ที่ `:root` และ `.dark` อยู่แล้ว; token ครอบคลุม background/foreground/card/muted/primary/border/input/ring/destructive และ chart/sidebar colors. ค่า light theme ปัจจุบันเป็น neutral ขาว/เทาและ primary เป็น neutral ไม่ใช่ muted blue ตาม visual direction ที่ต้องการ; ให้เปลี่ยน token กลางแทนไล่ hard-code สีทั่วระบบ และตรวจ `.dark` คู่กัน
+- `ecosystem-frontend-next-js/src/app/page.tsx`: UI signed-out/signed-in ใช้ `Show` จาก Clerk; grid `grid-cols-1 md:grid-cols-3` มีอยู่แล้ว; Work Schedule ลิงก์ไป `/work-schedule`; Coming Soon เป็น disabled; Toothcraft block ถูก comment. งานนี้เปลี่ยน layout/appearance เท่านั้น ห้ามเปิด feature ที่ปิดไว้
+- `ecosystem-frontend-next-js/src/app/organizations/page.tsx` และ `src/app/organizations/loading.tsx`: ทั้งคู่ใช้ container `p-8 w-full max-w-6xl` และ grid `grid-cols-1 md:grid-cols-3`; ใช้ loading component ที่มีอยู่. หน้า Organizations แสดง `CreateOrgModal` และนำไป `/organizations/${orgId}/settings`; การเปลี่ยนแปลงต้องไม่แก้ query/toast/route
+- Work Schedule root และหน้าระบบย่อยมี style สองรูปแบบปะปนกัน: บางหน้าใช้ `p-8`, `bg-white`, `text-gray-*` และสี purple/blue แบบ hard-coded; บางหน้ามี responsive utilities และ semantic tokens เช่น `px-4 sm:px-6 lg:px-8`, `min-w-0`, `break-words`, `min-h-11`, `@container`, และ `text-muted-foreground` อยู่แล้ว. ให้ปรับตามความจำเป็นและรักษา responsive behavior ที่มีอยู่ ไม่แทนที่รูปแบบที่ดีอยู่แล้วด้วย layout ที่ถอยหลัง
+- `ecosystem-frontend-next-js/src/components/ui/button.tsx`: shared Button ใช้ CVA และ semantic tokens; sizes ปัจจุบันมีหลายระดับรวมถึงความสูงต่ำกว่า 44px. ห้ามเปลี่ยน primitive กลางทั้งระบบโดยอัตโนมัติ ให้ตรวจ use sites ก่อนและทำเฉพาะเมื่อจำเป็น
+- `src/components/data-state-wrapper.tsx`: มี auth/query loading state, error state และ reload button ที่ปรากฏหลัง timer 5 วินาที; คงเงื่อนไขและ timer เดิมขณะจัด layout ให้ responsive
+- `src/components/use-by-layout/global-error-modal.tsx` และ `src/components/use-by-layout/offline-banner.tsx`: modal ใช้ fixed overlay/padding และ banner แสดงเมื่อ offline เท่านั้น; ปรับการ wrap/ขนาดภายใน viewport โดยไม่เปลี่ยน state/การปิด modal/เงื่อนไข offline
+- `src/app/[...notFound]/page.tsx`: เป็น fallback 404 ที่มีปุ่ม `router.back()` และลิงก์ Home; `src/app/error.tsx` เป็น Error Boundary ที่เรียก `reset()`. ไม่สร้างหรือเปลี่ยน fallback route โดยไม่จำเป็น
+- `src/app/agent/page.tsx`: เป็น chat UI ที่ใช้ Clerk token แล้ว POST ไป `${NEXT_PUBLIC_API_BASE_URL}/api/program/agent/chat` พร้อม `message` และ `conversationId`; ต้องรวมในขอบเขต responsive ด้วย แต่ห้ามเปลี่ยน protocol/request/state ของแชต
+- CI จริงใน `.github/workflows/ci.yml` ใช้ Node 22, `pnpm install --frozen-lockfile` และ `pnpm run verify`; root `package.json` มี scripts `test:frontend`, `lint:frontend`, `typecheck:frontend`, `build:frontend` และ `verify`. ห้ามแก้ workflow/scripts/dependencies เพื่อแก้ปัญหา UI โดยไม่มีเหตุผลนอกเหนือจากขอบเขต
+
+### 4.2 Inventory route component ที่ยืนยันจาก GitHub `main`
+
+ตรวจ Git tree ของ `main` (tree SHA ณ snapshot ก่อนแก้เอกสาร: `5f9472f9ba9d3326cac6a1a93fd0890753f5ed79`) พบไฟล์ที่เป็น `page.tsx`, `client-page.tsx`, `layout.tsx`, `loading.tsx` หรือ `error.tsx` รวม **90 ไฟล์**: `page.tsx` 33, `client-page.tsx` 28, `layout.tsx` 3, `loading.tsx` 13 และ `error.tsx` 13. รายการนี้เป็น baseline ที่ต้องให้ความสำคัญครบทุก path; อย่าตัด route ออกจากงานเพราะไม่อยู่ในแผนฉบับก่อน
+
+#### Root, fallback และ global error (5 files)
+- `ecosystem-frontend-next-js/src/app/[...notFound]/page.tsx`
+- `ecosystem-frontend-next-js/src/app/agent/page.tsx`
+- `ecosystem-frontend-next-js/src/app/error.tsx`
+- `ecosystem-frontend-next-js/src/app/layout.tsx`
+- `ecosystem-frontend-next-js/src/app/page.tsx`
+
+#### Organizations routes (14 files)
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/general/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/general/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/work-schedule/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/work-schedule/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/work-schedule/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/work-schedule/page.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/page.tsx`
+
+#### Person routes (2 files)
+- `ecosystem-frontend-next-js/src/app/person/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/person/new/page.tsx`
+
+#### Work Schedule routes (69 files)
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/layout.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/layout.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/new/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/new/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/new/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/new/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/new/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/new/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/invitations/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/invitations/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/new/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/staff/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/invitations/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/invitations/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/staff/[placeId]/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/staff/[placeId]/page.tsx`
+
+### 4.3 ไฟล์ route-local ที่ไม่ใช่ page wrapper แต่มีผลกับ UI/behavior
+
+ไฟล์เหล่านี้พบใน source tree จริงและต้องอ่านเมื่อปรับหน้าที่เกี่ยวข้อง โดยเฉพาะ helper ที่คุม error redirect, wizard และ schedule board:
+
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/new/_components/step-1-welcome.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/new/_components/step-2-setup.tsx`
+- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/dental-clinic/new/_components/step-3-success.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/min-max/new/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-template/new/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot-type/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/component-work-schedule-board-component-slot-type-selector.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/component-work-schedule-board.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/slot-date-range.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/error-code-redirect-list.ts`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/staff-position/new/error-code-redirect-list.ts`
+
+### 4.4 Shared UI และ feature components ที่ route import ใช้ร่วมกัน
+
+ตรวจ existence จาก Git tree แล้ว; ไล่ตาม call sites ก่อนแก้ shared behavior:
+
+- `ecosystem-frontend-next-js/src/app/globals.css`
+- `ecosystem-frontend-next-js/src/components/data-state-wrapper.tsx`
+- `ecosystem-frontend-next-js/src/components/use-by-layout/global-error-modal.tsx`
+- `ecosystem-frontend-next-js/src/components/use-by-layout/offline-banner.tsx`
+- `ecosystem-frontend-next-js/src/components/use-by-layout/sidebar.tsx`
+- `ecosystem-frontend-next-js/src/components/use-by-layout/toast-notifier.tsx`
+- `ecosystem-frontend-next-js/src/components/ui/button.tsx`
+- `ecosystem-frontend-next-js/src/components/children-header.tsx`
+- `ecosystem-frontend-next-js/src/components/menu-grid/menu-gird.tsx`
+- `ecosystem-frontend-next-js/src/components/menu-grid/menu-card.tsx`
+- `ecosystem-frontend-next-js/src/components/menu-grid/icon.tsx`
+- `ecosystem-frontend-next-js/src/components/input/datetime-input.tsx`
+- `ecosystem-frontend-next-js/src/components/redirect/redirect-ui.tsx`
+- `ecosystem-frontend-next-js/src/constants/page-error-list.enum.ts`
+- `ecosystem-frontend-next-js/src/hooks/use-effect-check-error.ts`
+- `ecosystem-frontend-next-js/src/features/organizations/components/create-organization-modal.tsx`
+- `ecosystem-frontend-next-js/src/features/person/components/create-person-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/places/components/create-work-schedule-place-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/position/components/create-work-schedule-position-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/staff/components/create-work-schedule-staff-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/min-max/components/create-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/slot-template/components/create-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/slot-type/components/create-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/staff-position/components/create-many-check-box.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/holiday/components/holiday-form.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/holiday/components/holiday-list.tsx`
+- `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/my-work-schedule-calendar.tsx`
+
+นอกจากนี้ route files ที่เกี่ยวข้อง import feature hooks/query/mutation และ shared providers (เช่น `organizationsQueries`, `workSchedulePlacesQueries`, `workSchedulePositionQueries`, `workScheduleSlotQueries`, `workScheduleSlotTemplateQueries`, `workScheduleSlotTypeQueries`, `workScheduleStaffPositionQueries`, `workScheduleStaffQueries`, และ `workScheduleStaffInvitationQueries`). ให้เปลี่ยน class/layout เท่านั้นโดยไม่ปรับ key, payload, query options, mutation callbacks หรือสิทธิ์เข้าถึง.
+
+### 4.5 Test baseline ที่ตรวจพบจริง
+
+- `ecosystem-frontend-next-js/jest.config.mjs` ใช้ `next/jest`, `testEnvironment: "jsdom"`, และ `testMatch` ภายใต้ `tests/**/*.test.ts(x)`; มี path alias `@/` และ `@backend/` ตาม monorepo
+- Test files ที่พบใน frontend package มี 4 ไฟล์:
+  - `ecosystem-frontend-next-js/tests/work-schedule/admin-slot-board-holidays.test.tsx`
+  - `ecosystem-frontend-next-js/tests/work-schedule/admin-slot-date-range.test.tsx`
+  - `ecosystem-frontend-next-js/tests/work-schedule/create-many-holiday-blocking.test.tsx`
+  - `ecosystem-frontend-next-js/tests/work-schedule/slot-date-range.test.ts`
+- Tests ที่มีอยู่ทดสอบ holiday rendering/filtering, date-range/timezone และ create-many holiday-blocking logic; รักษา assertions เหล่านี้ไว้ และเพิ่ม responsive/UI regression tests ใน directory/convention เดิมตาม component ที่แก้. Jest/jsdom ไม่ได้พิสูจน์ visual overflow จริงใน browser
+
 
 ## 5. Business Logic ที่คาดหวังหลัง Implement
 
@@ -62,13 +241,15 @@
 ### ขั้นตอนที่ 1 — ตรวจ inventory และกำหนด baseline
 
 งาน:
-- รันคำสั่ง inventory ในหัวข้อ 2 กับ working tree จริง
-- ตรวจทุก `page.tsx`, `client-page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx` และ `not-found.tsx` ที่พบ รวมถึง component ที่หน้าเหล่านั้นใช้; ไล่ตาม link/navigation ที่อยู่ใน UI เพื่อไม่พลาด route ที่มีอยู่
+- รันคำสั่ง inventory ในหัวข้อ 2 กับ working tree จริงก่อนเริ่มแก้
+- Baseline ที่ Planner ตรวจจาก GitHub `main` พบ route component 90 ไฟล์ (33 `page.tsx`, 28 `client-page.tsx`, 13 `loading.tsx`, 13 `error.tsx`, 3 `layout.tsx`); รายการ path ทั้งหมดระบุไว้ใน Section 4.2
+- ถ้า inventory ใน checkout ของ Implementor ต่างจาก baseline (มี route เพิ่ม/หาย/เปลี่ยนชื่อ) ให้หยุดก่อนแก้ source และรายงาน Planner เพื่อปรับแผน ไม่ตัดสินใจข้าม route หรือขยาย scope เอง
+- ตรวจทุก route component ตาม Section 4.2 และตาม imports ไปยัง route-local/shared components ใน Section 4.3–4.4; ตรวจ href/router destinations ที่มีอยู่จริง รวมถึง form/modal, nested loading/error, wizard และ slot board ห้ามจำกัดงานไว้เฉพาะ route ที่แสดงอยู่ใน navigation หลัก
 - ค้น class ที่อาจก่อปัญหาบน viewport เล็ก เช่น fixed padding/width, single-row flex, grid columns ที่ไม่ responsive, `overflow-hidden`, long ID/text, form action groups และ table/container ที่กว้าง
 - สำรวจรูปแบบ Jest/Testing Library และ test ที่มีอยู่ก่อนเพิ่มหรือแก้ test
 
 เกณฑ์ผ่าน:
-- มีการตรวจ route inventory จาก working tree จริงครบทั้ง frontend และไม่มีการเดาชื่อไฟล์ route ที่ยังไม่ยืนยัน
+- inventory จาก working tree ถูกเทียบกับ baseline 90 paths ใน Section 4.2 แล้ว; ทุก route ที่ตรงกันถูกกำหนดขอบเขต UI ที่ต้องตรวจ และไม่มีการเดาชื่อไฟล์
 - ระบุจุดแก้ style ต่อไฟล์และ business logic ที่ต้องคงอยู่ก่อนเริ่มแก้
 - ไม่มีไฟล์ backend, API, schema, migration หรือ business logic ถูกแก้ในขั้นตอนนี้
 
@@ -92,24 +273,12 @@
 
 ### ขั้นตอนที่ 3 — ปรับทุกหน้าและ shared UI ให้ responsive/minimal
 
-ไฟล์ที่ยืนยันว่ามีอยู่และควรตรวจ/ปรับตามความจำเป็น:
-- `ecosystem-frontend-next-js/src/app/page.tsx`
-- `ecosystem-frontend-next-js/src/app/organizations/page.tsx`
-- `ecosystem-frontend-next-js/src/app/organizations/loading.tsx`
-- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/client-page.tsx`
-- `ecosystem-frontend-next-js/src/app/organizations/[orgId]/settings/general/client-page.tsx`
-- `ecosystem-frontend-next-js/src/app/person/new/client-page.tsx`
-- `ecosystem-frontend-next-js/src/features/person/components/create-person-form.tsx`
-- `ecosystem-frontend-next-js/src/app/work-schedule/page.tsx`
-- `ecosystem-frontend-next-js/src/app/work-schedule/invitations/client-page.tsx`
-- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/client-page.tsx`
-- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/client-page.tsx`
-- `ecosystem-frontend-next-js/src/app/work-schedule/staff/[placeId]/client-page.tsx`
-- `ecosystem-frontend-next-js/src/components/data-state-wrapper.tsx`
-- `ecosystem-frontend-next-js/src/components/use-by-layout/global-error-modal.tsx`
-- `ecosystem-frontend-next-js/src/components/use-by-layout/offline-banner.tsx`
-- `ecosystem-frontend-next-js/src/features/organizations/components/create-organization-modal.tsx`
-- route UI และ shared component อื่นทุกไฟล์ที่ยืนยันจาก inventory จริงในขั้นตอนที่ 1
+ไฟล์ route/UI ที่ต้องครอบคลุมทั้งหมดคือ 90 paths ตาม Section 4.2 (อย่าใช้รายการหน้าเดิมที่สั้นกว่านี้เป็น scope limit). อ่าน supporting components ตาม Section 4.3–4.4 เมื่อ route import ใช้งาน โดยให้พิจารณาเป็นอย่างน้อย:
+- root shell/theme และ global error/fallback/agent
+- Organizations/settings, Dental Clinic list + wizard และ Organization Work Schedule list/create
+- Person creation
+- Work Schedule landing/invitations, admin dashboard, position list/detail, min-max, slot-template, slot-type, slot/slot new/menu/pre-fill, staff-position assignment, staff list/create/invitations และ staff-side holiday/calendar
+- ทุก `loading.tsx`, `error.tsx`, `layout.tsx` ที่อยู่ใน nested route และ shared UI components ที่หน้าดังกล่าว render
 
 งาน:
 - ปรับ container padding จากค่าคงที่ที่กว้างเกินบนมือถือให้ responsive; จำกัด max width เฉพาะเนื้อหาที่เหมาะสม และใช้ `min-w-0`/wrapping เพื่อกันข้อความยาวดัน layout
@@ -118,7 +287,7 @@
 - ทำสี card, link, button, status badge, border และ muted text ให้สอดคล้องกับ theme tokens; เก็บความต่างสีที่จำเป็นสำหรับ Admin/Staff หรือสถานะ error/success ไว้เฉพาะเมื่อสื่อความหมาย
 - ให้ form/modal/error state อยู่ภายใน viewport, input กว้างตาม container, action buttons กดง่าย และ disabled/pending/error states ยังคงเดิม
 - ทำให้ skeleton/loading layout ตรงกับ layout จริง เพื่อไม่ให้กระโดดขนาดชัดเจนระหว่างโหลด
-- สำหรับ route ที่ได้จาก inventory แต่ไม่อยู่ในรายการข้างต้น ให้ใช้เกณฑ์เดียวกันและบันทึกว่าแก้ไฟล์ใดใน commit description/รายงานงาน ไม่สร้าง route ใหม่เพื่อทดแทน route เดิม
+- สำหรับทุก route ใน inventory Section 4.2 ให้ใช้เกณฑ์เดียวกันและบันทึกไฟล์ที่แก้ใน commit description/รายงานงาน; ห้ามเลือกไม่ปรับ route เพียงเพราะไม่อยู่ในรายการตัวอย่าง และห้ามสร้าง route ใหม่เพื่อทดแทน route เดิม
 
 เกณฑ์ผ่าน:
 - ทุก route ที่ inventory ได้รับการตรวจบน viewport 320px, 375px, 768px และ 1024px
@@ -127,58 +296,3 @@
 - visual style สม่ำเสมอทั้งหน้า Home, Organizations, person creation, Organization settings และ Work Schedule ทุก role/subroute ที่มีอยู่
 - ไม่มีการเปลี่ยนเงื่อนไข signed-in/signed-out, query/mutation, form schema, redirect, error code, loading/error handling หรือ link target
 
-### ขั้นตอนที่ 4 — เพิ่ม/ปรับ regression tests
-
-งาน:
-- ใช้ Jest และ Testing Library ตาม dependency/test setup ที่มีอยู่; ปรับ test เดิมก่อนสร้าง test ใหม่ และทำ mock ตาม conventions ของ repository
-- เพิ่ม test สำหรับ shared shell/component และหน้าหลักที่มีการเปลี่ยนโครงสร้าง เพื่อยืนยันว่า heading, link, form/action สำคัญ และ loading/error/empty states ยัง render ตามเดิม
-- เพิ่ม assertions ที่ตรวจ responsive utility classes/structure ที่เป็นส่วนของ requirement (เช่น responsive grid, wrapping/header container และ mobile-friendly action layout) โดยไม่อ้างว่า jsdom ตรวจวัด visual overflow จริงได้
-- เพิ่ม/คง regression coverage ของ conditional auth UI, organization navigation/error-state และ invitation/person form interactions เท่าที่เข้ากับ test setup ที่มีอยู่
-- ไม่เพิ่ม Playwright/browser automation dependency เพียงเพื่องานนี้ หาก repository ไม่มี browser test harness อยู่แล้ว; การตรวจด้วย browser จริงไม่ใช่เงื่อนไขที่ Implementor ต้องทำผ่าน CLI
-
-เกณฑ์ผ่าน:
-- test ที่เกี่ยวข้องผ่านและมี assertions ต่อ behavior ที่เปลี่ยน/เสี่ยง ไม่ใช่เพียง snapshot กว้าง ๆ
-- test ไม่ต้องเรียก backend จริง และไม่มี secrets/env จริงจำเป็นสำหรับ unit tests
-- ไม่มีการแก้ test เพื่อปิดบัง regression หรือข้าม assertions เดิม
-
-### ขั้นตอนที่ 5 — ตรวจสอบก่อนส่งงาน
-
-รันจาก root repository:
-```sh
-pnpm run test:frontend
-pnpm run lint:frontend
-pnpm run typecheck:frontend
-pnpm run build:frontend
-pnpm run verify
-```
-
-เกณฑ์ผ่าน:
-- ทุก command ที่ environment สามารถรันได้จบด้วย exit code 0; หาก command ใดทำไม่ได้เพราะ environment/dependency/secret ให้รายงาน command และ output จริงโดยไม่อ้างว่าผ่าน
-- `pnpm run verify` ใช้ตรวจแบบเดียวกับ `.github/workflows/ci.yml` ซึ่งติดตั้ง dependencies ด้วย frozen lockfile แล้วเรียก root verification script
-- ตรวจ diff รอบสุดท้ายว่าไม่มีการแก้ไฟล์ backend, API contract, database/schema/migration, route behavior หรือ dependencies โดยไม่จำเป็น
-- สรุป route ที่ตรวจจริง, test commands ที่รันจริง และผลที่พบ
-
-## 7. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
-
-- แก้ไขไฟล์ CSS/theme และ shared shell ที่มีอยู่ โดยเฉพาะ `src/app/globals.css` และ `src/app/layout.tsx`
-- แก้ไขเฉพาะ route/page/client component และ shared UI component ที่ inventory/ตรวจโค้ดยืนยันว่าจำเป็นต่อ responsive behavior; รายการไฟล์ต้องสอดคล้องกับ actual inventory ไม่เพิ่ม path โดยการคาดเดา
-- เพิ่มหรือแก้ test files เฉพาะตามรูปแบบที่มีอยู่จริงเพื่อทดสอบ regressions; ไม่มี dependency เพิ่มถ้าไม่จำเป็น
-- ไม่สร้างหรือลบ route, ไม่สร้าง design system แยกชุดใหม่ และไม่แก้ไฟล์ backend/API/database/migration
-- `CURRENT_TASK_PLAN.md` เป็นไฟล์เอกสารที่ Planner ปรับในรอบนี้; `VERIFICATION_TABLE.md` ต้องคงช่อง Approve CURRENT_TASK_PLAN ว่างทั้งหมดในรอบที่แก้แผน ห้าม mark approve ใน commit นี้
-
-## 8. สิ่งที่ต้องระวัง
-
-- ห้ามเปลี่ยน business logic ขณะ refactor className: อย่าย้าย/ลบ conditional branch, handler, hook, query, mutation, Zod/React Hook Form configuration หรือ redirect
-- ห้ามเปลี่ยน Clerk behavior, provider order, auth gate, route pathname, URL query parameter, error code, toast contents หรือ role-specific navigation
-- ห้ามลบ content หรือใช้ `hidden` เพื่อแก้ overflow; ให้เปลี่ยน wrapping/layout หรือทำ overflow เฉพาะ container ข้อมูลที่จำเป็น
-- อย่าตั้ง fixed width ที่เกิน viewport หรือใช้ `w-screen`/fixed positioning โดยไม่จำเป็น; ใช้ `w-full`, `max-w-*`, `min-w-0`, wrapping และ breakpoint utilities ตามบริบท
-- อย่าปรับ global button/input primitives จนกระทบทุกหน้าโดยไม่ตรวจ use sites; หากแก้ shared component ต้องรัน test และดู call sites ที่เกี่ยวข้อง
-- อย่าเปิด Sidebar ที่ปัจจุบันถูก comment, อย่าเปิด modal/feature ที่ปิดไว้, และอย่าเปลี่ยน Coming Soon state
-- อย่าแก้ package/lockfile, backend, database หรือ API เพียงเพื่อรองรับ styling
-- อย่ารายงาน visual browser testing ที่ไม่ได้ทำ; Jest/jsdom ใช้ตรวจ DOM/behavior ได้ แต่ไม่ใช่หลักฐานว่าไม่มี overflow จริงบน browser
-- ห้ามแต่ง route/file inventory: ให้ยึดผลจาก filesystem ของ working tree ที่ Implementor ได้รับ และระบุข้อจำกัดถ้าไม่สามารถตรวจ route ใดได้
-
-## 9. ข้อจำกัดของงาน
-
-- ขอบเขตคือ code, tests และ CI/CLI verification เท่านั้น ไม่รวมการ deploy, เปลี่ยน production config, ทดสอบบนอุปกรณ์จริง หรือการเปลี่ยน business/product policy
-- หากระหว่างตรวจพบว่าจำเป็นต้องเปลี่ยน business logic, API contract, route flow หรือเพิ่ม dependency เพื่อทำ UI ให้ responsive ให้หยุดการเปลี่ยนส่วนนั้นและรายงานเหตุผลก่อนขยาย scope
