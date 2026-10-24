@@ -336,7 +336,7 @@ pnpm run verify
 - ปรับ loading/error/layout boundary ของ nested routes ให้สอดคล้องกับหน้าหลัก โดยรักษา error boundary, loading skeleton, redirect helper และ UUIDv7 validation; ไม่สร้างหรือเปลี่ยน pathname
 - เพิ่ม/แก้ regression tests ภายใต้ `ecosystem-frontend-next-js/tests/` โดยใช้ `jest.config.mjs` และ conventions เดิม; คง test files 4 รายการที่ระบุใน Section 4.5 และเพิ่ม coverage เฉพาะ UI behavior ที่แก้
 - ไม่เพิ่ม dependency/browser test framework, ไม่แก้ package/lockfile, backend, API/database/migration, query/mutation contract หรือ CI scripts
-- `CURRENT_TASK_PLAN.md` เป็นไฟล์เอกสารที่ Planner ปรับในรอบนี้; เนื่องจากมีการแก้แผน ต้องคงทุกช่อง Approve CURRENT_TASK_PLAN ว่าง และห้าม mark approve ใน commit นี้
+- `CURRENT_TASK_PLAN.md` เป็นเอกสารแผนที่ root ของ repository; หากสร้างหรือแก้ไขแผน ให้ reset เครื่องหมายทั้งหมดในแถว Approve CURRENT_TASK_PLAN และห้ามอนุมัติในรอบที่แก้แผน. อนุมัติได้เฉพาะการเรียก Planner ครั้งถัดไปที่ตรวจแล้วไม่พบสิ่งจำเป็นต้องแก้ โดยทำเครื่องหมายเพียงช่องว่างถัดไปหนึ่งช่อง
 
 ## 8. สิ่งที่ต้องระวัง
 
