@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.1",
@@ -35,6 +36,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "^16.0.0",
+    "@types/jest": "^30.0.0",
     "@types/js-cookie": "^3.0.6",
     "@types/luxon": "^3.7.2",
     "@types/node": "^20",
@@ -42,6 +45,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

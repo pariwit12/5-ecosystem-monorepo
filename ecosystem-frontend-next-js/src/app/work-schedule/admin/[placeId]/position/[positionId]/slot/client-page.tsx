@@ -7,7 +7,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 
 import { workScheduleSlotQueries } from "@/features/work-schedule/slot/work-schedule-slot.queries";
 import { workScheduleStaffPositionQueries } from "@/features/work-schedule/staff-position/work-schedule-staff-position.queries";
@@ -23,11 +23,15 @@ import ErrorQuery from "./error";
 import Loading from "./loading";
 
 import { cn } from "@/lib/utils";
-import { DateTime } from "luxon";
 
 import { ChildrenHeader } from "@/components/children-header";
 import { DateTimeRangePicker } from "@/components/input/datetime-input";
 import { WorkScheduleBoard } from "./component-work-schedule-board";
+import {
+  type AppliedSlotRange,
+  formatSlotDateRange,
+  parseSlotDateRange,
+} from "./slot-date-range";
 
 export default function WorkScheduleAdminPositionSlotClient({
   placeId,
@@ -38,8 +42,10 @@ export default function WorkScheduleAdminPositionSlotClient({
 }) {
   const { getToken, userId, isLoaded } = useAuth();
 
-  const [startDateTime, setStartDateTime] = useState<string>("");
-  const [endDateTime, setEndDateTime] = useState<string>("");
+  const [draftStartDateTime, setDraftStartDateTime] = useState("");
+  const [draftEndDateTime, setDraftEndDateTime] = useState("");
+  const [appliedRange, setAppliedRange] = useState<AppliedSlotRange | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const {
     data: dataQueryPlace,
@@ -59,32 +65,8 @@ export default function WorkScheduleAdminPositionSlotClient({
 
   const place = dataQueryPlace;
 
-  const getISOStringWithLuxon = (dateString: string, tzName?: string) => {
-    // ถ้าไม่มีค่าเวลา หรือยังดึง Timezone มาไม่เสร็จ ให้คืนค่าว่าง
-    if (!dateString || !tzName) return "";
-
-    // dateString จะหน้าตาประมาณ "2026-08-03T12:00" (ได้จาก datetime-local)
-    // สร้าง DateTime object โดยระบุว่าเวลานี้ เป็นเวลาของ Timezone ที่ดึงมาได้
-    const dt = DateTime.fromISO(dateString, { zone: tzName });
-
-    // ตรวจสอบว่าวันที่ถูกต้องหรือไม่ (เช่น ผู้ใช้อาจจะพิมพ์วันที่ผิดแปลกๆ)
-    if (!dt.isValid) return "";
-
-    // แปลงให้เป็น UTC ISO 8601 String ("2026-08-03T05:00:00.000Z")
-    return dt.toUTC().toISO();
-  };
-
-  let isoStartDateTime = "";
-  let isoEndDateTime = "";
-
-  if (place) {
-    isoStartDateTime = getISOStringWithLuxon(startDateTime, place.timezone);
-    isoEndDateTime = getISOStringWithLuxon(endDateTime, place.timezone);
-  }
-
   const {
     data: dataQuerySlot,
-    isLoading: isLoadingSlot,
     isFetching: isFetchingSlot,
     error: errorQuerySlot,
     refetch: refetchSlot,
@@ -93,8 +75,8 @@ export default function WorkScheduleAdminPositionSlotClient({
     workScheduleSlotQueries.queryGetSlotsByPositionIdStartTimeEndTime(
       positionId,
 
-      isoStartDateTime,
-      isoEndDateTime,
+      appliedRange?.startTime ?? "",
+      appliedRange?.endTime ?? "",
 
       userId,
       getToken,
@@ -149,6 +131,33 @@ export default function WorkScheduleAdminPositionSlotClient({
     dataQueryPlace,
   );
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isFetchingSlot) return;
+
+    const result = parseSlotDateRange(
+      draftStartDateTime,
+      draftEndDateTime,
+      place?.timezone,
+    );
+
+    if (!result.ok) {
+      setValidationError(result.error);
+      return;
+    }
+
+    setValidationError(null);
+    // The query key changes only with UTC bounds; confirming the same range
+    // updates its draft snapshot without forcing a refetch.
+    setAppliedRange(result.range);
+  }
+
+  function refreshSlots() {
+    if (appliedRange && !isFetchingSlot) {
+      void refetchSlot();
+    }
+  }
+
   if (isRedirectingSlot && targetUrlSlot && errorCodeSlot) {
     return <RedirectUI targetUrl={targetUrlSlot} errorCode={errorCodeSlot} />;
   }
@@ -170,10 +179,6 @@ export default function WorkScheduleAdminPositionSlotClient({
     return <RedirectUI targetUrl={targetUrlPlace} errorCode={errorCodePlace} />;
   }
 
-  if (errorQuerySlot && dataQuerySlot === undefined) {
-    return <ErrorQuery reset={() => refetchSlot()} />;
-  }
-
   if (errorQueryStaffPosition && dataQueryStaffPosition === undefined) {
     return <ErrorQuery reset={() => refetchStaffPosition()} />;
   }
@@ -184,10 +189,8 @@ export default function WorkScheduleAdminPositionSlotClient({
 
   if (
     !isLoaded ||
-    isLoadingSlot ||
     isLoadingStaffPosition ||
     isLoadingPlace ||
-    (startDateTime && endDateTime && dataQuerySlot === undefined) ||
     dataQueryStaffPosition === undefined ||
     dataQueryPlace === undefined ||
     place === undefined
@@ -195,14 +198,13 @@ export default function WorkScheduleAdminPositionSlotClient({
     return <Loading />;
   }
 
-  let workScheduleSlots = undefined;
-  let minMaxs = undefined;
-  if (dataQuerySlot) {
-    workScheduleSlots = dataQuerySlot.workScheduleSlots;
-    minMaxs = dataQuerySlot.minMaxs;
-  }
-
   const staffPositions = dataQueryStaffPosition.staffPositions;
+  const hasDraftChanges =
+    appliedRange !== null &&
+    (draftStartDateTime !== appliedRange.draftStartDateTime ||
+      draftEndDateTime !== appliedRange.draftEndDateTime ||
+      place.timezone !== appliedRange.timezone);
+  const rangeLabel = appliedRange ? formatSlotDateRange(appliedRange) : "";
 
   return (
     <div
@@ -234,36 +236,85 @@ export default function WorkScheduleAdminPositionSlotClient({
         // (จบ) กรณี: ใช้ create button
 
         // กรณี: ใช้ status bar
-        isFetching={isFetchingSlot}
-        errorQuery={errorQuerySlot}
-        refetch={refetchSlot}
-        dataUpdatedAt={dataUpdatedAtSlot}
+        isFetching={appliedRange ? isFetchingSlot : undefined}
+        errorQuery={appliedRange ? errorQuerySlot : undefined}
+        refetch={appliedRange ? refreshSlots : undefined}
+        dataUpdatedAt={appliedRange ? dataUpdatedAtSlot : undefined}
         // (จบ) กรณี: ใช้ status bar
       />
 
-      <DateTimeRangePicker
-        startDateTime={startDateTime}
-        endDateTime={endDateTime}
-        onStartChange={setStartDateTime}
-        onEndChange={setEndDateTime}
-        isSubmitting={isLoadingSlot}
-      />
+      <form noValidate onSubmit={handleSubmit} aria-label="เลือกช่วงเวลาตารางเวร">
+        <fieldset
+          disabled={isFetchingSlot}
+          className="flex flex-wrap items-end gap-4"
+        >
+          <DateTimeRangePicker
+            startDateTime={draftStartDateTime}
+            endDateTime={draftEndDateTime}
+            onStartChange={(value) => {
+              setDraftStartDateTime(value);
+              setValidationError(null);
+            }}
+            onEndChange={(value) => {
+              setDraftEndDateTime(value);
+              setValidationError(null);
+            }}
+            isSubmitting={isFetchingSlot}
+          />
+          <button
+            type="submit"
+            className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          >
+            แสดงตารางเวร
+          </button>
+        </fieldset>
+        {validationError && (
+          <p role="alert" className="mt-2 text-sm text-red-600">
+            {validationError}
+          </p>
+        )}
+      </form>
 
-      {isoStartDateTime &&
-        isoEndDateTime &&
-        workScheduleSlots !== undefined &&
-        minMaxs !== undefined && (
+      {hasDraftChanges && (
+        <p className="text-sm text-amber-700">
+          มีการเปลี่ยนช่วงเวลา กรุณากดแสดงตารางเวรเพื่ออัปเดตผลลัพธ์
+        </p>
+      )}
+
+      {appliedRange === null ? (
+        <p className="text-sm text-gray-600">
+          เลือกช่วงเวลาแล้วกดแสดงตารางเวร
+        </p>
+      ) : dataQuerySlot !== undefined ? (
+        <>
+          <p className="text-sm font-medium">
+            ช่วงเวลาที่แสดงผล: {rangeLabel}
+          </p>
           <WorkScheduleBoard
-            slots={workScheduleSlots}
-            minMaxs={minMaxs}
+            slots={dataQuerySlot.workScheduleSlots}
+            minMaxs={dataQuerySlot.minMaxs}
             staffPositions={staffPositions}
-            startDateTime={isoStartDateTime}
-            endDateTime={isoEndDateTime}
+            startDateTime={appliedRange.startTime}
+            endDateTime={appliedRange.endTime}
             placeId={placeId}
             positionId={positionId}
-            timezone={place.timezone}
+            timezone={appliedRange.timezone}
           />
-        )}
+        </>
+      ) : (
+        <>
+          <p className="text-sm font-medium">
+            ช่วงเวลาที่ร้องขอ: {rangeLabel}
+          </p>
+          {errorQuerySlot ? (
+            <ErrorQuery reset={refreshSlots} />
+          ) : isFetchingSlot ? (
+            <p role="status" className="text-sm text-gray-600">
+              กำลังโหลดตารางเวร...
+            </p>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
