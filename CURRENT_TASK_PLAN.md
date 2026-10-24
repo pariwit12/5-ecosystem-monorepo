@@ -14,7 +14,7 @@
 - การสร้างวันหยุดฝั่งพนักงานอยู่ที่ `src/modules/work-schedule/holiday/commands/create-holiday.handler.ts` ซึ่งแปลงวันหยุดเต็มวันโดยใช้ timezone ของสถานที่ทำงาน และปฏิเสธเมื่อช่วงวันหยุดทับเวรที่มีอยู่แล้ว นอกจากนี้ยังตรวจเงื่อนไขจำนวนพนักงานขั้นต่ำ (Min)
 - `src/modules/work-schedule/holiday/queries/list-my-holidays.handler.ts` อ่านวันหยุดของพนักงานที่ล็อกอินอยู่เพียงคนเดียว จึงไม่เหมาะสำหรับแสดงวันหยุดของพนักงานทุกคนให้ admin ดู
 - หน้าดูกระดานเวร admin อยู่ที่ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/client-page.tsx` และ `component-work-schedule-board.tsx`; API ที่เรียกคือ `GET /api/work-schedule/slot/by-position-id-start-time-end-time/:position_id` ซึ่งปัจจุบันคืน `workScheduleSlots` กับ `minMaxs`
-- แบบฟอร์มสร้างเวรอยู่ที่ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`. ฟอร์มเลือกหลายวัน หลายพนักงาน เวลาเริ่ม และระยะเวลา แล้วสร้าง slot ทุกคู่ของวันกับพนักงานก่อนส่ง `POST /api/work-schedule/slot/:position_id`
+- แบบฟอร์มสร้างเวรอยู่ที่ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`. ฟอร์มเลือกหลายวัน หลายพนักงาน เวลาเริ่ม และระยะเวลา แล้วสร้าง slot ทุกคู่ของวันกับพนักงานก่อนส่ง `POST /api/work-schedule/slot/:position_id`. Schema ปัจจุบันตรวจวัน เวลาเริ่ม และระยะเวลา แต่ไม่ได้ตรวจ `selectedIds`; หากไม่เลือกพนักงาน `slotsPayload` จึงอาจเป็น array ว่าง และต้องจัดการก่อนเพิ่ม preflight ที่ต้องคำนวณขอบเขตเวลา
 - `src/modules/work-schedule/slot/commands/create-many.handler.ts` ตรวจสิทธิ์ admin, เวรที่ซ้อนกันใน payload, ความสัมพันธ์พนักงานกับตำแหน่ง, เวรเดิมที่ซ้อนกัน และค่า Max ก่อน `createMany` ภายใน transaction แต่ **ยังไม่ได้ตรวจ `WorkScheduleHoliday`** จึงสามารถมีช่องโหว่จากการสร้างเวรทับวันหยุดได้
 - ตรวจ `VERIFICATION_TABLE.md` บน `main` แล้วพบว่าแถว `Approve CURRENT_TASK_PLAN` ว่างทุกช่องอยู่แล้ว จึงไม่มีเครื่องหมายเดิมที่ต้องล้าง; หลังแก้แผนรอบนี้ต้องคงแถวดังกล่าวว่างทั้งหมดและห้ามทำเครื่องหมายผ่านในรอบเดียวกัน
 
@@ -25,6 +25,7 @@
 3. หน้ากระดาน admin แสดงพนักงานตาม `staffPositions` และวาดเวรเป็นช่วงเวลาบน timeline; ตัวเลือกประเภทเวรกรองเฉพาะ slot. การคำนวณจำนวนผู้ทำงานและแถว Compare/Min-Max อิงข้อมูล slot ไม่ใช่รายการวันหยุด
 4. backend สร้างหลาย slot เป็นชุดเดียวใน transaction เดียว หากรายการใดรายการหนึ่งไม่ผ่าน validation จะต้องไม่ insert รายการใดในชุดนั้น
 5. การตรวจใน frontend เพียงอย่างเดียวไม่ใช่ขอบเขตความปลอดภัย เพราะ API สามารถถูกเรียกโดยตรงและข้อมูลวันหยุดอาจเปลี่ยนหลังจากแสดงหน้าได้
+6. `CreateManyForm` อนุญาตให้ไม่เลือกพนักงาน เพราะ `selectedIds` ไม่ได้อยู่ใน schema validation; หาก payload ว่าง จะไม่สามารถหาค่าเวลาเริ่มต้น/สิ้นสุดสำหรับ preflight ได้ จึงต้องปฏิเสธตั้งแต่ frontend ก่อน query หรือ mutation แทนการสร้างช่วงเวลาที่ไม่ถูกต้อง
 
 ## 4. Business Logic ที่คาดหวังหลัง Implement (พร้อมเหตุผล)
 
@@ -34,6 +35,7 @@
 4. **backend เป็นกฎบังคับสุดท้าย:** ภายใน transaction ของ `CreateWorkScheduleSlotHandler` ให้ดึงวันหยุดของพนักงานที่อยู่ใน payload ซึ่งทับช่วงเวลาที่จะสร้าง และปฏิเสธเมื่อ slot ใดทับวันหยุดด้วย error code และข้อความเฉพาะ ห้ามอาศัย preflight ของ frontend เพียงอย่างเดียว
 5. **รักษาความถูกต้องเมื่อคำสั่งเกิดพร้อมกัน:** การสร้างวันหยุดมี transaction แบบ Serializable และ retry เมื่อพบ Prisma `P2034` อยู่แล้ว ให้ปรับ transaction การสร้าง slot ให้ใช้ isolation/retry ที่เข้ากัน เพื่อให้กรณี admin จัดเวรพร้อมกับพนักงานส่งวันหยุดถูกตรวจใหม่หลัง retry แทนที่จะปล่อยให้ทั้งสองรายการผ่านโดยทับกัน การตรวจวันหยุดต้องอยู่ใน transaction เดียวกับการ insert และคงการ lock ตำแหน่งเดิมไว้
 6. **ไม่เปลี่ยนกฎวันหยุดเดิม:** ยังคงปฏิเสธการสร้างวันหยุดทับเวรเดิม และคงการตรวจ Min ที่มีอยู่ ห้ามเพิ่ม approval workflow, สถานะวันหยุด, ตารางฐานข้อมูล หรือ migration เพราะไม่พบสิ่งเหล่านี้ในโมเดลปัจจุบันและไม่จำเป็นต่อไอเดียต้นฉบับ
+7. **ต้องมีพนักงานก่อนสร้างเวร:** หากไม่มีพนักงานที่เลือกหรือ candidate slots ว่าง ให้แสดง validation alert และยุติการ submit ก่อน preflight/API/mutation เพราะไม่สามารถคำนวณ bounding interval ที่ถูกต้องจากชุดว่างได้ และไม่ควรส่งคำขอสร้างเวรว่าง
 
 ## 5. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
 
@@ -93,6 +95,7 @@
 
 **ไฟล์ `features/work-schedule/slot/components/create-many-form.tsx`**
 
+- ก่อน preflight ให้ตรวจว่า `selectedIds.length > 0` และ candidate slots ที่สร้างขึ้นไม่ว่าง หากไม่ผ่าน ให้แสดง inline validation alert ด้วย `role="alert"` และหยุดทันที โดยไม่เรียก query และไม่เรียก `mutateCreateMany`; เมื่อผู้ใช้เลือกพนักงานแล้ว ให้สามารถ submit ใหม่ได้
 - ใช้ `useAuth` และ `useQueryClient`/query เดิมของ `workScheduleSlotQueries.queryGetSlotsByPositionIdStartTimeEndTime` เพื่อ preflight ก่อนเรียก `mutateCreateMany`; ไม่เพิ่ม endpoint ใหม่
 - สร้าง candidate slots ด้วย logic เดียวกับที่ใช้ส่ง payload ปัจจุบัน โดยใช้ `placeTimezone` และช่วงเวลาเริ่ม/จบจริงของแต่ละวัน รวมกรณีเวรข้ามเที่ยงคืน
 - คำนวณขอบเขต query จาก candidate slots ทั้งชุด ไม่ใช้แค่วันแรก/วันสุดท้ายโดยละเลยระยะเวลาเวร และบังคับให้ preflight อ่านข้อมูลล่าสุด (ไม่ยอมใช้ cache ที่ยัง fresh โดยไม่ตรวจใหม่)
@@ -114,7 +117,7 @@
 - รักษาการตรวจสิทธิ์, staff-position membership, incoming payload overlap, existing slot overlap, Max และ lock `work_schedule_position` เดิม
 - ภายใน transaction เดียวกัน ให้ query `WorkScheduleHoliday` ของ `staffIds` ที่กำลังสร้างและทับ bounding interval ของ candidate slots
 - วนตรวจทุก `body.slots` เทียบกับวันหยุดของ `staff_id` เดียวกันด้วย `newStart < holiday.endTime && newEnd > holiday.startTime`; ช่วงที่แตะกันเฉพาะขอบเวลาแต่ไม่ทับกันต้องไม่ถูกปฏิเสธ
-- เมื่อพบ conflict ให้ throw exception ที่มี error code ใหม่และ HTTP conflict status ก่อนถึง `tx.workScheduleSlot.createMany`; ต้องไม่มีบางส่วนถูก insert
+- เมื่อพบ conflict ให้ throw `AppException(ErrorCode.WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP, message, HttpStatus.CONFLICT)` ก่อนถึง `tx.workScheduleSlot.createMany` เพื่อให้ API คืน error code ที่ frontend map ได้; import ทั้ง `AppException`, `ErrorCode` และ `HttpStatus` ตามรูปแบบ `CreateHolidayHandler`; ต้องไม่มีบางส่วนถูก insert และห้ามใช้ `WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP` ซึ่งหมายถึงสร้างวันหยุดทับเวร
 - ปรับ transaction ให้ใช้ `Serializable` และเพิ่ม retry loop ครอบ `$transaction` สำหรับ Prisma serialization conflict `P2034` ตามรูปแบบที่มีอยู่ใน `CreateHolidayHandler`; ทุก attempt ต้องเปิด transaction ใหม่และทำ lock ตำแหน่ง, query/ตรวจ existing slots, ตรวจ holiday overlap และ query/ตรวจ Min/Max ใหม่ทั้งหมดก่อน `createMany`. ห้าม retry validation error โดยเฉพาะ conflict วันหยุด; คง payload self-overlap และ staff-position membership validation เดิมไว้ และอย่าเปลี่ยนกฎเหล่านี้เกินจำเป็น
 - ไม่เปลี่ยนลำดับ/ความหมายของกฎ Max และ overlap เดิมเกินกว่าที่จำเป็นต่อการตรวจวันหยุด และไม่แก้กฎสร้าง/ลบวันหยุดเดิม
 
@@ -125,7 +128,7 @@
 เพิ่ม `create-many.handler.spec.ts` โดย mock Prisma/AccessControlService แบบ unit test และไม่ต่อฐานข้อมูลจริง ต้องครอบคลุมอย่างน้อย:
 
 - สร้างเวรสำเร็จเมื่อไม่มีวันหยุดทับ
-- ปฏิเสธเมื่อวันหยุดของพนักงานคนเดียวกันทับบางส่วนหรือเต็มช่วงเวลา และ assert ว่า `createMany` ไม่ถูกเรียก
+- ปฏิเสธเมื่อวันหยุดของพนักงานคนเดียวกันทับบางส่วนหรือเต็มช่วงเวลา ตรวจ error code `WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP` และ HTTP conflict status และ assert ว่า `createMany` ไม่ถูกเรียก
 - วันหยุดของพนักงานคนอื่นไม่ขวางการสร้างเวรให้คนที่เลือก
 - เวรที่จบตรงเวลาเริ่มวันหยุด หรือเริ่มตรงเวลาสิ้นสุดวันหยุด ไม่ถือว่าทับกัน
 - หาก payload มีหลาย slot และมีเพียง slot เดียวที่ทับวันหยุด ต้องปฏิเสธทั้ง batch
@@ -139,13 +142,13 @@
 
 - อัปเดต mock response ใน `admin-slot-date-range.test.tsx` ให้มี `workScheduleHolidays: []` และตรวจ prop ใหม่ที่ส่งให้ board โดยไม่ทำให้ test ช่วงเวลา/refresh/error เดิมเสีย
 - `admin-slot-board-holidays.test.tsx`: ทดสอบการแสดงวันหยุดใน row ของพนักงานที่ถูกต้อง, วันหยุดยังแสดงเมื่อกรองประเภทเวร และวันหยุดไม่ถูกนับเป็น slot/คนทำงาน
-- `create-many-holiday-blocking.test.tsx`: ทดสอบ preflight ที่พบวันหยุดแล้วแสดง alert และไม่เรียก mutation, conflict ของพนักงานที่ไม่ได้เลือกไม่ขวาง, ช่วงเวลาที่ไม่ทับกันส่ง mutation ได้ และเมื่อ query ตรวจวันหยุดล้มเหลวต้องไม่ส่ง mutation
+- `create-many-holiday-blocking.test.tsx`: ทดสอบกรณีไม่เลือกพนักงานแล้วแสดง alert โดยไม่เรียก preflight query หรือ mutation; preflight ที่พบวันหยุดแล้วแสดง alert และไม่เรียก mutation; conflict ของพนักงานที่ไม่ได้เลือกไม่ขวาง; ช่วงเวลาที่ไม่ทับกันส่ง mutation ได้; และเมื่อ query ตรวจวันหยุดล้มเหลวต้องไม่ส่ง mutation
 
 ## 7. เกณฑ์ผ่าน / Acceptance Criteria แยกตามขั้นตอน
 
 1. **Query และ response:** เมื่อ admin ขอช่วงเวลาสำหรับตำแหน่งที่ตนมีสิทธิ์ response มีวันหยุดที่ทับช่วงนั้นของพนักงาน active ในตำแหน่งเท่านั้น; ผู้ไม่มีสิทธิ์ยังถูกปฏิเสธ; slot และ Min/Max เดิมไม่เปลี่ยน
 2. **กระดาน admin:** วันหยุดปรากฏในแถวของพนักงานที่ถูกต้อง เวลาอ่านตาม timezone ของสถานที่ ช่วงที่อยู่นอกกระดานถูก clip และตัวกรองชนิดเวรไม่ซ่อนวันหยุด
-3. **ฟอร์ม admin:** เมื่อ candidate slot อย่างน้อยหนึ่งรายการทับวันหยุด ต้องเห็นคำเตือนและไม่มี POST/mutation เกิดขึ้น; เมื่อไม่ทับวันหยุด เส้นทางสร้างเวรเดิมทำงานต่อได้
+3. **ฟอร์ม admin:** เมื่อ candidate slot อย่างน้อยหนึ่งรายการทับวันหยุด ต้องเห็นคำเตือนและไม่มี POST/mutation เกิดขึ้น; เมื่อไม่ทับวันหยุด เส้นทางสร้างเวรเดิมทำงานต่อได้; หากไม่ได้เลือกพนักงานอย่างน้อยหนึ่งคน ต้องแสดง validation alert และไม่มี preflight query หรือ mutation
 4. **Backend:** API ปฏิเสธ payload ที่ทับวันหยุดแม้ข้าม frontend มาโดยตรง และไม่ insert บางส่วน; การเปรียบเทียบใช้ช่วงเวลาจริง รวมเวรข้ามวันและขอบเขตที่เท่ากัน
 5. **กฎเดิม:** การป้องกันเวรซ้อนกัน, staff-position membership, Max, การสร้างวันหยุดทับเวรเดิม และ Min ของวันหยุดยังทำงานตามเดิม
 6. **Regression / Types / Lint:** tests ใหม่และเดิมที่ระบุผ่าน, backend/frontend typecheck และ lint ผ่าน และ `pnpm run verify` ผ่าน
