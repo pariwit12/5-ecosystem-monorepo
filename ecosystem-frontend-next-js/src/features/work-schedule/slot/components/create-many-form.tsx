@@ -5,6 +5,8 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@clerk/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useState } from "react";
 
@@ -14,6 +16,8 @@ import { toast } from "sonner";
 import { DateTime } from "luxon";
 
 import { Calendar } from "@/components/ui/calendar";
+import { workScheduleSlotQueries } from "../work-schedule-slot.queries";
+import { ErrorCode } from "@backend/common/exceptions/error-codes.enum";
 
 const FrontendFormSchema = z.object({
   slot_type_id: z.uuid({
@@ -91,8 +95,14 @@ export const CreateManyForm = ({
   className?: string;
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { getToken, userId } = useAuth();
 
   const { mutate: mutateCreateMany, isPending } = useCreateMany();
+  const [isPreflightPending, setIsPreflightPending] = useState(false);
+  const [isSubmittingFlow, setIsSubmittingFlow] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isSubmitting = isPending || isSubmittingFlow;
 
   const {
     register,
@@ -116,6 +126,7 @@ export const CreateManyForm = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleSelectAll = () => {
+    setSubmitError(null);
     if (selectedIds.length === staffPositions.length) {
       // ถ้าเลือกครบแล้ว ให้เคลียร์ทิ้ง
       setSelectedIds([]);
@@ -128,6 +139,7 @@ export const CreateManyForm = ({
   };
 
   const handleToggleSelect = (id: string) => {
+    setSubmitError(null);
     setSelectedIds(
       (prev) =>
         prev.includes(id)
@@ -179,7 +191,14 @@ export const CreateManyForm = ({
     }
   }
 
-  const onSubmit = (data: FrontendForm) => {
+  const onSubmit = async (data: FrontendForm) => {
+    if (isSubmittingFlow || isPending) return;
+
+    if (selectedIds.length === 0) {
+      setSubmitError("กรุณาเลือกพนักงานอย่างน้อย 1 คนก่อนสร้างเวร");
+      return;
+    }
+
     const slotsPayload: {
       staff_id: string;
       slot_type_id: string;
@@ -208,7 +227,7 @@ export const CreateManyForm = ({
       const actual_start_time = startDt.toISO()!;
       const actual_end_time = endDt.toISO()!;
 
-      selectedIds.map((staffId) => {
+      selectedIds.forEach((staffId) => {
         slotsPayload.push({
           staff_id: staffId,
           slot_type_id: data.slot_type_id,
@@ -218,24 +237,118 @@ export const CreateManyForm = ({
       });
     }
 
-    mutateCreateMany(
-      {
-        positionId: positionId,
-        slots: slotsPayload,
-        skipErrorCodes: skipErrorCodes,
-      },
-      {
-        onSuccess: () => {
-          toast.success("สร้าง workScheduleSlot เรียบร้อยแล้ว");
-          router.push(urlOnSuccess);
+    if (slotsPayload.length === 0) {
+      setSubmitError(
+        "ไม่พบรายการเวรสำหรับสร้าง กรุณาเลือกวันที่และพนักงานใหม่",
+      );
+      return;
+    }
+
+    setIsSubmittingFlow(true);
+    setIsPreflightPending(true);
+    setSubmitError(null);
+
+    try {
+      if (!userId) throw new Error("Authentication is not ready");
+
+      const startTime = new Date(
+        Math.min(
+          ...slotsPayload.map((slot) => Date.parse(slot.actual_start_time)),
+        ),
+      ).toISOString();
+      const endTime = new Date(
+        Math.max(
+          ...slotsPayload.map((slot) => Date.parse(slot.actual_end_time)),
+        ),
+      ).toISOString();
+      const query =
+        workScheduleSlotQueries.queryGetSlotsByPositionIdStartTimeEndTime(
+          positionId,
+          startTime,
+          endTime,
+          userId,
+          getToken,
+          skipErrorCodes,
+        );
+      const preflight = await queryClient.fetchQuery({
+        ...query,
+        staleTime: 0,
+        retry: false,
+      });
+
+      const staffNames = new Map(
+        staffPositions.map((staffPosition) => [
+          staffPosition.staffId,
+          staffPosition.name,
+        ]),
+      );
+      const conflict = slotsPayload.flatMap((slot) => {
+        const holiday = preflight.workScheduleHolidays.find(
+          (item) =>
+            item.staffId === slot.staff_id &&
+            Date.parse(slot.actual_start_time) < Date.parse(item.endTime) &&
+            Date.parse(slot.actual_end_time) > Date.parse(item.startTime),
+        );
+        return holiday ? [{ slot, holiday }] : [];
+      })[0];
+
+      if (conflict) {
+        const slotStart = DateTime.fromISO(conflict.slot.actual_start_time, {
+          zone: placeTimezone,
+        }).toFormat("dd/MM/yyyy HH:mm");
+        const slotEnd = DateTime.fromISO(conflict.slot.actual_end_time, {
+          zone: placeTimezone,
+        }).toFormat("dd/MM/yyyy HH:mm");
+        const holidayStart = DateTime.fromISO(conflict.holiday.startTime, {
+          zone: placeTimezone,
+        }).toFormat("dd/MM/yyyy HH:mm");
+        const holidayEnd = DateTime.fromISO(conflict.holiday.endTime, {
+          zone: placeTimezone,
+        }).toFormat("dd/MM/yyyy HH:mm");
+        const staffName =
+          staffNames.get(conflict.slot.staff_id) ?? conflict.slot.staff_id;
+
+        setSubmitError(
+          `${staffName} มีวันหยุด ${holidayStart} - ${holidayEnd} ทับกับเวร ${slotStart} - ${slotEnd} กรุณาแก้ไขก่อนสร้างเวร`,
+        );
+        setIsSubmittingFlow(false);
+        setIsPreflightPending(false);
+        return;
+      }
+
+      setIsPreflightPending(false);
+      mutateCreateMany(
+        {
+          positionId: positionId,
+          slots: slotsPayload,
+          skipErrorCodes: skipErrorCodes,
         },
-        onError: () => {
-          toast.error(
-            "ไม่สามารถสร้าง workScheduleSlot ได้ กรุณาลองใหม่อีกครั้ง",
-          );
+        {
+          onSuccess: () => {
+            setIsSubmittingFlow(false);
+            toast.success("สร้าง workScheduleSlot เรียบร้อยแล้ว");
+            router.push(urlOnSuccess);
+          },
+          onError: (error) => {
+            setIsSubmittingFlow(false);
+            const errorCode = (
+              error as { response?: { data?: { errorCode?: unknown } } }
+            ).response?.data?.errorCode;
+            if (errorCode !== ErrorCode.WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP) {
+              toast.error(
+                "ไม่สามารถสร้าง workScheduleSlot ได้ กรุณาลองใหม่อีกครั้ง",
+              );
+            }
+          },
         },
-      },
-    );
+      );
+    } catch {
+      setIsSubmittingFlow(false);
+      setIsPreflightPending(false);
+      setSubmitError(
+        "ตรวจสอบวันหยุดไม่สำเร็จ กรุณาลองส่งข้อมูลอีกครั้งก่อนสร้างเวร",
+      );
+    }
   };
 
   return (
@@ -257,7 +370,7 @@ export const CreateManyForm = ({
               mode="multiple" // สั่งให้เลือกได้หลายวัน
               selected={field.value} // ค่าจาก Form
               onSelect={field.onChange} // ส่งค่ากลับไป Form
-              disabled={isPending}
+              disabled={isSubmitting}
               className="bg-white rounded-md border shadow-sm
                 max-w-150
                 portrait:w-full
@@ -282,7 +395,7 @@ export const CreateManyForm = ({
         <select
           id="slot_type_id"
           {...register("slot_type_id")}
-          disabled={isPending}
+          disabled={isSubmitting}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
             errors.slot_type_id
               ? "border-red-300 focus:ring-red-100 focus:border-red-500"
@@ -313,7 +426,7 @@ export const CreateManyForm = ({
           id="start_time"
           type="time"
           {...register("start_time")}
-          disabled={isPending}
+          disabled={isSubmitting}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 ${
             errors.start_time
               ? "border-red-300 focus:ring-red-100 focus:border-red-500"
@@ -345,7 +458,7 @@ export const CreateManyForm = ({
             },
           )}
           placeholder="กรุณาระบุระยะเวลา"
-          disabled={isPending}
+          disabled={isSubmitting}
           className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 focus:ring-2 ${
             errors.duration_minute
               ? "border-red-300 focus:ring-red-100 focus:border-red-500"
@@ -384,6 +497,7 @@ export const CreateManyForm = ({
       <div className="flex items-center gap-3">
         <input
           type="checkbox"
+          disabled={isSubmitting}
           checked={
             selectedIds.length === staffPositions.length &&
             staffPositions.length > 0
@@ -404,6 +518,7 @@ export const CreateManyForm = ({
           >
             <input
               type="checkbox"
+              disabled={isSubmitting}
               checked={selectedIds.includes(staffPosition.staffId)}
               onChange={() => handleToggleSelect(staffPosition.staffId)}
               className="w-5 h-5 mr-4 cursor-pointer rounded border-gray-300"
@@ -420,11 +535,17 @@ export const CreateManyForm = ({
         ))}
       </ul>
 
+      {submitError && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
+
       <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
         <button
           type="button"
           onClick={() => router.push(urlOnCancel)}
-          disabled={isPending}
+          disabled={isSubmitting}
           className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
         >
           ยกเลิก
@@ -432,10 +553,14 @@ export const CreateManyForm = ({
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isSubmitting}
           className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+          {isPreflightPending
+            ? "กำลังตรวจสอบวันหยุด..."
+            : isPending
+              ? "กำลังบันทึก..."
+              : "บันทึกข้อมูล"}
         </button>
       </div>
     </form>

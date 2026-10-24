@@ -4,7 +4,10 @@ import { AccessControlService } from '../../../../common/access-control/access-c
 
 import { CreateManyCommand } from './create-many.command';
 
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { AppException } from '../../../../common/exceptions/app.exception';
+import { ErrorCode } from '../../../../common/exceptions/error-codes.enum';
 
 @CommandHandler(CreateManyCommand)
 export class CreateWorkScheduleSlotHandler implements ICommandHandler<
@@ -15,6 +18,42 @@ export class CreateWorkScheduleSlotHandler implements ICommandHandler<
     private readonly prisma: PrismaService,
     private readonly accessControlService: AccessControlService,
   ) {}
+
+  private async executeWithRetry<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
+    let attempt = 0;
+    while (attempt <= maxRetries) {
+      try {
+        return await this.prisma.$transaction(async (tx) => operation(tx), {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      } catch (error: unknown) {
+        if (error instanceof AppException) throw error;
+
+        if ((error as { code?: string })?.code === 'P2034') {
+          attempt++;
+          if (attempt > maxRetries) {
+            throw new AppException(
+              ErrorCode.DEFAULT_ERROR,
+              'เกิดการแข่งขันในการทำรายการ กรุณาลองใหม่อีกครั้ง',
+              HttpStatus.CONFLICT,
+            );
+          }
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new AppException(
+      ErrorCode.DEFAULT_ERROR,
+      'เกิดข้อผิดพลาดในการทำรายการ',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
 
   async execute(command: CreateManyCommand): Promise<void> {
     const { clerkId, param, body } = command;
@@ -91,7 +130,7 @@ export class CreateWorkScheduleSlotHandler implements ICommandHandler<
       Math.max(...body.slots.map((s) => new Date(s.actual_end_time).getTime())),
     );
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.executeWithRetry(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "work_schedule_position" WHERE id = ${param.position_id} FOR UPDATE`;
 
       // ดึง Slot ทั้งหมดของ Staff กลุ่มนี้ที่มีอยู่ใน ช่วงเวลานี้ + Slot ทั้งหมดของ positionId นี้ที่อยู่ใน ช่วงเวลานี้
@@ -136,6 +175,38 @@ export class CreateWorkScheduleSlotHandler implements ICommandHandler<
         if (overlappingSlot) {
           throw new BadRequestException(
             `พนักงานรหัส ${newSlot.staff_id} มีตารางเวรซ้ำซ้อนอยู่แล้วในช่วงเวลานี้ (${overlappingSlot.slotType.name}: ${overlappingSlot.actualStartTime.toISOString()} - ${overlappingSlot.actualEndTime.toISOString()})`,
+          );
+        }
+      }
+
+      const overlappingHolidays = await tx.workScheduleHoliday.findMany({
+        where: {
+          workScheduleStaffId: { in: staffIds },
+          startTime: { lt: maxEndTime },
+          endTime: { gt: minStartTime },
+        },
+        select: {
+          workScheduleStaffId: true,
+          startTime: true,
+          endTime: true,
+        },
+      });
+
+      for (const newSlot of body.slots) {
+        const newStart = new Date(newSlot.actual_start_time);
+        const newEnd = new Date(newSlot.actual_end_time);
+        const overlappingHoliday = overlappingHolidays.find(
+          (holiday) =>
+            holiday.workScheduleStaffId === newSlot.staff_id &&
+            newStart < holiday.endTime &&
+            newEnd > holiday.startTime,
+        );
+
+        if (overlappingHoliday) {
+          throw new AppException(
+            ErrorCode.WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP,
+            `ไม่สามารถจัดเวรได้ เนื่องจากพนักงานรหัส ${newSlot.staff_id} มีวันหยุดทับช่วงเวลา ${overlappingHoliday.startTime.toISOString()} - ${overlappingHoliday.endTime.toISOString()}`,
+            HttpStatus.CONFLICT,
           );
         }
       }

@@ -29,9 +29,17 @@ interface MinMax {
   endTime: string;
 }
 
+interface WorkScheduleHoliday {
+  id: string;
+  staffId: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface WorkScheduleBoardProps {
   slots: Slot[];
   minMaxs: MinMax[];
+  workScheduleHolidays: WorkScheduleHoliday[];
   staffPositions: StaffPosition[];
   startDateTime: string; // ISO String เริ่มต้นของกระดาน
   endDateTime: string; // ISO String สิ้นสุดของกระดาน
@@ -43,6 +51,7 @@ interface WorkScheduleBoardProps {
 export function WorkScheduleBoard({
   slots,
   minMaxs,
+  workScheduleHolidays,
   staffPositions,
   startDateTime,
   endDateTime,
@@ -80,7 +89,13 @@ export function WorkScheduleBoard({
   const rows = useMemo(() => {
     const staffMap = new Map<
       string,
-      { id: string; name: string; isExtra: boolean; slots: Slot[] }
+      {
+        id: string;
+        name: string;
+        isExtra: boolean;
+        slots: Slot[];
+        holidays: WorkScheduleHoliday[];
+      }
     >();
 
     staffPositions.forEach((sp) => {
@@ -89,7 +104,12 @@ export function WorkScheduleBoard({
         name: sp.name,
         isExtra: false,
         slots: [],
+        holidays: [],
       });
+    });
+
+    workScheduleHolidays.forEach((holiday) => {
+      staffMap.get(holiday.staffId)?.holidays.push(holiday);
     });
 
     const unassignedSlots: Slot[] = [];
@@ -106,6 +126,7 @@ export function WorkScheduleBoard({
           name: slot.slotTypeName,
           isExtra: true,
           slots: [],
+          holidays: [],
         });
       }
 
@@ -120,11 +141,12 @@ export function WorkScheduleBoard({
         name: "ยังไม่ระบุพนักงาน",
         isExtra: true,
         slots: unassignedSlots,
+        holidays: [],
       });
     }
 
     return result;
-  }, [filteredSlots, staffPositions]);
+  }, [filteredSlots, staffPositions, workScheduleHolidays]);
 
   // 2. ข้อมูลระยะเวลาและฟังก์ชันคำนวณพิกัดแกน X (อิงตาม timezone)
   const startMs = DateTime.fromISO(startDateTime, {
@@ -454,6 +476,50 @@ export function WorkScheduleBoard({
                         {startTimeOnly} - {endTimeOnly}
                       </span>
                     </Link>
+                  );
+                })}
+
+                {row.holidays.map((holiday) => {
+                  const coords = getCoordinates(
+                    holiday.startTime,
+                    holiday.endTime,
+                  );
+                  if (parseFloat(coords.width) <= 0) return null;
+
+                  const startFormatted = DateTime.fromISO(holiday.startTime, {
+                    zone: timezone,
+                  }).toFormat("dd/MM HH:mm");
+                  const endFormatted = DateTime.fromISO(holiday.endTime, {
+                    zone: timezone,
+                  }).toFormat("dd/MM HH:mm");
+
+                  return (
+                    <div
+                      key={holiday.id}
+                      role="note"
+                      aria-label={`วันหยุดของ ${row.name} ${startFormatted} ถึง ${endFormatted}`}
+                      title={`วันหยุด: ${row.name} (${startFormatted} - ${endFormatted})`}
+                      style={{ left: coords.left, width: coords.width }}
+                      className={cn(
+                        "absolute top-1 bottom-1 rounded border border-rose-400 bg-rose-100/95 px-1 text-rose-900",
+                        "flex flex-col justify-center overflow-hidden text-[10px] z-20",
+                        coords.isClippedLeft &&
+                          "rounded-l-none border-l-2 border-dashed",
+                        coords.isClippedRight &&
+                          "rounded-r-none border-r-2 border-dashed",
+                      )}
+                    >
+                      <span className="font-semibold truncate">วันหยุด</span>
+                      <span className="truncate">
+                        {DateTime.fromISO(holiday.startTime, {
+                          zone: timezone,
+                        }).toFormat("HH:mm")}{" "}
+                        -{" "}
+                        {DateTime.fromISO(holiday.endTime, {
+                          zone: timezone,
+                        }).toFormat("HH:mm")}
+                      </span>
+                    </div>
                   );
                 })}
               </div>

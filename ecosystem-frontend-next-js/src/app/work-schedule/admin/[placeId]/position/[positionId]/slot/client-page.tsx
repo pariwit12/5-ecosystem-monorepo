@@ -293,6 +293,7 @@ export default function WorkScheduleAdminPositionSlotClient({
           <WorkScheduleBoard
             slots={dataQuerySlot.workScheduleSlots}
             minMaxs={dataQuerySlot.minMaxs}
+            workScheduleHolidays={dataQuerySlot.workScheduleHolidays}
             staffPositions={staffPositions}
             startDateTime={appliedRange.startTime}
             endDateTime={appliedRange.endTime}

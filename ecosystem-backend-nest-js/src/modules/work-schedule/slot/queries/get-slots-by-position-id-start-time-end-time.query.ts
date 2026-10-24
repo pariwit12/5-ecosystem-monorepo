@@ -65,4 +65,10 @@ export interface GetSlotsByPositionIdStartTimeEndTimeResponse {
     startTime: string;
     endTime: string;
   }[];
+  workScheduleHolidays: {
+    id: string;
+    staffId: string;
+    startTime: string;
+    endTime: string;
+  }[];
 }

@@ -27,6 +27,30 @@ export class GetSlotsByPositionIdStartTimeEndTimeHandler implements IQueryHandle
       param.position_id,
     );
 
+    const workScheduleHolidaysPromise =
+      this.prisma.workScheduleHoliday.findMany({
+        where: {
+          startTime: { lt: queryFromUrl.end_time },
+          endTime: { gt: queryFromUrl.start_time },
+          workScheduleStaff: {
+            deletedAt: null,
+            workScheduleStaffPositions: {
+              some: {
+                workSchedulePositionId: param.position_id,
+                deletedAt: null,
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          workScheduleStaffId: true,
+          startTime: true,
+          endTime: true,
+        },
+        orderBy: [{ startTime: 'asc' }, { endTime: 'asc' }, { id: 'asc' }],
+      });
+
     const [workScheduleSlots, minMaxs] = await Promise.all([
       this.prisma.workScheduleSlot.findMany({
         where: {
@@ -88,6 +112,7 @@ export class GetSlotsByPositionIdStartTimeEndTimeHandler implements IQueryHandle
         orderBy: [{ startTime: 'asc' }, { endTime: 'asc' }, { id: 'asc' }],
       }),
     ]);
+    const workScheduleHolidays = await workScheduleHolidaysPromise;
 
     return {
       workScheduleSlots: workScheduleSlots.map((slot) => ({
@@ -106,6 +131,13 @@ export class GetSlotsByPositionIdStartTimeEndTimeHandler implements IQueryHandle
         max: mm.max,
         startTime: mm.startTime.toISOString(),
         endTime: mm.endTime.toISOString(),
+      })),
+
+      workScheduleHolidays: workScheduleHolidays.map((holiday) => ({
+        id: holiday.id,
+        staffId: holiday.workScheduleStaffId,
+        startTime: holiday.startTime.toISOString(),
+        endTime: holiday.endTime.toISOString(),
       })),
     };
   }

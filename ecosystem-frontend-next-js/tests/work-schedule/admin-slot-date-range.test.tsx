@@ -112,6 +112,7 @@ function deferred<T>() {
 
 function response(id: string, range = A): SlotResponse {
   return {
+    workScheduleHolidays: [],
     workScheduleSlots: [{
       id,
       staffId: "staff-1",
@@ -166,6 +167,7 @@ function expectResult(range: TestRange, data: SlotResponse) {
   expect(board()).toEqual({
     slots: data.workScheduleSlots,
     minMaxs: data.minMaxs,
+    workScheduleHolidays: data.workScheduleHolidays,
     staffPositions: [{ staffId: "staff-1", name: "Staff One" }],
     startDateTime: range.startTime,
     endDateTime: range.endTime,
@@ -356,7 +358,7 @@ describe("Admin slot date range integration", () => {
   });
 
   test("treats empty arrays as a successful result and still renders the submitted range and Board", async () => {
-    const empty = { workScheduleSlots: [], minMaxs: [] };
+    const empty = { workScheduleSlots: [], minMaxs: [], workScheduleHolidays: [] };
     mockGetSlots.mockResolvedValueOnce(empty);
     await renderPage();
     changeDraft(A.start, A.end);

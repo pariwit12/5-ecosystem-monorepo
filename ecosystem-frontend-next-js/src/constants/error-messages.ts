@@ -68,6 +68,8 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
     "ไม่พบข้อมูลวันหยุดที่ต้องการ หรือคุณไม่มีสิทธิ์เข้าถึงรายการนี้",
   [ErrorCode.WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP]:
     "ไม่สามารถบันทึกวันหยุดได้เนื่องจากช่วงเวลาทับซ้อนกับเวรการทำงานที่คุณมีอยู่",
+  [ErrorCode.WORK_SCHEDULE_SLOT_HOLIDAY_OVERLAP]:
+    "ไม่สามารถจัดเวรได้เนื่องจากช่วงเวลาทับซ้อนกับวันหยุดของพนักงาน",
   [ErrorCode.WORK_SCHEDULE_HOLIDAY_MIN_STAFF_NOT_ENOUGH]:
     "ไม่สามารถบันทึกวันหยุดได้ เนื่องจากจำนวนพนักงานที่พร้อมทำงานจะต่ำกว่าจำนวนขั้นต่ำ (Min) ในช่วงเวลานี้",
 
