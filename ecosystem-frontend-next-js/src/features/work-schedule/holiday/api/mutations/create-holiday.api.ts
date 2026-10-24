@@ -27,6 +27,7 @@ export const createHoliday = async (
   token: string,
   skipErrorCodes: readonly string[] = [
     ErrorCode.WORK_SCHEDULE_HOLIDAY_SLOT_OVERLAP,
+    ErrorCode.WORK_SCHEDULE_HOLIDAY_MIN_STAFF_NOT_ENOUGH,
   ],
 ): Promise<CreateHolidayResult> => {
   const parsedParam = CreateHolidayDtoParamSchema.safeParse(param);

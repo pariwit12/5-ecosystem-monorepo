@@ -69,6 +69,133 @@ export class CreateHolidayHandler implements ICommandHandler<
     );
   }
 
+  private async verifyMinimumStaff(
+    tx: Prisma.TransactionClient,
+    staffId: string,
+    placeId: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<void> {
+    const activeInPlace = {
+      deletedAt: null,
+      organizationWorkSchedulePlaceId: placeId,
+    };
+    const requesterPositions = await tx.workScheduleStaffPosition.findMany({
+      where: {
+        workScheduleStaffId: staffId,
+        deletedAt: null,
+        workScheduleStaff: activeInPlace,
+        workSchedulePosition: activeInPlace,
+      },
+      select: { workSchedulePositionId: true },
+    });
+
+    if (requesterPositions.length === 0) return;
+
+    const minMaxRules = await tx.workScheduleMinMax.findMany({
+      where: {
+        workSchedulePositionId: {
+          in: requesterPositions.map((link) => link.workSchedulePositionId),
+        },
+        min: { not: null },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+      },
+      select: {
+        workSchedulePositionId: true,
+        min: true,
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    if (minMaxRules.length === 0) return;
+
+    const staffPositions = await tx.workScheduleStaffPosition.findMany({
+      where: {
+        workSchedulePositionId: {
+          in: [
+            ...new Set(minMaxRules.map((rule) => rule.workSchedulePositionId)),
+          ],
+        },
+        deletedAt: null,
+        workScheduleStaff: activeInPlace,
+        workSchedulePosition: activeInPlace,
+      },
+      select: { workScheduleStaffId: true, workSchedulePositionId: true },
+    });
+
+    const staffByPosition = new Map<string, Set<string>>();
+    const eligibleStaffIds = new Set<string>();
+    for (const link of staffPositions) {
+      const positionStaff =
+        staffByPosition.get(link.workSchedulePositionId) ?? new Set<string>();
+      positionStaff.add(link.workScheduleStaffId);
+      staffByPosition.set(link.workSchedulePositionId, positionStaff);
+      eligibleStaffIds.add(link.workScheduleStaffId);
+    }
+
+    const existingHolidays = await tx.workScheduleHoliday.findMany({
+      where: {
+        workScheduleStaffId: { in: [...eligibleStaffIds] },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+      },
+      select: { workScheduleStaffId: true, startTime: true, endTime: true },
+    });
+    const holidays = [
+      ...existingHolidays,
+      { workScheduleStaffId: staffId, startTime, endTime },
+    ];
+
+    for (const rule of minMaxRules) {
+      if (rule.min === null) continue;
+
+      // Only the intersection can be affected by this new holiday.
+      const checkStart = Math.max(
+        startTime.getTime(),
+        rule.startTime.getTime(),
+      );
+      const checkEnd = Math.min(endTime.getTime(), rule.endTime.getTime());
+      const positionStaff =
+        staffByPosition.get(rule.workSchedulePositionId) ?? new Set<string>();
+      const overlappingHolidays = holidays.filter(
+        (holiday) =>
+          positionStaff.has(holiday.workScheduleStaffId) &&
+          holiday.startTime.getTime() < checkEnd &&
+          holiday.endTime.getTime() > checkStart,
+      );
+
+      const boundaries = new Set([checkStart, checkEnd]);
+      for (const holiday of overlappingHolidays) {
+        boundaries.add(Math.max(checkStart, holiday.startTime.getTime()));
+        boundaries.add(Math.min(checkEnd, holiday.endTime.getTime()));
+      }
+      const times = [...boundaries].sort((a, b) => a - b);
+
+      for (let i = 0; i < times.length - 1; i++) {
+        // A staff member is absent once, even with several overlapping holidays.
+        const absentStaff = new Set(
+          overlappingHolidays
+            .filter(
+              (holiday) =>
+                holiday.startTime.getTime() < times[i + 1] &&
+                holiday.endTime.getTime() > times[i],
+            )
+            .map((holiday) => holiday.workScheduleStaffId),
+        );
+
+        if (positionStaff.size - absentStaff.size < rule.min) {
+          throw new AppException(
+            ErrorCode.WORK_SCHEDULE_HOLIDAY_MIN_STAFF_NOT_ENOUGH,
+            'ไม่สามารถบันทึกวันหยุดได้ เนื่องจากจำนวนพนักงานที่พร้อมทำงานจะต่ำกว่าจำนวนขั้นต่ำ (Min) ในช่วงเวลานี้',
+            HttpStatus.CONFLICT,
+          );
+        }
+      }
+    }
+  }
+
   async execute(command: CreateHolidayCommand): Promise<CreateHolidayResult> {
     const { clerkId, param, body } = command;
     const placeId = param.place_id;
@@ -119,7 +246,7 @@ export class CreateHolidayHandler implements ICommandHandler<
       endTime = new Date(body.end_time);
     }
 
-    // 3. Check slot overlap and insert in serializable transaction with retry
+    // 3. Check slot overlap and minimum staffing, then insert in one transaction.
     return await this.executeWithRetry(async (tx) => {
       const overlappingSlot = await tx.workScheduleSlot.findFirst({
         where: {
@@ -137,6 +264,8 @@ export class CreateHolidayHandler implements ICommandHandler<
           HttpStatus.CONFLICT,
         );
       }
+
+      await this.verifyMinimumStaff(tx, staffId, placeId, startTime, endTime);
 
       const holiday = await tx.workScheduleHoliday.create({
         data: {
