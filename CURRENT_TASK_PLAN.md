@@ -60,7 +60,7 @@
 
 ### 4.2 Inventory route component ที่ยืนยันจาก GitHub `main`
 
-ตรวจ Git tree ของ `main` (tree SHA ณ snapshot ก่อนแก้เอกสาร: `5f9472f9ba9d3326cac6a1a93fd0890753f5ed79`) พบไฟล์ที่เป็น `page.tsx`, `client-page.tsx`, `layout.tsx`, `loading.tsx` หรือ `error.tsx` รวม **90 ไฟล์**: `page.tsx` 33, `client-page.tsx` 28, `layout.tsx` 3, `loading.tsx` 13 และ `error.tsx` 13. รายการนี้เป็น baseline ที่ต้องให้ความสำคัญครบทุก path; อย่าตัด route ออกจากงานเพราะไม่อยู่ในแผนฉบับก่อน
+ตรวจ Git tree ของ `main` (commit SHA ของ snapshot ที่ใช้ตรวจ baseline ก่อนแก้เอกสาร: `5f9472f9ba9d3326cac6a1a93fd0890753f5ed79`) พบไฟล์ที่เป็น `page.tsx`, `client-page.tsx`, `layout.tsx`, `loading.tsx` หรือ `error.tsx` รวม **90 ไฟล์**: `page.tsx` 33, `client-page.tsx` 28, `layout.tsx` 3, `loading.tsx` 13 และ `error.tsx` 13. รายการนี้เป็น baseline ที่ต้องให้ความสำคัญครบทุก path; อย่าตัด route ออกจากงานเพราะไม่อยู่ในแผนฉบับก่อน
 
 #### Root, fallback และ global error (5 files)
 - `ecosystem-frontend-next-js/src/app/[...notFound]/page.tsx`
