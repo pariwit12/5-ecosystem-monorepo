@@ -238,8 +238,8 @@ export default function WorkScheduleAdminPositionSlotNewClient({
       />
 
       {staffPositions.length === 0 && (
-        <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
-          <div className="py-6 text-center text-gray-500">
+        <div className="w-full border border-border rounded-xl shadow-sm bg-card divide-y divide-border">
+          <div className="py-6 text-center text-muted-foreground">
             ไม่พบข้อมูลพนักงานของตำแหน่งงานนี้
             กรุณาเพิ่มพนักงานเข้าตำแหน่งงานนี้ก่อน
           </div>
@@ -247,8 +247,8 @@ export default function WorkScheduleAdminPositionSlotNewClient({
       )}
 
       {slotTypes.length === 0 && (
-        <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
-          <div className="py-6 text-center text-gray-500">
+        <div className="w-full border border-border rounded-xl shadow-sm bg-card divide-y divide-border">
+          <div className="py-6 text-center text-muted-foreground">
             ไม่พบข้อมูลชนิด/ประเภทกะการทำงานของตำแหน่งงานนี้
             กรุณาเพิ่มชนิด/ประเภทกะการทำงานเข้าตำแหน่งงานนี้ก่อน
           </div>

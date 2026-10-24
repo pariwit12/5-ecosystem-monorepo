@@ -198,9 +198,9 @@ export default function Client({
       />
 
       {isoStartDateTime && isoEndDateTime && minMaxs !== undefined && (
-        <div className="w-full overflow-x-auto border border-gray-200 rounded-xl shadow-sm bg-white">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-800 border-b border-gray-200">
+        <div className="w-full overflow-x-auto border border-border rounded-xl shadow-sm bg-card">
+          <table className="w-full text-left text-sm text-muted-foreground">
+            <thead className="bg-background text-foreground border-b border-border">
               <tr>
                 <th className="px-6 py-4 font-semibold">เริ่มต้น</th>
                 <th className="px-6 py-4 font-semibold">สิ้นสุด</th>
@@ -210,22 +210,22 @@ export default function Client({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {minMaxs.map((mm) => (
                 <tr
                   key={mm.id}
-                  className="hover:bg-gray-50/50 transition-colors"
+                  className="hover:bg-muted/50 transition-colors"
                 >
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-muted-foreground">
                     {mm.startTime}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-muted-foreground">
                     {mm.endTime}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-500">
+                  <td className="px-6 py-4 text-sm text-right text-muted-foreground">
                     {mm.min}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-500">
+                  <td className="px-6 py-4 text-sm text-right text-muted-foreground">
                     {mm.max}
                   </td>
 
@@ -233,7 +233,7 @@ export default function Client({
                   <td className="px-6 py-4 text-center">
                     <Link
                       href={`/work-schedule/admin/${placeId}/position/${positionId}/min-max/${mm.id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="inline-flex min-h-11 items-center justify-center px-4 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/10 transition-colors"
                     >
                       เลือก
                     </Link>
@@ -244,7 +244,7 @@ export default function Client({
           </table>
 
           {minMaxs.length === 0 && (
-            <div className="py-6 text-center text-gray-500">ไม่พบข้อมูล</div>
+            <div className="py-6 text-center text-muted-foreground">ไม่พบข้อมูล</div>
           )}
         </div>
       )}

@@ -61,7 +61,7 @@ export default function OrganizationSettingsClient({
   // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
   if (!isLoaded || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         กำลังโหลดข้อมูลองค์กร...
       </div>
     );
@@ -79,7 +79,7 @@ export default function OrganizationSettingsClient({
     ].includes(error.response?.data?.errorCode)
   ) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         เกิดข้อผิดพลาด กำลังพากลับไปยังหน้ารายชื่อองค์กร...
       </div>
     );
@@ -88,12 +88,12 @@ export default function OrganizationSettingsClient({
   // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
 
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
       {/* 🟢 ส่วนหัวข้อ และปุ่มย้อนกลับ */}
-      <div className="flex items-center gap-4 border-b pb-6">
+      <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
         <Link
           href="/organizations"
-          className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+          className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -111,12 +111,12 @@ export default function OrganizationSettingsClient({
           </svg>
         </Link>
 
-        <div className="flex-1 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">
               ตั้งค่าองค์กร: {orgDetails?.name}
             </h2>
-            <p className="text-gray-500 mt-1 font-mono text-sm">
+            <p className="mt-1 break-all font-mono text-xs text-muted-foreground sm:text-sm">
               Organization ID: {orgDetails?.id}
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function OrganizationSettingsClient({
           {/* 🌟 ปุ่มลิงก์ไปหน้า General Settings */}
           <Link
             href={`/organizations/${orgId}/settings/general`}
-            className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-sm"
+            className="min-h-11 w-full rounded-lg bg-secondary px-4 py-2 text-center text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent sm:w-auto"
           >
             แก้ไขข้อมูลทั่วไป
           </Link>
@@ -133,39 +133,39 @@ export default function OrganizationSettingsClient({
 
       {/* 🟢 โซนจัดการโมดูล (Subscriptions) */}
       <div>
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
+        <h3 className="text-xl font-bold text-foreground mb-4">
           โมดูลและแอปพลิเคชัน (Subscriptions)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* การ์ดแอป Toothcraft */}
-          <div className="border border-blue-100 bg-white rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+          <div className="border border-primary/20 bg-card rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl">
               แนะนำ
             </div>
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold text-2xl">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-2xl">
                 🦷
               </div>
               <div>
-                <h4 className="text-lg font-bold text-gray-800">
+                <h4 className="text-lg font-bold text-foreground">
                   Dental Clinic Information System
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   ระบบบริหารจัดการคลินิกทันตกรรม
                 </p>
               </div>
             </div>
-            <p className="text-gray-600 text-sm mb-6 flex-1">
+            <p className="text-muted-foreground text-sm mb-6 flex-1">
               จัดการประวัติคนไข้ ตารางนัดหมาย ทันตแพทย์ และระบบคลังสต๊อกวัสดุ
             </p>
-            <div className="flex items-center justify-between border-t pt-4">
-              <span className="text-sm font-medium text-gray-500">
+            <div className="flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
                 สถานะ:{" "}
-                <span className="text-blue-600 font-bold">พร้อมใช้งาน</span>
+                <span className="text-primary font-bold">พร้อมใช้งาน</span>
               </span>
               <Link
                 href={`/organizations/${orgId}/dental-clinic`}
-                className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+                className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:w-auto"
               >
                 เข้าสู่ระบบจัดการคลินิก
               </Link>
@@ -173,33 +173,33 @@ export default function OrganizationSettingsClient({
           </div>
 
           {/* 🌟 การ์ดแอป Work Schedule (ใหม่) */}
-          <div className="border border-purple-100 bg-white rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden transition-all hover:border-purple-300 hover:shadow-md">
-            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+          <div className="border border-primary/20 bg-card rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden transition-all hover:border-primary/20 hover:shadow-md">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl">
               ใหม่
             </div>
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center font-bold text-2xl">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-2xl">
                 🗓️
               </div>
               <div>
-                <h4 className="text-lg font-bold text-gray-800">
+                <h4 className="text-lg font-bold text-foreground">
                   Work Schedule System
                 </h4>
-                <p className="text-sm text-gray-500">ระบบบริหารตารางการทำงาน</p>
+                <p className="text-sm text-muted-foreground">ระบบบริหารตารางการทำงาน</p>
               </div>
             </div>
-            <p className="text-gray-600 text-sm mb-6 flex-1">
+            <p className="text-muted-foreground text-sm mb-6 flex-1">
               จัดการกะทำงาน สร้างแม่แบบเวร
               และให้พนักงานกดจองคิวลงเวลาทำงานได้แบบยืดหยุ่น
             </p>
-            <div className="flex items-center justify-between border-t pt-4">
-              <span className="text-sm font-medium text-gray-500">
+            <div className="flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
                 สถานะ:{" "}
-                <span className="text-purple-600 font-bold">พร้อมใช้งาน</span>
+                <span className="text-primary font-bold">พร้อมใช้งาน</span>
               </span>
               <Link
                 href={`/organizations/${orgId}/work-schedule`}
-                className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+                className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:w-auto"
               >
                 เข้าสู่ระบบจัดเวร
               </Link>
@@ -207,30 +207,30 @@ export default function OrganizationSettingsClient({
           </div>
 
           {/* การ์ดแอป HR (ตัวอย่างแอปในอนาคต) */}
-          <div className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col opacity-75 grayscale hover:grayscale-0 transition-all">
+          <div className="border border-border bg-card rounded-2xl p-6 shadow-sm flex flex-col opacity-75 grayscale hover:grayscale-0 transition-all">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center font-bold text-2xl">
                 👥
               </div>
               <div>
-                <h4 className="text-lg font-bold text-gray-800">
+                <h4 className="text-lg font-bold text-foreground">
                   HR & Payroll
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   ระบบจัดการบุคคลและเงินเดือน
                 </p>
               </div>
             </div>
-            <p className="text-gray-600 text-sm mb-6 flex-1">
+            <p className="text-muted-foreground text-sm mb-6 flex-1">
               คำนวณเงินเดือนหมอ หักภาษี และจัดการวันลาของพนักงานในคลินิก
             </p>
-            <div className="flex items-center justify-between border-t pt-4">
-              <span className="text-sm font-medium text-gray-400">
+            <div className="flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
                 เร็วๆ นี้
               </span>
               <button
                 disabled
-                className="px-4 py-2 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed"
+                className="min-h-11 w-full rounded-lg bg-muted px-4 py-2 text-center font-medium text-muted-foreground cursor-not-allowed sm:w-auto"
               >
                 ยังไม่เปิดให้บริการ
               </button>
@@ -241,13 +241,13 @@ export default function OrganizationSettingsClient({
 
       {/* 🟢 โซนจัดการพนักงาน (รอลุยในอนาคต) */}
       <div className="mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-800">สมาชิกในองค์กร</h3>
-          <button className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-xl font-bold text-foreground">สมาชิกในองค์กร</h3>
+          <button className="min-h-11 w-full rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground transition-colors hover:bg-accent sm:w-auto">
             + เชิญสมาชิก
           </button>
         </div>
-        <div className="bg-white border rounded-2xl p-8 text-center text-gray-500 shadow-sm">
+        <div className="bg-card border rounded-2xl p-4 sm:p-6 lg:p-8 text-center text-muted-foreground shadow-sm">
           ฟีเจอร์จัดการพนักงานและกำหนด Role จะแสดงที่นี่
         </div>
       </div>

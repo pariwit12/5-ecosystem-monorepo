@@ -2,8 +2,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrganizationsLoading() {
   return (
-    // 🌟 รักษาโครงสร้าง p-8 max-w-6xl gap-8 เหมือนหน้า page.tsx เป๊ะๆ!
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8 relative">
+    // 🌟 รักษาโครงสร้าง p-4 sm:p-6 lg:p-8 max-w-6xl gap-8 เหมือนหน้า page.tsx เป๊ะๆ!
+    <div className="w-full max-w-6xl min-w-0 p-4 sm:mx-auto sm:p-6 lg:p-8 flex flex-col gap-6 sm:gap-8 relative">
       {/* 1. จำลองส่วนหัวข้อ */}
       <div className="w-full space-y-2">
         <Skeleton className="h-9 w-50" /> {/* แท่งหัวข้อใหญ่ */}
@@ -16,7 +16,7 @@ export default function OrganizationsLoading() {
         {[1, 2, 3].map((index) => (
           <div
             key={index}
-            className="p-6 border border-gray-100 rounded-2xl bg-white shadow-sm flex flex-col items-start min-h-48.5"
+            className="p-6 border border-border rounded-2xl bg-card shadow-sm flex flex-col items-start min-h-48.5"
           >
             {/* จำลองโลโก้วงกลม/สี่เหลี่ยมมนมุมการ์ด */}
             <Skeleton className="w-12 h-12 rounded-xl mb-4" />

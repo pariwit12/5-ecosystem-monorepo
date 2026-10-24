@@ -23,9 +23,9 @@ export function DateTimeRangePicker({
         "gap-4",
         "p-4",
 
-        "bg-white",
+        "bg-card",
         "border",
-        "border-gray-200",
+        "border-border",
         "rounded-xl",
 
         "shadow-sm",
@@ -33,7 +33,7 @@ export function DateTimeRangePicker({
     >
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold text-gray-700">
+          <label className="text-sm font-bold text-foreground">
             เวลาเริ่มต้น
           </label>
           <input
@@ -41,17 +41,17 @@ export function DateTimeRangePicker({
             value={startDateTime}
             disabled={isSubmitting}
             onChange={(e) => onStartChange(e.target.value)}
-            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 border-gray-300 focus:ring-purple-100 focus:border-purple-500`}
+            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-background bg-card focus:ring-2 border-border focus:ring-primary focus:border-ring`}
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold text-gray-700">เวลาสิ้นสุด</label>
+          <label className="text-sm font-bold text-foreground">เวลาสิ้นสุด</label>
           <input
             type="datetime-local"
             value={endDateTime}
             onChange={(e) => onEndChange(e.target.value)}
-            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-gray-50 bg-white focus:ring-2 border-gray-300 focus:ring-purple-100 focus:border-purple-500`}
+            className={`w-full px-4 py-3 border rounded-xl outline-none transition-all disabled:bg-background bg-card focus:ring-2 border-border focus:ring-primary focus:border-ring`}
           />
         </div>
       </div>

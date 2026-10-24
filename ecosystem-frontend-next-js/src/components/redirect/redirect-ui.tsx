@@ -16,17 +16,17 @@ export default function RedirectUI({ targetUrl, errorCode }: RedirectUIProps) {
   const errorMessage = API_ERROR_MESSAGES[errorCode] || "เกิดข้อผิดพลาด";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="p-8 bg-white rounded-lg shadow-md text-center max-w-sm">
-        <h2 className="text-xl text-red-600 font-bold mb-2">ข้อผิดพลาด</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <div className="p-4 sm:p-6 lg:p-8 bg-card rounded-lg shadow-md text-center max-w-sm">
+        <h2 className="text-xl text-destructive font-bold mb-2">ข้อผิดพลาด</h2>
         {/* 🌟 แสดงข้อความที่ดึงมาได้ */}
-        <p className="mb-6 text-gray-600">{errorMessage}</p>
-        <p className="mb-6 text-gray-600">
+        <p className="mb-6 text-muted-foreground">{errorMessage}</p>
+        <p className="mb-6 text-muted-foreground">
           ระบบกำลังพาไปยังหน้าต่างที่เหมาะสม...
         </p>
         <button
           onClick={() => router.push(targetUrl)}
-          className="px-4 py-2 w-full bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+          className="min-h-11 w-full rounded bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90"
         >
           ดำเนินการต่อ
         </button>

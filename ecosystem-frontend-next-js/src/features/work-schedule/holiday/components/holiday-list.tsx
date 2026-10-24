@@ -80,28 +80,28 @@ export function HolidayList({ placeId, placeTimezone }: HolidayListProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-base font-semibold text-gray-800">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-base font-semibold text-foreground">
         รายการวันหยุดของคุณ
       </h2>
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         รายการวันหยุดทั้งหมดที่คุณได้ลงไว้ในสถานที่ทำงานนี้
       </p>
 
       {isLoading ? (
-        <div className="mt-4 text-center py-6 text-sm text-gray-400">
+        <div className="mt-4 text-center py-6 text-sm text-muted-foreground">
           กำลังโหลดรายการวันหยุด...
         </div>
       ) : error ? (
-        <div className="mt-4 text-center py-6 text-sm text-red-500">
+        <div className="mt-4 text-center py-6 text-sm text-destructive">
           ไม่สามารถโหลดรายการวันหยุดได้
         </div>
       ) : !data?.holidays || data.holidays.length === 0 ? (
-        <div className="mt-4 text-center py-8 text-sm text-gray-400 border border-dashed rounded-xl">
+        <div className="mt-4 text-center py-6 sm:py-8 text-sm text-muted-foreground border border-dashed rounded-xl">
           ยังไม่มีรายการวันหยุดที่บันทึกไว้
         </div>
       ) : (
-        <div className="mt-4 divide-y divide-gray-100">
+        <div className="mt-4 divide-y divide-border">
           {data.holidays.map((holiday) => {
             const period = formatPeriod(holiday.startTime, holiday.endTime);
             const isConfirming = confirmDeleteId === holiday.id;
@@ -110,24 +110,24 @@ export function HolidayList({ placeId, placeTimezone }: HolidayListProps) {
             return (
               <div
                 key={holiday.id}
-                className="flex items-center justify-between py-3 gap-4"
+                className="flex flex-wrap items-start justify-between gap-3 py-3"
               >
                 <div>
                   <div className="flex items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         period.isFullDay
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-blue-100 text-blue-800"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
                       {period.isFullDay ? "เต็มวัน" : "บางช่วงเวลา"}
                     </span>
-                    <span className="text-sm font-medium text-gray-800">
+                    <span className="text-sm font-medium text-foreground">
                       {period.text}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400 block mt-1">
+                  <span className="text-xs text-muted-foreground block mt-1">
                     บันทึกเมื่อ:{" "}
                     {DateTime.fromISO(holiday.createdAt)
                       .setZone(placeTimezone)
@@ -135,17 +135,17 @@ export function HolidayList({ placeId, placeTimezone }: HolidayListProps) {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {isConfirming ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-red-600 font-medium">
+                      <span className="text-xs text-destructive font-medium">
                         ยืนยันการลบ?
                       </span>
                       <button
                         type="button"
                         onClick={() => handleDelete(holiday.id)}
                         disabled={isDeleting}
-                        className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition"
+                        className="min-h-11 rounded-lg bg-destructive px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:bg-destructive disabled:opacity-50"
                       >
                         {isDeleting ? "กำลังลบ..." : "ใช่, ลบ"}
                       </button>
@@ -153,7 +153,7 @@ export function HolidayList({ placeId, placeTimezone }: HolidayListProps) {
                         type="button"
                         onClick={() => setConfirmDeleteId(null)}
                         disabled={isDeleting}
-                        className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition"
+                        className="min-h-11 rounded-lg bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground transition hover:bg-accent"
                       >
                         ยกเลิก
                       </button>
@@ -162,7 +162,7 @@ export function HolidayList({ placeId, placeTimezone }: HolidayListProps) {
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(holiday.id)}
-                      className="rounded-lg border border-gray-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition"
+                      className="min-h-11 rounded-lg border border-border px-3 py-1 text-xs font-semibold text-destructive transition hover:border-destructive hover:bg-destructive/10"
                     >
                       ลบ
                     </button>

@@ -14,25 +14,25 @@ export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
       {/* ไอคอนและพื้นหลังวงกลม */}
-      <div className="w-24 h-24 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-6">
+      <div className="w-24 h-24 bg-muted text-muted-foreground rounded-full flex items-center justify-center mb-6">
         <FileQuestion className="w-12 h-12" />
       </div>
 
       {/* ข้อความแจ้งเตือน */}
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl mb-2">
         404 - ไม่พบหน้าเว็บนี้ (This is [...notFound]/page.tsx)
       </h2>
-      <p className="text-gray-500 mb-8 max-w-md">
+      <p className="text-muted-foreground mb-8 max-w-md">
         ขออภัยครับ เราไม่พบเนื้อหาที่คุณกำลังค้นหา ลิงก์อาจเสียหาย
         หรือหน้านี้อาจถูกลบไปแล้ว
       </p>
 
       {/* 🌟 3. จัดกลุ่มปุ่มให้อยู่คู่กัน (Flex row) */}
-      <div className="flex items-center gap-4">
+      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
         {/* ปุ่มย้อนกลับ */}
         <button
           onClick={() => router.back()}
-          className="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors shadow-sm flex items-center gap-2"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-medium text-secondary-foreground shadow-sm transition-colors hover:bg-accent sm:w-auto sm:px-6"
         >
           <ArrowLeft className="w-4 h-4" />
           ย้อนกลับ
@@ -41,7 +41,7 @@ export default function NotFound() {
         {/* ปุ่มพากลับไป Home */}
         <Link
           href="/"
-          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:w-auto sm:px-6"
         >
           <Home className="w-4 h-4" />
           กลับไปหน้าแรก

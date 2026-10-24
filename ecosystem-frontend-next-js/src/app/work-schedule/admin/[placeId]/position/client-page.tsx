@@ -113,7 +113,7 @@ export default function Client({ placeId }: { placeId: string }) {
   const positions = dataQuery.positions;
 
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
       {/*  */}
       {/* ============================== */}
       {/* ส่วนหัวข้อ + สถานะ fetching */}
@@ -125,7 +125,7 @@ export default function Client({ placeId }: { placeId: string }) {
         {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด), ส่วนหัวข้อ (กลาง) และ ปุ่มแก้ไขข้อมูล (ขวาสุด) */}
         {/* =================================================================== */}
 
-        <div className="flex items-center gap-4 border-b pb-6">
+        <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
           {/*  */}
           {/* ========================== */}
           {/* 🟢 ปุ่มย้อนกลับ (ซ้ายสุด) */}
@@ -133,7 +133,7 @@ export default function Client({ placeId }: { placeId: string }) {
 
           <Link
             href={`/work-schedule/admin/${placeId}`}
-            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+            className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -159,7 +159,7 @@ export default function Client({ placeId }: { placeId: string }) {
           {/* 🟢 ส่วนหัวข้อ (ซ้าย) และ ปุ่มแก้ไขข้อมูล (ขวา) */}
           {/* ============================================ */}
 
-          <div className="flex-1 flex items-center justify-between">
+          <div className="min-w-0 flex-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/*  */}
             {/* ============================= */}
             {/* 🟢 กลุ่มของส่วนหัวข้อ (ซ้าย) */}
@@ -168,13 +168,13 @@ export default function Client({ placeId }: { placeId: string }) {
             <div>
               {/*  */}
               <h2 // หัวข้อ
-                className="text-3xl font-bold text-gray-800"
+                className="break-words text-2xl font-bold text-foreground sm:text-3xl"
               >
                 รายการตำแหน่งงาน
               </h2>
 
               <p // รายละเอียด (ใต้หัวข้อ) เช่น ชื่อองค์กรที่สังกัด
-                className="text-gray-500 mt-1 font-mono text-sm"
+                className="text-muted-foreground mt-1 font-mono text-sm"
               >
                 จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ
               </p>
@@ -193,7 +193,7 @@ export default function Client({ placeId }: { placeId: string }) {
 
             <Link
               href={`/work-schedule/admin/${placeId}/position/new`}
-              className="inline-flex items-center justify-center px-5 py-2.5 font-medium text-sm text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm transition-colors shrink-0"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:bg-primary sm:w-auto"
             >
               <span>+ สร้างข้อมูลใหม่</span>
             </Link>
@@ -224,9 +224,9 @@ export default function Client({ placeId }: { placeId: string }) {
             // =================================
 
             isFetching ? (
-              <span className="text-gray-500 flex items-center gap-2 animate-pulse">
+              <span className="text-muted-foreground flex items-center gap-2 animate-pulse">
                 <svg
-                  className="animate-spin h-3.5 w-3.5 text-blue-500"
+                  className="animate-spin h-3.5 w-3.5 text-primary"
                   viewBox="0 0 24 24"
                 >
                   <circle
@@ -258,7 +258,7 @@ export default function Client({ placeId }: { placeId: string }) {
 
             errorQuery ? (
               <div className="flex items-center gap-2">
-                <span className="text-red-500 flex items-center gap-1.5 font-medium">
+                <span className="text-destructive flex items-center gap-1.5 font-medium">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-3.5 w-3.5"
@@ -278,7 +278,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 <button
                   type="button"
                   onClick={() => refetch()}
-                  className="text-blue-600 hover:text-blue-700 font-semibold underline cursor-pointer transition-colors"
+                  className="text-primary hover:text-primary font-semibold underline cursor-pointer transition-colors"
                 >
                   ลองใหม่
                 </button>
@@ -295,7 +295,7 @@ export default function Client({ placeId }: { placeId: string }) {
 
               dataUpdatedAt > 0 && (
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-400 flex items-center gap-1.5">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-3.5 w-3.5 text-green-500"
@@ -317,7 +317,7 @@ export default function Client({ placeId }: { placeId: string }) {
                   <button
                     type="button"
                     onClick={() => refetch()}
-                    className="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer transition-colors font-medium"
+                    className="text-muted-foreground hover:text-muted-foreground flex items-center gap-1 cursor-pointer transition-colors font-medium"
                     title="กดเพื่ออัปเดตข้อมูลใหม่"
                   >
                     <svg
@@ -365,11 +365,11 @@ export default function Client({ placeId }: { placeId: string }) {
       {/* ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
       {/* ========================================================= */}
 
-      <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
+      <div className="w-full border border-border rounded-xl shadow-sm bg-card divide-y divide-border">
         {positions.map((p) => (
           <div
             key={p.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-gray-50/50 transition-colors"
+            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-muted/50 transition-colors"
           >
             {/*  */}
             {/* ================= */}
@@ -382,7 +382,7 @@ export default function Client({ placeId }: { placeId: string }) {
               {/* โลโก้แบบกลม */}
               {/* ================ */}
 
-              <div className="w-10 h-10 shrink-0 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">
+              <div className="w-10 h-10 shrink-0 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-lg">
                 {p.name.charAt(0).toUpperCase()}
               </div>
 
@@ -400,7 +400,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 {/* 🌟 ชื่อเต็มของรายการ */}
                 {/* ====================== */}
 
-                <h3 className="text-base font-semibold text-gray-800">
+                <h3 className="text-base font-semibold text-foreground">
                   {p.name}
                 </h3>
 
@@ -412,7 +412,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 {/* 🌟 รายละเอียด */}
                 {/* ================= */}
 
-                <p className="text-sm text-gray-500 font-mono mt-0.5">
+                <p className="text-sm text-muted-foreground font-mono mt-0.5">
                   ID: {p.id.slice(0, 8)}...
                 </p>
 
@@ -438,7 +438,7 @@ export default function Client({ placeId }: { placeId: string }) {
 
             <Link
               href={`/work-schedule/admin/${placeId}/position/${p.id}`}
-              className="w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className="min-h-11 w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-secondary text-secondary-foreground hover:bg-accent"
             >
               เลือก
             </Link>
@@ -455,7 +455,7 @@ export default function Client({ placeId }: { placeId: string }) {
         {/* ============================== */}
 
         {positions.length === 0 && (
-          <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
+          <div className="py-12 text-center text-muted-foreground">ไม่พบข้อมูล</div>
         )}
 
         {/* ============================== */}

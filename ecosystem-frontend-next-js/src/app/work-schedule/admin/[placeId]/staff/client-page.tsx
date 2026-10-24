@@ -73,7 +73,7 @@ export default function Client({ placeId }: { placeId: string }) {
     ].includes(error.response?.data?.errorCode)
   ) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         เกิดข้อผิดพลาด กำลังพากลับไปยังหน้าแรกของ Work-Schedule...
       </div>
     );
@@ -108,11 +108,11 @@ export default function Client({ placeId }: { placeId: string }) {
         isQueryLoading={isLoading}
         errorQuery={error}
       >
-        <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
-          <div className="flex items-center gap-4 border-b pb-6">
+        <div className="w-full max-w-6xl min-w-0 p-4 sm:mx-auto sm:p-6 lg:p-8 flex flex-col gap-6 sm:gap-8">
+          <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
             <Link
               href={`/work-schedule/admin/${placeId}`}
-              className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+              className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -130,16 +130,16 @@ export default function Client({ placeId }: { placeId: string }) {
               </svg>
             </Link>
 
-            <div className="flex-1 flex items-center justify-between">
+            <div className="min-w-0 flex-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gray-800">
+                <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">
                   รายชื่อพนักงาน
                 </h2>
-                <p className="text-gray-500 mt-1 text-sm">
+                <p className="text-muted-foreground mt-1 text-sm">
                   จัดการข้อมูลพนักงานและการผูกบัญชีในระบบ
                 </p>
                 {isFetching && !isLoading && (
-                  <span className="text-sm text-gray-400 flex items-center gap-2 mt-2">
+                  <span className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                       <circle
                         className="opacity-25"
@@ -160,10 +160,10 @@ export default function Client({ placeId }: { placeId: string }) {
                   </span>
                 )}
               </div>
-              <div>
+              <div className="w-full sm:w-auto">
                 <Link
                   href={`/work-schedule/admin/${placeId}/staff/invitations`}
-                  className="rounded-xl border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 shadow-sm transition hover:bg-purple-100"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-center text-sm font-semibold text-primary shadow-sm transition hover:bg-primary/20 sm:w-auto"
                 >
                   จัดการคำขอผูกบัญชี 📋
                 </Link>
@@ -174,9 +174,9 @@ export default function Client({ placeId }: { placeId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <Link
               href={`/work-schedule/admin/${placeId}/staff/new`}
-              className="group flex flex-col items-center justify-center p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all cursor-pointer min-h-40"
+              className="group flex flex-col items-center justify-center p-6 bg-background border-2 border-dashed border-border rounded-2xl hover:border-primary/20 hover:bg-primary/10 transition-all cursor-pointer min-h-40"
             >
-              <div className="w-12 h-12 bg-white text-gray-400 rounded-full flex items-center justify-center shadow-sm group-hover:text-purple-600 group-hover:scale-110 transition-transform mb-3">
+              <div className="w-12 h-12 bg-card text-muted-foreground rounded-full flex items-center justify-center shadow-sm group-hover:text-primary group-hover:scale-110 transition-transform mb-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
@@ -192,7 +192,7 @@ export default function Client({ placeId }: { placeId: string }) {
                   />
                 </svg>
               </div>
-              <span className="font-medium text-gray-600 group-hover:text-purple-600">
+              <span className="font-medium text-muted-foreground group-hover:text-primary">
                 เพิ่มพนักงานใหม่
               </span>
             </Link>
@@ -200,7 +200,7 @@ export default function Client({ placeId }: { placeId: string }) {
             {staffs.map((staff) => (
               <div
                 key={staff.id}
-                className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md transition-shadow relative"
+                className="border border-border bg-card rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md transition-shadow relative"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span
@@ -216,20 +216,20 @@ export default function Client({ placeId }: { placeId: string }) {
 
                 <div className="overflow-hidden mb-4">
                   <h4
-                    className="text-lg font-bold text-gray-800 truncate"
+                    className="break-words text-lg font-bold text-foreground"
                     title={staff.name}
                   >
                     {staff.name}
                   </h4>
                   <p
-                    className="text-xs text-gray-400 font-mono truncate"
+                    className="break-all text-xs font-mono text-muted-foreground"
                     title={staff.id}
                   >
                     ID: {staff.id.substring(0, 8)}...
                   </p>
                 </div>
 
-                <div className="mt-auto border-t pt-4 flex items-center justify-between gap-2">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-4">
                   {staff.isLinked ? (
                     <button
                       type="button"
@@ -240,7 +240,7 @@ export default function Client({ placeId }: { placeId: string }) {
                           name: staff.name,
                         })
                       }
-                      className="text-xs font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                      className="text-xs font-medium text-destructive hover:text-destructive disabled:opacity-50"
                     >
                       ถอดการผูก
                     </button>
@@ -249,12 +249,12 @@ export default function Client({ placeId }: { placeId: string }) {
                       type="button"
                       disabled={issueMutation.isPending}
                       onClick={() => handleIssue(staff.id)}
-                      className="text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                      className="text-xs font-medium text-primary hover:text-primary disabled:opacity-50"
                     >
                       ออกรหัสคำเชิญ
                     </button>
                   )}
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {staff.isLinked ? "พร้อมใช้งาน" : "รอผูกบัญชี"}
                   </span>
                 </div>
@@ -277,26 +277,26 @@ export default function Client({ placeId }: { placeId: string }) {
       {/* Dialog ยืนยันยกเลิกการผูก */}
       {unlinkConfirmStaff && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">
+            <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md min-w-0 overflow-y-auto rounded-2xl bg-card p-4 shadow-xl sm:p-6">
+            <h3 className="text-lg font-bold text-foreground">
               ยืนยันการยกเลิกผูกบัญชี
             </h3>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted-foreground">
               คุณต้องการยกเลิกการผูกบัญชีของพนักงาน{" "}
-              <strong className="text-gray-900">
+              <strong className="text-foreground">
                 {unlinkConfirmStaff.name}
               </strong>{" "}
               ใช่หรือไม่?
             </p>
-            <p className="mt-1 text-xs text-red-500">
+            <p className="mt-1 text-xs text-destructive">
               * ข้อมูลตารางเวรเดิมจะยังคงอยู่ แต่พนักงานจะไม่สามารถเข้าถึงสถานที่ทำงานนี้ได้จนกว่าจะผูกบัญชีใหม่
             </p>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse justify-end gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setUnlinkConfirmStaff(null)}
-                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted sm:w-auto"
               >
                 ยกเลิก
               </button>
@@ -304,7 +304,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 type="button"
                 disabled={unlinkMutation.isPending}
                 onClick={handleUnlink}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition"
+                className="min-h-11 w-full rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-destructive disabled:opacity-50 sm:w-auto"
               >
                 {unlinkMutation.isPending ? "กำลังดำเนินการ..." : "ยืนยันยกเลิกผูก"}
               </button>

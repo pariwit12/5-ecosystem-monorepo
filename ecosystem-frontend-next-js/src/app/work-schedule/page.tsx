@@ -60,7 +60,7 @@ export default function Page() {
       errorQuery={error}
     >
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-        <header className="flex items-start gap-3 border-b pb-6 sm:items-center sm:gap-5 sm:pb-8">
+        <header className="flex flex-col items-stretch gap-3 border-b pb-6 sm:flex-row sm:items-center sm:gap-5 sm:pb-8">
           <Link
             href="/"
             aria-label="กลับหน้าหลัก"
@@ -121,10 +121,10 @@ export default function Page() {
               </span>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto">
             <Link
               href="/work-schedule/invitations"
-              className="inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-center text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 sm:w-auto"
             >
               <span>📩</span> กรอกโค้ด / สถานะคำขอ
             </Link>
@@ -167,10 +167,10 @@ export default function Page() {
                   {placesAsAdmin.map((place) => (
                     <article
                       key={place.id}
-                      className="flex min-w-0 flex-col rounded-2xl border border-purple-200 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-md sm:p-6"
+                      className="flex min-w-0 flex-col rounded-2xl border border-primary/20 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md sm:p-6"
                     >
                       <div className="mb-5 flex items-center justify-between gap-3">
-                        <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">
+                        <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                           Admin
                         </span>
                         <span className="text-xs text-muted-foreground">สถานที่ทำงาน</span>
@@ -181,7 +181,7 @@ export default function Page() {
                       <div className="mt-6 border-t pt-4">
                         <Link
                           href={`/work-schedule/admin/${place.id}`}
-                          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-purple-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2"
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         >
                           จัดการตารางเวร <span className="ml-2" aria-hidden="true">→</span>
                         </Link>
@@ -207,10 +207,10 @@ export default function Page() {
                   {placesAsStaff.map((place) => (
                     <article
                       key={place.id}
-                      className="flex min-w-0 flex-col rounded-2xl border border-blue-200 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md sm:p-6"
+                      className="flex min-w-0 flex-col rounded-2xl border border-primary/20 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md sm:p-6"
                     >
                       <div className="mb-5 flex items-center justify-between gap-3">
-                        <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                        <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                           Staff
                         </span>
                         <span className="text-xs text-muted-foreground">สถานที่ทำงาน</span>
@@ -221,7 +221,7 @@ export default function Page() {
                       <div className="mt-6 border-t pt-4">
                         <Link
                           href={`/work-schedule/staff/${place.id}`}
-                          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-center text-sm font-semibold text-blue-800 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-center text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         >
                           เข้าสู่สถานที่ทำงาน <span className="ml-2" aria-hidden="true">→</span>
                         </Link>

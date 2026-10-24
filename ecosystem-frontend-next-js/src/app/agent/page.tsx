@@ -103,16 +103,16 @@ export default function AgentPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex h-screen max-w-5xl flex-col">
+    <main className="min-h-[100dvh] bg-background text-foreground">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col">
         {/* Header */}
-        <header className="border-b border-white/10 px-6 py-4">
-          <h1 className="text-xl font-semibold">AI Agent</h1>
-          <p className="mt-1 text-sm text-slate-400">n8n + Gemini Agent</p>
+        <header className="border-b border-border px-4 py-4 sm:px-6">
+          <h1 className="text-xl font-semibold text-foreground">AI Agent</h1>
+          <p className="mt-1 text-sm text-muted-foreground">n8n + Gemini Agent</p>
         </header>
 
         {/* Messages */}
-        <section className="flex-1 overflow-y-auto px-6 py-8">
+        <section className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto flex max-w-3xl flex-col gap-6">
             {messages.map((message) => {
               const isUser = message.role === "user";
@@ -124,10 +124,10 @@ export default function AgentPage() {
                 >
                   <div
                     className={[
-                      "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6",
+                      "max-w-[90%] break-words whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[80%]",
                       isUser
-                        ? "bg-blue-600 text-white"
-                        : "bg-white/10 text-slate-100",
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border bg-card text-card-foreground",
                     ].join(" ")}
                   >
                     {message.content}
@@ -138,7 +138,7 @@ export default function AgentPage() {
 
             {isSending && (
               <div className="flex justify-start">
-                <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-400">
+                <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-card-foreground">
                   กำลังคิด...
                 </div>
               </div>
@@ -147,10 +147,10 @@ export default function AgentPage() {
         </section>
 
         {/* Composer */}
-        <footer className="border-t border-white/10 px-6 py-4">
+        <footer className="border-t border-border px-4 py-4 sm:px-6">
           <form
             onSubmit={handleSubmit}
-            className="mx-auto flex max-w-3xl items-end gap-3"
+            className="mx-auto flex w-full max-w-3xl flex-col items-stretch gap-2 sm:flex-row sm:items-end sm:gap-3"
           >
             <textarea
               value={input}
@@ -168,13 +168,13 @@ export default function AgentPage() {
               }}
               placeholder="พิมพ์ข้อความ..."
               rows={1}
-              className="max-h-40 min-h-12 flex-1 resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-slate-500 focus:border-blue-500"
+              className="min-h-12 w-full min-w-0 flex-1 resize-none rounded-2xl border border-input bg-card px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
 
             <button
               type="submit"
               disabled={!canSend}
-              className="h-12 rounded-2xl bg-blue-600 px-5 text-sm font-medium transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-11 w-full rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
               ส่ง
             </button>

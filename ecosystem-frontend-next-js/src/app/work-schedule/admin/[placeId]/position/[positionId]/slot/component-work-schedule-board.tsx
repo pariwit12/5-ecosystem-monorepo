@@ -364,7 +364,7 @@ export function WorkScheduleBoard({
 
   if (totalDurationMs <= 0) {
     return (
-      <div className="text-center text-red-500 p-4">
+      <div className="text-center text-destructive p-4">
         ช่วงเวลาที่เลือกไม่ถูกต้อง
       </div>
     );
@@ -373,7 +373,7 @@ export function WorkScheduleBoard({
   return (
     <div className="flex flex-col gap-3">
       {/* วาง UI Component ตัวเลือกไว้ด้านบนกระดาน */}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-start sm:justify-end">
         <SlotTypeSelect
           value={selectedSlotTypeId}
           onChange={setSelectedSlotTypeId}
@@ -381,18 +381,24 @@ export function WorkScheduleBoard({
         />
       </div>
 
-      <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
+      <div
+        className="w-full overflow-x-auto rounded-xl border border-border bg-card shadow-sm"
+        role="region"
+        aria-label="กระดานตารางเวลา เลื่อนแนวนอนเพื่อดูข้อมูลเพิ่มเติม"
+        tabIndex={0}
+      >
+      <div className="min-w-[720px] overflow-hidden rounded-xl flex flex-col">
         {/* Header Section */}
-        <div className="bg-gray-50 border-b border-gray-200 flex text-sm text-gray-500 font-medium">
-          <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-gray-200 p-3 flex items-center">
-            <span className="font-semibold text-gray-700">รายชื่อพนักงาน</span>
+        <div className="bg-background border-b border-border flex text-sm text-muted-foreground font-medium">
+          <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-border p-3 flex items-center">
+            <span className="font-semibold text-foreground">รายชื่อพนักงาน</span>
           </div>
 
           <div className="grow relative min-h-11 overflow-hidden">
             {markers.map((m) => (
               <div
                 key={m.id}
-                className="absolute top-0 bottom-0 border-l border-gray-200 pl-1 pt-2 flex flex-col text-[10px] text-gray-400"
+                className="absolute top-0 bottom-0 border-l border-border pl-1 pt-2 flex flex-col text-[10px] text-muted-foreground"
                 style={{ left: `${m.percent}%` }}
               >
                 <span>{m.label}</span>
@@ -402,14 +408,14 @@ export function WorkScheduleBoard({
         </div>
 
         {/* Body Section (Rows) */}
-        <div className="divide-y divide-gray-100 overflow-y-auto max-h-150">
+        <div className="divide-y divide-border overflow-y-auto max-h-150">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="flex min-h-16 hover:bg-gray-50/50 transition-colors group relative"
+              className="flex min-h-16 hover:bg-muted/50 transition-colors group relative"
             >
-              <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-gray-100 p-3 flex flex-col justify-center bg-white group-hover:bg-transparent z-10">
-                <span className="text-sm font-semibold text-gray-800 line-clamp-2">
+              <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-border p-3 flex flex-col justify-center bg-card group-hover:bg-transparent z-10">
+                <span className="text-sm font-semibold text-foreground line-clamp-2">
                   {row.name}
                 </span>
                 {row.isExtra && row.id !== "unassigned" && (
@@ -424,7 +430,7 @@ export function WorkScheduleBoard({
                   {markers.map((m) => (
                     <div
                       key={m.id}
-                      className="absolute top-0 bottom-0 border-l border-gray-100/70"
+                      className="absolute top-0 bottom-0 border-l border-border/70"
                       style={{ left: `${m.percent}%` }}
                     />
                   ))}
@@ -460,12 +466,12 @@ export function WorkScheduleBoard({
                       href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/${slot.id}`}
                       style={{ left: coords.left, width: coords.width }}
                       className={cn(
-                        "absolute top-2 bottom-2 bg-blue-100 rounded text-blue-900",
-                        "py-1.5 shadow-sm hover:shadow-md hover:bg-blue-200 transition-all duration-200 flex flex-col overflow-hidden text-xs z-10",
+                        "absolute top-2 bottom-2 bg-primary/10 rounded text-primary",
+                        "py-1.5 shadow-sm hover:shadow-md hover:bg-primary/20 transition-all duration-200 flex flex-col overflow-hidden text-xs z-10",
                         coords.isClippedLeft &&
-                          "rounded-l-none border-l-0 border-dashed border-l-blue-400",
+                          "rounded-l-none border-l-0 border-dashed border-l-primary",
                         coords.isClippedRight &&
-                          "rounded-r-none border-r-2 border-dashed border-r-blue-400",
+                          "rounded-r-none border-r-2 border-dashed border-r-primary",
                       )}
                       title={`${slot.slotTypeName} (${startFormatted} - ${endFormatted})`}
                     >
@@ -527,12 +533,12 @@ export function WorkScheduleBoard({
           ))}
 
           {/* แถวที่ 1: รวมคนทำงานจริง */}
-          <div className="flex min-h-12 bg-gray-50/50 transition-colors relative border-t border-gray-200">
-            <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-gray-200 p-3 flex flex-col justify-center bg-gray-100 z-10">
-              <span className="text-xs font-bold text-gray-700">
+          <div className="flex min-h-12 bg-muted/50 transition-colors relative border-t border-border">
+            <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-border p-3 flex flex-col justify-center bg-muted z-10">
+              <span className="text-xs font-bold text-foreground">
                 รวมคนทำงานจริง
               </span>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-muted-foreground">
                 จำนวนพนักงาน (คน)
               </span>
             </div>
@@ -542,7 +548,7 @@ export function WorkScheduleBoard({
                 {markers.map((m) => (
                   <div
                     key={m.id}
-                    className="absolute top-0 bottom-0 border-l border-gray-200/70"
+                    className="absolute top-0 bottom-0 border-l border-border/70"
                     style={{ left: `${m.percent}%` }}
                   />
                 ))}
@@ -563,7 +569,7 @@ export function WorkScheduleBoard({
                   <div
                     key={`count-${slice.id}`}
                     style={{ left: coords.left, width: coords.width }}
-                    className="absolute top-1.5 bottom-1.5 bg-blue-50 border border-blue-200 rounded flex items-center justify-center text-xs text-blue-900 font-semibold z-10 shadow-2xs truncate"
+                    className="absolute top-1.5 bottom-1.5 bg-primary/10 border border-primary/20 rounded flex items-center justify-center text-xs text-primary font-semibold z-10 shadow-2xs truncate"
                     title={`ช่วงเวลา: ${startFormatted} - ${endFormatted} | ทำงานอยู่: ${slice.currentCount} คน`}
                   >
                     <span className="truncate">{slice.currentCount} คน</span>
@@ -576,12 +582,12 @@ export function WorkScheduleBoard({
           {selectedSlotTypeId === "all" && (
             <>
               {/* แถวที่ 2: เปรียบเทียบเกณฑ์ (Compare Row) */}
-              <div className="flex min-h-12 bg-gray-50/80 transition-colors relative border-t border-gray-200">
-                <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-gray-200 p-3 flex flex-col justify-center bg-gray-100 z-10">
-                  <span className="text-xs font-bold text-gray-700">
+              <div className="flex min-h-12 bg-muted/80 transition-colors relative border-t border-border">
+                <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-border p-3 flex flex-col justify-center bg-muted z-10">
+                  <span className="text-xs font-bold text-foreground">
                     เปรียบเทียบเกณฑ์
                   </span>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-[10px] text-muted-foreground">
                     สถานะอัตรากำลัง
                   </span>
                 </div>
@@ -591,7 +597,7 @@ export function WorkScheduleBoard({
                     {markers.map((m) => (
                       <div
                         key={m.id}
-                        className="absolute top-0 bottom-0 border-l border-gray-200/70"
+                        className="absolute top-0 bottom-0 border-l border-border/70"
                         style={{ left: `${m.percent}%` }}
                       />
                     ))}
@@ -606,10 +612,10 @@ export function WorkScheduleBoard({
 
                     // กำหนดการแสดงสีในช่อง Compare
                     let statusClasses =
-                      "bg-gray-100 border-gray-300 text-gray-600";
+                      "bg-muted border-border text-muted-foreground";
                     if (slice.status === "low") {
                       statusClasses =
-                        "bg-red-100 border-l-4 border-red-500 text-red-900 font-medium";
+                        "bg-destructive/10 border-l-4 border-destructive text-destructive font-medium";
                     } else if (slice.status === "high") {
                       statusClasses =
                         "bg-amber-100 border-l-4 border-amber-500 text-amber-900 font-medium";
@@ -647,12 +653,12 @@ export function WorkScheduleBoard({
               </div>
 
               {/* แถวที่ 3: Min / Max (ไม่แสดงสีเตือน และไม่แสดงจำนวนคนจริง) */}
-              <div className="flex min-h-14 bg-gray-50/50 transition-colors relative border-t border-gray-200">
-                <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-gray-200 p-3 flex flex-col justify-center bg-gray-100 z-10">
-                  <span className="text-sm font-bold text-gray-700">
+              <div className="flex min-h-14 bg-muted/50 transition-colors relative border-t border-border">
+                <div className="w-24 sm:w-32 md:w-40 lg:w-48 shrink-0 border-r border-border p-3 flex flex-col justify-center bg-muted z-10">
+                  <span className="text-sm font-bold text-foreground">
                     Min / Max
                   </span>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-[10px] text-muted-foreground">
                     อัตรากำลังที่ต้องการ
                   </span>
                 </div>
@@ -662,7 +668,7 @@ export function WorkScheduleBoard({
                     {markers.map((m) => (
                       <div
                         key={m.id}
-                        className="absolute top-0 bottom-0 border-l border-gray-200/70"
+                        className="absolute top-0 bottom-0 border-l border-border/70"
                         style={{ left: `${m.percent}%` }}
                       />
                     ))}
@@ -684,7 +690,7 @@ export function WorkScheduleBoard({
                         key={mm.id}
                         style={{ left: coords.left, width: coords.width }}
                         className={cn(
-                          "absolute top-1.5 bottom-1.5 bg-slate-100 border border-slate-300 rounded flex flex-col justify-center text-xs text-slate-700 z-10",
+                          "absolute top-1.5 bottom-1.5 bg-muted border border-border rounded flex flex-col justify-center text-xs text-foreground z-10",
                           coords.isClippedLeft &&
                             "rounded-l-none border-l-0 border-dashed",
                           coords.isClippedRight &&
@@ -714,6 +720,7 @@ export function WorkScheduleBoard({
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

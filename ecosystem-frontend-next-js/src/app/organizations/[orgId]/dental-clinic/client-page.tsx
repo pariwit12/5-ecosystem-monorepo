@@ -9,12 +9,12 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
   // ];
 
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-6xl mx-auto flex flex-col gap-8">
       {/* 🟢 ส่วนหัวข้อและทางย้อนกลับ */}
-      <div className="flex items-center gap-4 border-b pb-6">
+      <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
         <Link
           href={`/organizations/${orgId}/settings`}
-          className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-all"
+          className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -31,18 +31,18 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
             />
           </svg>
         </Link>
-        <div className="flex-1 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">
               ระบบบริหารคลินิกทันตกรรม
             </h2>
-            <p className="text-gray-500 mt-1 text-sm">
+            <p className="text-muted-foreground mt-1 text-sm">
               จัดการสาขาและสิทธิการใช้งานของคลินิกในเครือ
             </p>
           </div>
           <Link
             href={`/organizations/${orgId}/dental-clinic/new`}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm text-sm"
+            className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:w-auto"
           >
             + เพิ่มสาขาคลินิกใหม่
           </Link>
@@ -51,20 +51,20 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
 
       {/* 🟢 ส่วนแสดงรายชื่อคลินิก (Empty State vs Data Grid) */}
       {/* {mockClinics.length === 0 ? (
-        <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 flex flex-col items-center justify-center text-center bg-gray-50/50">
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mb-4">
+        <div className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center justify-center text-center bg-muted/50">
+          <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-3xl mb-4">
             🏢
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <h3 className="text-xl font-bold text-foreground mb-2">
             ยังไม่มีคลินิกในองค์กรนี้
           </h3>
-          <p className="text-gray-500 max-w-md mb-6 text-sm leading-relaxed">
+          <p className="text-muted-foreground max-w-md mb-6 text-sm leading-relaxed">
             เริ่มต้นใช้งานระบบ Toothcraft ด้วยการสร้างโปรไฟล์คลินิกสาขาแรกของคุณ
             เพื่อเปิดใช้งานระบบนัดหมายและประวัติคนไข้แยกตามสาขา
           </p>
           <Link
             href={`/organizations/${orgId}/dental-clinic/new`}
-            className="px-6 py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-all text-sm shadow-md"
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all text-sm shadow-md"
           >
             สร้างคลินิกสาขาแรก
           </Link>
@@ -74,19 +74,19 @@ export default function DentalClinicListClient({ orgId }: { orgId: string }) {
           {mockClinics.map((clinic) => (
             <div
               key={clinic.id}
-              className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm flex flex-col hover:border-gray-300 transition-all"
+              className="border border-border bg-card rounded-2xl p-6 shadow-sm flex flex-col hover:border-border transition-all"
             >
-              <h4 className="text-lg font-bold text-gray-800 mb-2">
+              <h4 className="text-lg font-bold text-foreground mb-2">
                 {clinic.name}
               </h4>
-              <p className="text-sm text-gray-500 flex-1">
+              <p className="text-sm text-muted-foreground flex-1">
                 สถานะ:{" "}
                 <span className="text-green-600 font-medium">เปิดใช้งาน</span>
               </p>
               <div className="mt-4 pt-4 border-t">
                 <Link
                   href={`/organizations/${orgId}/dental-clinic/${clinic.id}/dashboard`}
-                  className="w-full block text-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm"
+                  className="w-full block text-center px-4 py-2 bg-secondary hover:bg-accent text-foreground font-medium rounded-lg transition-colors text-sm"
                 >
                   เข้าสู่หน้าแอดมินสาขา
                 </Link>

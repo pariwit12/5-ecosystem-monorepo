@@ -72,9 +72,9 @@ export function CreateOrgModal() {
       {/* 🌟 1. ปุ่มทริกเกอร์ (แสดงเป็นรูปแบบการ์ดใน Grid) */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="p-6 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-all flex flex-col items-center justify-center text-gray-500 group min-h-50"
+        className="min-h-50 rounded-2xl border-2 border-dashed border-border bg-muted/50 p-5 text-muted-foreground transition-all hover:border-primary/30 hover:bg-primary/10 hover:text-primary flex flex-col items-center justify-center group sm:p-6"
       >
-        <div className="w-12 h-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+        <div className="w-12 h-12 rounded-full bg-card border shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -95,12 +95,12 @@ export function CreateOrgModal() {
 
       {/* 🌟 2. ตัวป๊อปอัป Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md min-w-0 overflow-y-auto rounded-2xl bg-card p-4 shadow-xl animate-in fade-in zoom-in duration-200 sm:p-6">
+            <h3 className="text-xl font-bold text-foreground mb-2">
               สร้างองค์กรใหม่
             </h3>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               กรุณาระบุชื่อคลินิกหรือองค์กรของคุณ
             </p>
 
@@ -110,8 +110,8 @@ export function CreateOrgModal() {
               className="flex flex-col gap-4"
             >
               <div className="flex flex-col gap-2">
-                <Label htmlFor="orgName" className="text-gray-700">
-                  ชื่อองค์กร <span className="text-red-500">*</span>
+                <Label htmlFor="orgName" className="text-foreground">
+                  ชื่อองค์กร <span className="text-destructive">*</span>
                 </Label>
 
                 {/* 🌟 5. เชื่อม Input ของ shadcn เข้ากับระบบ Form */}
@@ -120,27 +120,27 @@ export function CreateOrgModal() {
                   {...form.register("name")} // เวทมนตร์อยู่ตรงนี้ แทน onChange/value
                   disabled={createMutation.isPending}
                   placeholder="เช่น คลินิกทันตกรรมรอยยิ้ม"
-                  className={
+                  className={`min-h-11 ${
                     form.formState.errors.name
-                      ? "border-red-500 focus-visible:ring-red-500"
+                      ? "border-destructive focus-visible:ring-destructive"
                       : ""
-                  }
+                  }`}
                 />
 
                 {/* แสดง Error Message จาก Zod */}
                 {form.formState.errors.name && (
-                  <span className="text-sm text-red-500">
+                  <span className="text-sm text-destructive">
                     {form.formState.errors.name.message}
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 mt-4">
+              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
                 {/* 🌟 6. เปลี่ยนมาใช้ Button ของ shadcn/ui */}
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="min-h-11 w-full sm:flex-1"
                   onClick={() => {
                     setIsModalOpen(false);
                     form.reset();
@@ -152,7 +152,7 @@ export function CreateOrgModal() {
 
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="min-h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-1"
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending

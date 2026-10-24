@@ -132,7 +132,7 @@ export default function Client({
               "rounded-full",
               // rounded-full + icon (h = w) + p-2 = ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
 
-              "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
+              "text-muted-foreground bg-secondary hover:bg-accent transition",
             )}
           >
             <svg
@@ -180,7 +180,7 @@ export default function Client({
                 "truncate",
 
                 "font-bold",
-                "text-gray-800",
+                "text-foreground",
               )}
             >
               รายการ slotTemplate
@@ -193,7 +193,7 @@ export default function Client({
                 "truncate",
 
                 "font-mono",
-                "text-gray-500",
+                "text-muted-foreground",
               )}
             >
               จัดการและตรวจสอบข้อมูลรายการทั้งหมดในระบบ
@@ -216,10 +216,10 @@ export default function Client({
               "p-2 sm:px-4 sm:py-2",
               "rounded-full sm:rounded-xl",
 
-              "text-white",
-              "bg-blue-500",
-              "hover:bg-blue-700",
-              "active:bg-blue-800",
+              "text-primary-foreground",
+              "bg-primary",
+              "hover:bg-primary/90",
+              "active:bg-primary",
               "shadow-sm",
               "transition-colors",
             )}
@@ -296,14 +296,14 @@ export default function Client({
 
                   "gap-2",
 
-                  "text-gray-500 animate-pulse",
+                  "text-muted-foreground animate-pulse",
                 )}
               >
                 <svg
                   className={cn(
                     "h-3.5 w-3.5",
 
-                    "animate-spin text-blue-500",
+                    "animate-spin text-primary",
                   )}
                   viewBox="0 0 24 24"
                 >
@@ -352,7 +352,7 @@ export default function Client({
 
                     "gap-1.5",
 
-                    "font-medium text-red-500",
+                    "font-medium text-destructive",
                   )}
                 >
                   <svg
@@ -377,7 +377,7 @@ export default function Client({
                   onClick={() => refetch()}
                   className={cn(
                     "font-semibold underline",
-                    "text-blue-600 hover:text-blue-700 transition-colors",
+                    "text-primary hover:text-primary transition-colors",
                     "cursor-pointer",
                   )}
                 >
@@ -412,7 +412,7 @@ export default function Client({
 
                       "gap-1.5",
 
-                      "text-gray-400",
+                      "text-muted-foreground",
                     )}
                   >
                     <svg
@@ -447,7 +447,7 @@ export default function Client({
 
                       "gap-1",
 
-                      "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
+                      "font-medium text-muted-foreground hover:text-muted-foreground cursor-pointer transition-colors",
                     )}
                     title="กดเพื่ออัปเดตข้อมูลใหม่"
                   >
@@ -492,11 +492,11 @@ export default function Client({
       {/* ส่วนแสดงผล: Stacked List (สำหรับข้อมูลที่มี Column ไม่เยอะ) */}
       {/* ========================================================= */}
 
-      <div className="w-full border border-gray-200 rounded-xl shadow-sm bg-white divide-y divide-gray-100">
+      <div className="w-full border border-border rounded-xl shadow-sm bg-card divide-y divide-border">
         {slotTemplates.map((st) => (
           <div
             key={st.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-gray-50/50 transition-colors"
+            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 gap-4 hover:bg-muted/50 transition-colors"
           >
             {/*  */}
             {/* ================= */}
@@ -509,7 +509,7 @@ export default function Client({
               {/* โลโก้แบบกลม */}
               {/* ================ */}
 
-              <div className="w-10 h-10 shrink-0 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">
+              <div className="w-10 h-10 shrink-0 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-lg">
                 {st.name.charAt(0).toUpperCase()}
               </div>
 
@@ -527,7 +527,7 @@ export default function Client({
                 {/* 🌟 ชื่อเต็มของรายการ */}
                 {/* ====================== */}
 
-                <h3 className="text-base font-semibold text-gray-800">
+                <h3 className="text-base font-semibold text-foreground">
                   {st.name}
                 </h3>
 
@@ -539,7 +539,7 @@ export default function Client({
                 {/* 🌟 รายละเอียด */}
                 {/* ================= */}
 
-                <p className="text-sm text-gray-500 font-mono mt-0.5">
+                <p className="text-sm text-muted-foreground font-mono mt-0.5">
                   ID: {st.id.slice(0, 8)}...
                 </p>
 
@@ -565,7 +565,7 @@ export default function Client({
 
             <Link
               href={`/work-schedule/admin/${placeId}/position/${positionId}/slot-template/${st.id}`}
-              className="w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className="min-h-11 w-full sm:w-auto px-6 py-2 text-center font-medium rounded-lg transition-colors bg-secondary text-secondary-foreground hover:bg-accent"
             >
               เลือก
             </Link>
@@ -578,7 +578,7 @@ export default function Client({
         ))}
 
         {slotTemplates.length === 0 && (
-          <div className="py-12 text-center text-gray-500">ไม่พบข้อมูล</div>
+          <div className="py-12 text-center text-muted-foreground">ไม่พบข้อมูล</div>
         )}
       </div>
 

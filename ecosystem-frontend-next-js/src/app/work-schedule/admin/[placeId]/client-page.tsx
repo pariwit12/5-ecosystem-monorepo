@@ -18,7 +18,7 @@ export default function Client({ placeId }: { placeId: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-sm">Workforce Scheduling</p>
-            <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">Admin Mode</span>
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Admin Mode</span>
           </div>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             แผงควบคุมผู้ดูแล
@@ -40,17 +40,17 @@ export default function Client({ placeId }: { placeId: string }) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           <Link
             href={`/work-schedule/admin/${placeId}/position`}
-            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2 sm:p-7"
+            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-7"
           >
-            <div className="absolute inset-x-0 top-0 h-1 bg-purple-500 transition-all group-hover:h-1.5" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-primary transition-all group-hover:h-1.5" />
             <div className="flex items-start gap-4 sm:gap-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 transition-colors group-hover:bg-purple-600 group-hover:text-white sm:size-14">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/90 group-hover:text-primary-foreground sm:size-14">
                 <svg xmlns="http://www.w3.org/2000/svg" className="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-semibold text-card-foreground transition-colors group-hover:text-purple-700 sm:text-xl">
+                <h3 className="text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary sm:text-xl">
                   จัดการตารางเวร
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -59,7 +59,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 </p>
               </div>
             </div>
-            <div className="mt-7 flex items-center justify-between gap-3 border-t pt-4 text-sm font-semibold text-purple-700">
+            <div className="mt-7 flex items-center justify-between gap-3 border-t pt-4 text-sm font-semibold text-primary">
               <span>เปิดตำแหน่งงานและตารางเวร</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -69,17 +69,17 @@ export default function Client({ placeId }: { placeId: string }) {
 
           <Link
             href={`/work-schedule/admin/${placeId}/staff`}
-            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:p-7"
+            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-7"
           >
-            <div className="absolute inset-x-0 top-0 h-1 bg-blue-500 transition-all group-hover:h-1.5" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-primary transition-all group-hover:h-1.5" />
             <div className="flex items-start gap-4 sm:gap-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-colors group-hover:bg-blue-600 group-hover:text-white sm:size-14">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/90 group-hover:text-primary-foreground sm:size-14">
                 <svg xmlns="http://www.w3.org/2000/svg" className="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-semibold text-card-foreground transition-colors group-hover:text-blue-700 sm:text-xl">
+                <h3 className="text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary sm:text-xl">
                   จัดการพนักงาน
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -88,7 +88,7 @@ export default function Client({ placeId }: { placeId: string }) {
                 </p>
               </div>
             </div>
-            <div className="mt-7 flex items-center justify-between gap-3 border-t pt-4 text-sm font-semibold text-blue-700">
+            <div className="mt-7 flex items-center justify-between gap-3 border-t pt-4 text-sm font-semibold text-primary">
               <span>เปิดรายชื่อพนักงาน</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />

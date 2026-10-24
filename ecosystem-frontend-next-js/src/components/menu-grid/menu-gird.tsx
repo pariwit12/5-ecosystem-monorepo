@@ -26,7 +26,7 @@ export function MenuGrid({
             //
             "text-lg",
 
-            "font-bold text-gray-800",
+            "font-bold text-foreground",
             //
           )}
         >

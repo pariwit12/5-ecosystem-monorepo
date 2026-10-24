@@ -13,37 +13,37 @@ export default function GlobalErrorModal() {
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-card shadow-xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header แถบสีแดง */}
-        <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            {/* <AlertTriangle className="w-8 h-8 text-red-600" /> */}
+        <div className="bg-destructive/10 p-6 flex flex-col items-center text-center border-b border-destructive">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+            {/* <AlertTriangle className="w-8 h-8 text-destructive" /> */}
             <span className="text-3xl">⚠️</span>
           </div>
           {statusCode ? (
-            <h2 className="text-xl font-bold text-red-900">
+            <h2 className="text-xl font-bold text-destructive">
               {title} ({statusCode})
             </h2>
           ) : (
-            <h2 className="text-xl font-bold text-red-900">{title}</h2>
+            <h2 className="text-xl font-bold text-destructive">{title}</h2>
           )}
           {errorCode && (
-            <span className="mt-2 inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+            <span className="mt-2 inline-block px-2 py-1 bg-destructive/10 text-destructive text-xs font-semibold rounded-full">
               Error: {errorCode}
             </span>
           )}
         </div>
 
         {/* Body เนื้อหา Error */}
-        <div className="p-6 text-center text-gray-600">
+        <div className="p-6 text-center text-muted-foreground">
           <p>{message}</p>
         </div>
 
         {/* Footer ปุ่มกดปิด */}
-        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
+        <div className="flex justify-center border-t border-border bg-muted p-4">
           <button
             onClick={clearError}
-            className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="min-h-11 rounded-lg bg-secondary px-6 py-2 font-medium text-secondary-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             รับทราบและปิดหน้าต่าง
           </button>

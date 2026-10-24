@@ -8,13 +8,13 @@ export default function WorkScheduleAdminPositionErrorQuery({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-[50vh] gap-4">
-      <h2 className="text-red-500 animate-pulse">
+    <div className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 min-h-[50vh] gap-4">
+      <h2 className="text-destructive animate-pulse">
         เกิดข้อผิดพลาดในการโหลดข้อมูล (error.tsx)
       </h2>
       <button
         onClick={() => reset()}
-        className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm border border-gray-200"
+        className="mt-4 min-h-11 px-6 py-2 bg-secondary hover:bg-accent text-foreground font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm border border-border"
       >
         <svg
           className="w-4 h-4"

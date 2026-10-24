@@ -39,14 +39,14 @@ export function MenuCard({
         isStylePrimary ? "border-2" : "border",
         "rounded-2xl",
 
-        isStylePrimary ? "bg-blue-50/50" : "bg-white",
-        isStylePrimary ? "border-blue-100" : "border-gray-200",
+        isStylePrimary ? "bg-primary/10" : "bg-card",
+        isStylePrimary ? "border-primary/20" : "border-border",
 
         "cursor-pointer",
 
         "transition-all",
-        isStylePrimary ? "hover:bg-blue-50" : "hover:bg-gray-50",
-        isStylePrimary ? "hover:border-blue-300" : "hover:border-gray-300",
+        isStylePrimary ? "hover:bg-primary/10" : "hover:bg-background",
+        isStylePrimary ? "hover:border-primary/20" : "hover:border-border",
         "hover:shadow-md",
         //
       )}
@@ -61,11 +61,11 @@ export function MenuCard({
           "items-center",
           "justify-center",
 
-          isStylePrimary ? "bg-blue-500" : "bg-gray-100",
-          isStylePrimary ? "text-white" : "text-gray-600",
+          isStylePrimary ? "bg-primary" : "bg-muted",
+          isStylePrimary ? "text-primary-foreground" : "text-muted-foreground",
 
           "transition-all",
-          isStylePrimary ? "group-hover:scale-110" : "group-hover:bg-white",
+          isStylePrimary ? "group-hover:scale-110" : "group-hover:bg-card",
           "group-hover:shadow-sm",
 
           "shrink-0",
@@ -84,8 +84,8 @@ export function MenuCard({
 
           "font-bold",
 
-          isStylePrimary ? "text-gray-900" : "text-gray-800",
-          isStylePrimary ? "group-hover:text-blue-700" : "",
+          isStylePrimary ? "text-foreground" : "text-foreground",
+          isStylePrimary ? "group-hover:text-primary" : "",
           isStylePrimary ? "transition-colors" : "",
           //
         )}
@@ -99,7 +99,7 @@ export function MenuCard({
             //
             "text-sm",
 
-            "text-gray-500",
+            "text-muted-foreground",
 
             "mt-1",
             //

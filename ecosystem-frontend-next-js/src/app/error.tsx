@@ -18,18 +18,18 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 sm:p-6 lg:p-8 text-center">
+      <h2 className="text-2xl font-bold text-foreground mb-4">
         เกิดข้อผิดพลาดในการแสดงผลหน้าเว็บ
       </h2>
-      <p className="text-gray-500 mb-8 max-w-sm">
+      <p className="text-muted-foreground mb-8 max-w-sm">
         ดูเหมือนว่าส่วนนี้ของระบบจะมีปัญหาบางอย่างในการประมวลผล
         เราได้ทำการบันทึกข้อมูลความผิดพลาดไว้แล้วครับ
       </p>
 
       {/* 🌟 ปุ่ม reset() คือท่าไม้ตายที่ Next.js ให้มา 
           มันจะสั่งให้ Component พยายาม Re-render ใหม่อีกครั้ง */}
-      <Button onClick={() => reset()} variant="default">
+      <Button className="min-h-11" onClick={() => reset()} variant="default">
         ลองใหม่อีกครั้ง
       </Button>
     </div>

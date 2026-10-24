@@ -39,9 +39,9 @@ export function DateRangePicker({
         "gap-4",
         "p-4",
 
-        "bg-white",
+        "bg-card",
         "border",
-        "border-gray-200",
+        "border-border",
         "rounded-xl",
 
         "shadow-sm",
@@ -56,7 +56,7 @@ export function DateRangePicker({
         <div className="flex flex-col gap-1">
           <label
             htmlFor="start-date"
-            className="text-sm font-bold text-gray-700"
+            className="text-sm font-bold text-foreground"
           >
             เริ่มวันที่
           </label>
@@ -65,12 +65,12 @@ export function DateRangePicker({
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="end-date" className="text-sm font-bold text-gray-700">
+          <label htmlFor="end-date" className="text-sm font-bold text-foreground">
             ถึงวันที่
           </label>
           <input
@@ -78,7 +78,7 @@ export function DateRangePicker({
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
@@ -103,14 +103,14 @@ export function DateRangePicker({
         <button
           onClick={handleSet7Days}
           type="button" // ป้องกันฟอร์ม submit ถ้าไปอยู่ใน <form>
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+          className="min-h-11 px-4 py-2 bg-secondary hover:bg-accent text-secondary-foreground rounded-md text-sm font-medium transition-colors"
         >
           7 วัน
         </button>
         <button
           onClick={handleSetThisMonth}
           type="button"
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+          className="min-h-11 px-4 py-2 bg-secondary hover:bg-accent text-secondary-foreground rounded-md text-sm font-medium transition-colors"
         >
           เดือนนี้ (1 เดือน)
         </button>

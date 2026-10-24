@@ -5,11 +5,11 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col items-center gap-10">
+    <div className="w-full max-w-6xl min-w-0 p-4 sm:mx-auto sm:p-6 lg:p-8 flex flex-col items-center gap-8 sm:gap-10">
       {/* 🔴 โซนที่ 1: สถานะยังไม่ได้ล็อกอิน */}
       <Show when="signed-out">
-        <div className="mt-20 p-8 border rounded-2xl shadow-sm bg-white w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="mt-10 w-full max-w-md rounded-2xl border border-border bg-card p-5 text-center shadow-sm sm:mt-20 sm:p-8">
+          <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-8 w-8"
@@ -25,13 +25,13 @@ export default function Home() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Pariwit Ecosystem
           </h2>
-          <p className="text-gray-500 mb-8 text-sm">
+          <p className="text-muted-foreground mb-8 text-sm">
             เข้าสู่ระบบเพื่อเข้าถึงแอปพลิเคชันทั้งหมด
           </p>
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-gray-500 text-sm">
+          <div className="p-4 bg-background rounded-xl border border-border text-muted-foreground text-sm">
             👆 กรุณากดปุ่ม Sign In ที่มุมขวาบน
           </div>
         </div>
@@ -41,31 +41,31 @@ export default function Home() {
       <Show when="signed-in">
         {/* หัวข้อ Portal */}
         <div className="w-full max-w-5xl text-center mt-8">
-          <h2 className="text-3xl font-bold text-gray-800">
+          <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">
             แอปพลิเคชันของคุณ
           </h2>
-          <p className="text-gray-500 mt-2">
+          <p className="text-muted-foreground mt-2">
             เลือกโปรแกรมที่คุณต้องการใช้งานจาก Ecosystem
           </p>
         </div>
 
         {/* ตะแกรง Grid โชว์โปรแกรม 3 ตัว */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid w-full max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
           {/* โปรแกรมที่ 1: Toothcraft */}
           {/* ชั่วคราว: พาไปที่หน้า organizations ก่อน เพราะปกติต้องเลือกร้านก่อนเข้าแอป */}
           {/* <Link
             // ปรับตามใช้งานจริง
             href="/organizations"
-            className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center"
+            className="p-6 border rounded-2xl shadow-sm bg-card hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center"
           >
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
               🦷
             </div>
-            <h3 className="text-lg font-bold text-gray-800">Toothcraft</h3>
-            <p className="text-sm text-gray-500 mt-2 mb-6">
+            <h3 className="text-lg font-bold text-foreground">Toothcraft</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
               ระบบบริหารจัดการคลินิกทันตกรรมครบวงจร
             </p>
-            <button className="mt-auto px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg w-full group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <button className="mt-auto min-h-11 w-full rounded-lg bg-primary/10 px-4 py-2 font-medium text-primary transition-colors group-hover:bg-primary/90 group-hover:text-primary-foreground">
               เปิดใช้งาน
             </button>
           </Link> */}
@@ -73,27 +73,27 @@ export default function Home() {
           {/* 🌟 โปรแกรมที่ 2: Work Schedule System (ของจริง!) */}
           <Link
             href="/work-schedule"
-            className="p-6 border border-purple-100 rounded-2xl shadow-sm bg-white hover:border-purple-300 hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
+            className="p-6 border border-primary/20 rounded-2xl shadow-sm bg-card hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
           >
             {/* ป้ายกำกับ New */}
-            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl">
               ใหม่
             </div>
-            <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform font-bold text-3xl">
               🗓️
             </div>
-            <h3 className="text-lg font-bold text-gray-800">Work Schedule</h3>
-            <p className="text-sm text-gray-500 mt-2 mb-6">
+            <h3 className="text-lg font-bold text-foreground">Work Schedule</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
               ระบบบริหารตารางการทำงานและจัดการกะ
             </p>
-            <button className="mt-auto px-4 py-2 bg-purple-50 text-purple-600 font-medium rounded-lg w-full group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <button className="mt-auto min-h-11 w-full rounded-lg bg-primary/10 px-4 py-2 font-medium text-primary transition-colors group-hover:bg-primary/90 group-hover:text-primary-foreground">
               เข้าสู่ระบบจัดเวร
             </button>
           </Link>
 
           {/* โปรแกรมที่ 3: Coming Soon */}
-          <div className="p-6 border border-dashed border-gray-300 rounded-2xl bg-gray-50 flex flex-col items-center text-center opacity-70">
-            <div className="w-16 h-16 bg-gray-200 text-gray-400 rounded-2xl flex items-center justify-center mb-4">
+          <div className="p-6 border border-dashed border-border rounded-2xl bg-background flex flex-col items-center text-center opacity-70">
+            <div className="w-16 h-16 bg-muted text-muted-foreground rounded-2xl flex items-center justify-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-8 w-8"
@@ -109,13 +109,13 @@ export default function Home() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-gray-600">Coming Soon</h3>
-            <p className="text-sm text-gray-400 mt-2 mb-6">
+            <h3 className="text-lg font-bold text-muted-foreground">Coming Soon</h3>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
               แอปพลิเคชันใหม่กำลังอยู่ในช่วงพัฒนา
             </p>
             <button
               disabled
-              className="mt-auto px-4 py-2 bg-gray-200 text-gray-500 font-medium rounded-lg w-full cursor-not-allowed"
+              className="mt-auto min-h-11 w-full rounded-lg bg-muted px-4 py-2 font-medium text-muted-foreground cursor-not-allowed"
             >
               เร็วๆ นี้
             </button>

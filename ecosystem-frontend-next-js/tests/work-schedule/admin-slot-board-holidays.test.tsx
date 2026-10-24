@@ -85,4 +85,14 @@ describe("admin work schedule board holidays", () => {
     expect(screen.getAllByText("1 คน")).toHaveLength(1);
     expect(screen.queryByRole("link", { name: /Day/ })).toBeNull();
   });
+
+  it("keeps horizontal scrolling inside the schedule board on narrow screens", () => {
+    renderBoard();
+
+    const boardRegion = screen.getByRole("region", {
+      name: "กระดานตารางเวลา เลื่อนแนวนอนเพื่อดูข้อมูลเพิ่มเติม",
+    });
+    expect(boardRegion.className).toContain("overflow-x-auto");
+    expect(boardRegion.firstElementChild?.className).toContain("min-w-[720px]");
+  });
 });

@@ -49,13 +49,13 @@ export const DataStateWrapper = ({
       : "กำลังโหลดข้อมูล...";
 
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[50vh] gap-4">
-        <div className="text-gray-500 animate-pulse">{message}</div>
+      <div className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 min-h-[50vh] gap-4">
+        <div className="text-muted-foreground animate-pulse">{message}</div>
 
         {showReloadButton && (
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm border border-gray-200"
+            className="mt-4 min-h-11 flex items-center gap-2 rounded-xl border border-border bg-secondary px-6 py-2 font-medium text-secondary-foreground shadow-sm transition-all hover:bg-accent"
           >
             <svg
               className="w-4 h-4"
@@ -79,11 +79,11 @@ export const DataStateWrapper = ({
 
   if (errorQuery) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 min-h-[50vh] gap-4">
-        <div className="text-red-500 animate-pulse">เกิดข้อผิดพลาด...</div>
+      <div className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 min-h-[50vh] gap-4">
+        <div className="text-destructive animate-pulse">เกิดข้อผิดพลาด...</div>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm border border-gray-200"
+          className="mt-4 min-h-11 flex items-center gap-2 rounded-xl border border-border bg-secondary px-6 py-2 font-medium text-secondary-foreground shadow-sm transition-all hover:bg-accent"
         >
           <svg
             className="w-4 h-4"
@@ -111,7 +111,7 @@ export const DataStateWrapper = ({
   //     accessDeniedCodes.includes(error.response?.data?.errorCode)
   //   ) {
   //     return (
-  //       <div className="flex items-center justify-center min-h-[50vh] text-gray-500">
+  //       <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground">
   //         เกิดข้อผิดพลาด redirecting...
   //       </div>
   //     );

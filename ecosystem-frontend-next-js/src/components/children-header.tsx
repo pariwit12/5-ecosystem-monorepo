@@ -57,7 +57,7 @@ export function ChildrenHeader({
           //
           "flex",
           "flex-wrap",
-          "items-center",
+          "items-start sm:items-center",
           "justify-between",
 
           "gap-2 sm:gap-3",
@@ -76,12 +76,12 @@ export function ChildrenHeader({
           href={backHref}
           className={cn(
             //
-            "p-2", // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
+            "min-h-11 min-w-11 shrink-0 p-2", // เพื่อให้ตัวไอคอนลูกศรไม่เบียดขอบเขตของปุ่มจนเกินไป
 
             "rounded-full",
             // rounded-full + icon (h = w) + p-2 = ปุ่มกลายเป็น "วงกลม" ที่สมบูรณ์แบบครับ
 
-            "text-gray-600 bg-gray-100 hover:bg-gray-200 transition",
+            "text-muted-foreground bg-muted hover:bg-accent transition",
             //
           )}
         >
@@ -134,10 +134,10 @@ export function ChildrenHeader({
               //
               "text-2xl sm:text-3xl",
 
-              "truncate",
+              "break-words",
 
               "font-bold",
-              "text-gray-800",
+              "text-foreground",
               //
             )}
           >
@@ -149,10 +149,10 @@ export function ChildrenHeader({
               //
               "text-xs sm:text-sm",
 
-              "truncate",
+              "break-words",
 
               "font-mono",
-              "text-gray-500",
+              "text-muted-foreground",
               //
             )}
           >
@@ -180,13 +180,13 @@ export function ChildrenHeader({
                 //
 
                 // ทำให้ปุ่มหน้าตาเป็นปุ่ม
-                "p-2 sm:px-4 sm:py-2",
-                "rounded-full sm:rounded-xl",
+                "min-h-11 w-full flex items-center justify-center gap-2 px-3 sm:w-auto sm:px-4 sm:py-2",
+                "rounded-xl",
 
-                "text-white",
-                "bg-blue-500",
-                "hover:bg-blue-700",
-                "active:bg-blue-800",
+                "text-primary-foreground",
+                "bg-primary",
+                "hover:bg-primary/90",
+                "active:bg-primary",
                 "shadow-sm",
                 "transition-colors",
                 //
@@ -214,11 +214,9 @@ export function ChildrenHeader({
               <span
                 className={cn(
                   //
-                  "hidden sm:block",
-
                   "text-xs sm:text-sm",
 
-                  "truncate",
+                  "break-words",
 
                   "font-medium",
                   //
@@ -281,7 +279,7 @@ export function ChildrenHeader({
 
                       "gap-2",
 
-                      "text-gray-500 animate-pulse",
+                      "text-muted-foreground animate-pulse",
                       //
                     )}
                   >
@@ -290,7 +288,7 @@ export function ChildrenHeader({
                         //
                         "h-3.5 w-3.5",
 
-                        "animate-spin text-blue-500",
+                        "animate-spin text-primary",
                         //
                       )}
                       viewBox="0 0 24 24"
@@ -343,7 +341,7 @@ export function ChildrenHeader({
 
                         "gap-1.5",
 
-                        "font-medium text-red-500",
+                        "font-medium text-destructive",
                         //
                       )}
                     >
@@ -374,7 +372,7 @@ export function ChildrenHeader({
                       className={cn(
                         //
                         "font-semibold underline",
-                        "text-blue-600 hover:text-blue-700 transition-colors",
+                        "text-primary hover:text-primary transition-colors",
                         "cursor-pointer",
                         //
                       )}
@@ -413,7 +411,7 @@ export function ChildrenHeader({
 
                           "gap-1.5",
 
-                          "text-gray-400",
+                          "text-muted-foreground",
                           //
                         )}
                       >
@@ -451,7 +449,7 @@ export function ChildrenHeader({
 
                           "gap-1",
 
-                          "font-medium text-gray-400 hover:text-gray-600 cursor-pointer transition-colors",
+                          "font-medium text-muted-foreground hover:text-muted-foreground cursor-pointer transition-colors",
                           //
                         )}
                         title="กดเพื่ออัปเดตข้อมูลใหม่"

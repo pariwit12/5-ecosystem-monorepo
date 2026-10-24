@@ -51,58 +51,58 @@ export default function StepSetup({
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-      <h3 className="text-2xl font-bold text-gray-800 mb-2">
+      <h3 className="text-2xl font-bold text-foreground mb-2">
         ตั้งค่าข้อมูลคลินิก
       </h3>
-      <p className="text-gray-500 mb-8 text-sm">
+      <p className="text-muted-foreground mb-8 text-sm">
         ข้อมูลนี้จะใช้แสดงในใบเสร็จและใบนัดหมาย (สามารถแก้ไขได้ภายหลัง)
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-bold text-gray-700">
-            ชื่อคลินิก <span className="text-red-500">*</span>
+          <label className="text-sm font-bold text-foreground">
+            ชื่อคลินิก <span className="text-destructive">*</span>
           </label>
           <input
             {...register("name")}
             type="text"
             className={`p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
               errors.name
-                ? "border-red-500 focus:ring-red-200"
-                : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                ? "border-destructive focus:ring-destructive"
+                : "border-border focus:border-ring focus:ring-primary"
             }`}
             placeholder="ตัวอย่าง: คลินิกทันตกรรมฟันดี"
           />
           {errors.name && (
-            <span className="text-sm text-red-500">{errors.name.message}</span>
+            <span className="text-sm text-destructive">{errors.name.message}</span>
           )}
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-bold text-gray-700">
+          <label className="text-sm font-bold text-foreground">
             เลขที่ใบอนุญาตสถานพยาบาล (ถ้ามี)
           </label>
           <input
             {...register("licenseNumber")}
             type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 transition-all"
+            className="p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:border-ring focus:ring-primary transition-all"
             placeholder="ตัวอย่าง: 10101010101"
           />
         </div>
 
-        <div className="flex justify-between border-t pt-6 mt-2">
+        <div className="mt-2 flex flex-col-reverse justify-between gap-3 border-t pt-6 sm:flex-row">
           <button
             type="button"
             onClick={onBack}
             disabled={isSubmitting}
-            className="px-6 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium transition disabled:opacity-50"
+            className="min-h-11 w-full rounded-lg px-6 py-2 font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50 sm:w-auto"
           >
             ย้อนกลับ
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-8 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+            className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 sm:w-auto sm:px-6"
           >
             {isSubmitting ? "กำลังสร้างระบบ..." : "ยืนยันและเริ่มใช้งานฟรี"}
           </button>

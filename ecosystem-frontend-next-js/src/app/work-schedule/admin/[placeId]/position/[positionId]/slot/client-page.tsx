@@ -263,13 +263,13 @@ export default function WorkScheduleAdminPositionSlotClient({
           />
           <button
             type="submit"
-            className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             แสดงตารางเวร
           </button>
         </fieldset>
         {validationError && (
-          <p role="alert" className="mt-2 text-sm text-red-600">
+          <p role="alert" className="mt-2 text-sm text-destructive">
             {validationError}
           </p>
         )}
@@ -282,7 +282,7 @@ export default function WorkScheduleAdminPositionSlotClient({
       )}
 
       {appliedRange === null ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           เลือกช่วงเวลาแล้วกดแสดงตารางเวร
         </p>
       ) : dataQuerySlot !== undefined ? (
@@ -310,7 +310,7 @@ export default function WorkScheduleAdminPositionSlotClient({
           {errorQuerySlot ? (
             <ErrorQuery reset={refreshSlots} />
           ) : isFetchingSlot ? (
-            <p role="status" className="text-sm text-gray-600">
+            <p role="status" className="text-sm text-muted-foreground">
               กำลังโหลดตารางเวร...
             </p>
           ) : null}

@@ -80,10 +80,10 @@ export default function Client({ placeId }: { placeId: string }) {
       errorQuery={error}
     >
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
-        <header className="flex items-center gap-4 border-b pb-6">
+        <header className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
           <Link
             href="/work-schedule"
-            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+            className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -101,53 +101,53 @@ export default function Client({ placeId }: { placeId: string }) {
             </svg>
           </Link>
           <div className="flex-1">
-            <span className="inline-flex rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-800">
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
               Staff Member
             </span>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
               {data?.name || "สถานที่ทำงาน"}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               ข้อมูลสถานที่ทำงานและโปรไฟล์พนักงานของคุณ
             </p>
           </div>
         </header>
 
         <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               ข้อมูลสถานที่ทำงาน
             </h2>
             <div className="mt-4 space-y-3">
               <div>
-                <span className="text-xs text-gray-400">ชื่อสถานที่:</span>
-                <p className="text-base font-semibold text-gray-800">
+                <span className="text-xs text-muted-foreground">ชื่อสถานที่:</span>
+                <p className="text-base font-semibold text-foreground">
                   {data?.name}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-gray-400">ไทม์โซน (Timezone):</span>
-                <p className="text-base font-mono text-gray-700">
+                <span className="text-xs text-muted-foreground">ไทม์โซน (Timezone):</span>
+                <p className="text-base font-mono text-foreground">
                   {data?.timezone}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               ข้อมูลพนักงานของคุณ
             </h2>
             <div className="mt-4 space-y-3">
               <div>
-                <span className="text-xs text-gray-400">ชื่อในระบบสถานที่:</span>
-                <p className="text-base font-semibold text-gray-800">
+                <span className="text-xs text-muted-foreground">ชื่อในระบบสถานที่:</span>
+                <p className="text-base font-semibold text-foreground">
                   {data?.staff.name}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-gray-400">รหัสพนักงาน (ID):</span>
-                <p className="text-xs font-mono text-gray-500 truncate">
+                <span className="text-xs text-muted-foreground">รหัสพนักงาน (ID):</span>
+                <p className="break-all text-xs font-mono text-muted-foreground sm:break-words">
                   {data?.staff.id}
                 </p>
               </div>
@@ -175,7 +175,7 @@ export default function Client({ placeId }: { placeId: string }) {
         <div className="flex justify-center pt-2">
           <Link
             href="/work-schedule"
-            className="inline-flex rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300 transition"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-secondary px-4 py-2 text-center text-sm font-semibold text-secondary-foreground transition hover:bg-accent sm:w-auto"
           >
             กลับหน้ารายการสถานที่ทำงาน
           </Link>

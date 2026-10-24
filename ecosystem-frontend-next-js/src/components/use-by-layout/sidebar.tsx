@@ -18,8 +18,8 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-56 bg-white border-r shadow-sm flex flex-col p-4 h-full">
-      <div className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-wider px-3">
+    <aside className="w-56 bg-card border-r shadow-sm flex flex-col p-4 h-full">
+      <div className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-wider px-3">
         เมนูส่วนกลาง
       </div>
       <nav className="flex flex-col gap-1">
@@ -40,14 +40,14 @@ export default function Sidebar() {
               href={menu.path}
               className={`px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${
                 isActive
-                  ? "bg-blue-50 text-blue-700 font-semibold"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-background hover:text-foreground"
               }`}
             >
               {/* 🌟 แสดงผลไอคอน */}
               <Icon
                 size={18}
-                className={isActive ? "text-blue-700" : "text-gray-400"}
+                className={isActive ? "text-primary" : "text-muted-foreground"}
               />
               {menu.name}
             </Link>

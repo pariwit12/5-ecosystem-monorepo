@@ -11,9 +11,9 @@ export function OfflineBanner() {
 
   // ถ้าเน็ตหลุด ให้โชว์แถบสีเหลือง/ส้ม แจ้งเตือน
   return (
-    <div className="w-full bg-amber-500 text-white text-sm font-medium py-2 px-4 flex items-center justify-center gap-2 z-50 sticky top-0 shadow-md animate-in slide-in-from-top">
-      <WifiOff className="w-4 h-4" />
-      <span>
+    <div className="sticky top-0 z-50 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-amber-500 px-3 py-2 text-center text-sm font-medium text-primary-foreground shadow-sm animate-in slide-in-from-top sm:px-4">
+      <WifiOff className="h-4 w-4 shrink-0" />
+      <span className="min-w-0">
         คุณกำลังออฟไลน์ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ
         การเปลี่ยนแปลงอาจไม่ถูกบันทึก
       </span>

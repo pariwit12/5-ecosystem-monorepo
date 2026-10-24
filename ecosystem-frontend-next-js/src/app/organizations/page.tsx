@@ -68,7 +68,7 @@ export default function OrganizationsPage() {
   };
 
   return (
-    <div className="p-8 w-full max-w-6xl mx-auto flex flex-col gap-8 relative">
+    <div className="w-full max-w-6xl min-w-0 p-4 sm:mx-auto sm:p-6 lg:p-8 flex flex-col gap-6 sm:gap-8 relative">
       {/* ใส่ fallback={null} เพื่อบอกว่าระหว่างรอโหลด ไม่ต้องโชว์อะไร */}
       <Suspense fallback={null}>
         <ToastNotifier />
@@ -79,8 +79,8 @@ export default function OrganizationsPage() {
 
       {/* ส่วนหัวข้อ */}
       <div className="w-full">
-        <h2 className="text-3xl font-bold text-gray-800">องค์กรของคุณ</h2>
-        <p className="text-gray-500 mt-2">
+        <h2 className="text-2xl font-bold text-foreground sm:text-3xl">องค์กรของคุณ</h2>
+        <p className="text-muted-foreground mt-2">
           จัดการและเลือกองค์กรที่คุณสังกัด หรือสร้างองค์กรใหม่
         </p>
       </div>
@@ -90,14 +90,14 @@ export default function OrganizationsPage() {
         {organizations.map((org) => (
           <div
             key={org.id}
-            className="p-6 border rounded-2xl shadow-sm bg-white hover:shadow-md transition-all flex flex-col items-start"
+            className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md flex flex-col items-start sm:p-6"
           >
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-4 font-bold text-xl">
               {/* เอาตัวอักษรตัวแรกของชื่อมาทำเป็นโลโก้จำลอง */}
               {org.name.charAt(0).toUpperCase()}
             </div>
-            <h3 className="text-lg font-bold text-gray-800">{org.name}</h3>
-            <p className="text-sm text-gray-500 mt-1 mb-6">
+            <h3 className="break-words text-lg font-bold text-foreground">{org.name}</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-6">
               ID:{" "}
               <span className="font-mono text-xs">{org.id.slice(0, 8)}...</span>
             </p>
@@ -105,7 +105,7 @@ export default function OrganizationsPage() {
             {/* 🌟 ปุ่มกดเลือกองค์กร เปลี่ยนสีตามสถานะ */}
             <button
               onClick={() => handleSelectOrganization(org.id)}
-              className="mt-auto px-4 py-2 font-medium rounded-lg w-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className="mt-auto min-h-11 w-full rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground transition-colors hover:bg-accent"
             >
               ตั้งค่าองค์กร
             </button>

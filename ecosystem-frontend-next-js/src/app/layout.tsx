@@ -73,30 +73,30 @@ export default function RootLayout({
           // // มันจึง ระงับการจองพื้นที่ (จอง 0px) ทำให้มือถือหน้าจอเล็กๆ ของคุณไม่เสียพื้นที่สีขาวไปฟรีๆ แม้แต่พิกเซลเดียวครับ!
         )}
       >
-        <body className={cn("min-h-full flex flex-col bg-gray-50")}>
+        <body className={cn("min-h-full flex flex-col bg-background text-foreground")}>
           {/* ขยับ TanStackProvider มาครอบทั้งหมดตั้งแต่ตรงนี้! */}
           {/* เพื่อให้ Header และ Sidebar สามารถใช้ useQuery ดึง API ได้ด้วย */}
           <TanStackProvider>
             <OfflineBanner />
             {/* 🌟 OfflineBanner วางไว้บนสุด มันจะคอยเฝ้ามองแอปเราตลอดเวลา */}
             {/* --- Header --- */}
-            <header className="bg-white border-b shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-              <div className="text-xl font-bold text-blue-700">
+            <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-3 py-3 shadow-sm sm:px-6 sm:py-4">
+              <div className="min-w-0 text-base font-bold text-primary sm:text-xl">
                 Pariwit Ecosystem
               </div>
 
-              <div>
+              <div className="shrink-0">
                 <Show when="signed-out">
                   <SignInButton mode="modal">
-                    <button className="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                    <button className="min-h-11 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:px-5 sm:text-base">
                       เข้าสู่ระบบ
                     </button>
                   </SignInButton>
                 </Show>
 
                 <Show when="signed-in">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-600 hidden sm:block">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="hidden text-sm font-medium text-muted-foreground sm:block">
                       ยินดีต้อนรับ
                     </span>
                     <UserButton
@@ -112,7 +112,7 @@ export default function RootLayout({
             <div
               className={cn(
                 //
-                "flex flex-1 overflow-hidden",
+                "flex min-w-0 flex-1 flex-col overflow-visible",
               )}
             >
               {/* ซ้าย: Sidebar (โชว์เฉพาะตอนล็อกอินแล้ว) */}
@@ -126,7 +126,7 @@ export default function RootLayout({
               <main
                 className={cn(
                   //
-                  "flex-1",
+                  "min-w-0 w-full flex-1",
                 )}
               >
                 {/* 🌟 เนื้อหาหลักของแต่ละหน้าจะถูกนำมาแทรกตรงนี้ 🌟 */}

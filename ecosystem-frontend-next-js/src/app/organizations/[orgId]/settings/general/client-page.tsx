@@ -121,7 +121,7 @@ export default function OrganizationGeneralClient({
 
   // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
   if (!isLoaded || isLoading) {
-    return <div className="p-8 text-gray-500">กำลังโหลดข้อมูล...</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-muted-foreground">กำลังโหลดข้อมูล...</div>;
   }
 
   // 🌟 4. กันหน้าจอกระพริบระหว่างเตะออก
@@ -136,7 +136,7 @@ export default function OrganizationGeneralClient({
     ].includes(error.response?.data?.errorCode)
   ) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         เกิดข้อผิดพลาด กำลังพากลับไปยังหน้ารายชื่อองค์กร...
       </div>
     );
@@ -145,12 +145,12 @@ export default function OrganizationGeneralClient({
   // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
 
   return (
-    <div className="p-8 w-full max-w-4xl mx-auto flex flex-col gap-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto flex flex-col gap-8">
       {/* 🟢 ส่วนหัวข้อ และปุ่มย้อนกลับ */}
-      <div className="flex items-center gap-4 border-b pb-6">
+      <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
         <Link
           href={`/organizations/${orgId}/settings`}
-          className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+          className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -168,20 +168,20 @@ export default function OrganizationGeneralClient({
           </svg>
         </Link>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">ข้อมูลทั่วไป</h2>
-          <p className="text-gray-500 mt-1 text-sm">
+          <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">ข้อมูลทั่วไป</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             จัดการชื่อและรายละเอียดพื้นฐานขององค์กร
           </p>
         </div>
       </div>
 
       {/* 🟢 โซนฟอร์มแก้ไขข้อมูล */}
-      <div className="bg-white border rounded-2xl p-8 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
           {/* ช่องกรอกชื่อ */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="text-sm font-bold text-gray-700">
-              ชื่อองค์กร <span className="text-red-500">*</span>
+            <label htmlFor="name" className="text-sm font-bold text-foreground">
+              ชื่อองค์กร <span className="text-destructive">*</span>
             </label>
             <input
               id="name"
@@ -189,13 +189,13 @@ export default function OrganizationGeneralClient({
               {...register("name")}
               className={`p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 errors.name
-                  ? "border-red-500 focus:ring-red-200"
-                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                  ? "border-destructive focus:ring-destructive"
+                  : "border-border focus:border-ring focus:ring-primary"
               }`}
               placeholder="ตัวอย่าง: คลินิกทันตกรรมฟันดี"
             />
             {errors.name && (
-              <span className="text-sm text-red-500">
+              <span className="text-sm text-destructive">
                 {errors.name.message}
               </span>
             )}
@@ -209,7 +209,7 @@ export default function OrganizationGeneralClient({
               disabled={
                 !isDirty || updateMutation.isPending || updateMutation.isSuccess
               } // ปุ่มจะกดไม่ได้ถ้ายังไม่พิมพ์แก้ชื่อ (!isDirty) หรือกำลังสั่ง API อยู่ (isPending) และสำเร็จแล้วรอเปลี่ยนหน้า (isSuccess)
-              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-11 w-full rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
             >
               {updateMutation.isPending || updateMutation.isSuccess
                 ? "กำลังบันทึก..."

@@ -194,18 +194,18 @@ export default function WorkScheduleAdminPositionIdClient({
             "border-2",
             "rounded-2xl",
 
-            "bg-blue-50/50",
-            "border-blue-100",
+            "bg-primary/10",
+            "border-primary/20",
 
             "cursor-pointer",
 
             "transition-all",
-            "hover:bg-blue-50",
-            "hover:border-blue-300",
+            "hover:bg-primary/10",
+            "hover:border-primary/20",
             "hover:shadow-md",
           )}
         >
-          <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform shrink-0">
+          <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform shrink-0">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -227,8 +227,8 @@ export default function WorkScheduleAdminPositionIdClient({
 
               "font-bold",
 
-              "text-gray-900",
-              "group-hover:text-blue-700",
+              "text-foreground",
+              "group-hover:text-primary",
               "transition-colors",
             )}
           >
@@ -238,7 +238,7 @@ export default function WorkScheduleAdminPositionIdClient({
             className={cn(
               "text-sm",
 
-              "text-gray-500",
+              "text-muted-foreground",
 
               "mt-1",
             )}
@@ -276,14 +276,14 @@ export default function WorkScheduleAdminPositionIdClient({
             "border",
             "rounded-2xl",
 
-            "bg-white",
-            "border-gray-200",
+            "bg-card",
+            "border-border",
 
             "cursor-pointer",
 
             "transition-all",
-            "hover:bg-gray-50",
-            "hover:border-gray-300",
+            "hover:bg-background",
+            "hover:border-border",
             "hover:shadow-md",
           )}
         >
@@ -296,11 +296,11 @@ export default function WorkScheduleAdminPositionIdClient({
               "items-center",
               "justify-center",
 
-              "bg-gray-100",
-              "text-gray-600",
+              "bg-muted",
+              "text-muted-foreground",
 
               "transition-all",
-              "group-hover:bg-white",
+              "group-hover:bg-card",
               "group-hover:shadow-sm",
 
               "shrink-0",
@@ -329,7 +329,7 @@ export default function WorkScheduleAdminPositionIdClient({
 
               "font-bold",
 
-              "text-gray-800",
+              "text-foreground",
             )}
           >
             แบบร่าง
@@ -338,7 +338,7 @@ export default function WorkScheduleAdminPositionIdClient({
             className={cn(
               "text-sm",
 
-              "text-gray-500",
+              "text-muted-foreground",
 
               "mt-1",
             )}
@@ -383,14 +383,14 @@ export default function WorkScheduleAdminPositionIdClient({
             "border",
             "rounded-2xl",
 
-            "bg-white",
-            "border-gray-200",
+            "bg-card",
+            "border-border",
 
             "cursor-pointer",
 
             "transition-all",
-            "hover:bg-gray-50",
-            "hover:border-gray-300",
+            "hover:bg-background",
+            "hover:border-border",
             "hover:shadow-md",
           )}
         >
@@ -403,11 +403,11 @@ export default function WorkScheduleAdminPositionIdClient({
               "items-center",
               "justify-center",
 
-              "bg-gray-100",
-              "text-gray-600",
+              "bg-muted",
+              "text-muted-foreground",
 
               "transition-all",
-              "group-hover:bg-white",
+              "group-hover:bg-card",
               "group-hover:shadow-sm",
 
               "shrink-0",
@@ -436,7 +436,7 @@ export default function WorkScheduleAdminPositionIdClient({
 
               "font-bold",
 
-              "text-gray-800",
+              "text-foreground",
             )}
           >
             พนักงาน
@@ -445,7 +445,7 @@ export default function WorkScheduleAdminPositionIdClient({
             className={cn(
               "text-sm",
 
-              "text-gray-500",
+              "text-muted-foreground",
 
               "mt-1",
             )}

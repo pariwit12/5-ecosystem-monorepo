@@ -69,7 +69,7 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
   // isLoaded คือ จาก useAuth (Clerk) ป้องกันจังหวะแรกที่ยังโหลด userId ไม่เสร็จ
   if (!isLoaded || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         กำลังโหลดข้อมูล...
       </div>
     );
@@ -87,7 +87,7 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
     ].includes(error.response?.data?.errorCode)
   ) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         เกิดข้อผิดพลาด กำลังพากลับไปยังหน้ารายชื่อองค์กร...
       </div>
     );
@@ -96,22 +96,22 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
   // Error อื่นๆ ยังไม่ได้จัดการ ให้ global-error-modal แสดงผล แต่หน้าจอยังไม่ได้จัดการต่อ
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
         {/* 🟢 ส่วนหัวข้อ และปุ่มย้อนกลับ (ซ่อนเมื่อถึงหน้าสุดท้าย) */}
         {currentStep < 3 && (
-          <div className="flex items-center gap-4 border-b border-gray-200 pb-6">
+          <div className="flex items-center gap-4 border-b border-border pb-6">
             <Link
               href={`/organizations/${orgId}/dental-clinic`}
-              className="p-2 bg-white border text-gray-600 rounded-full hover:bg-gray-100 transition shadow-sm"
+              className="p-2 bg-card border text-muted-foreground rounded-full hover:bg-muted transition shadow-sm"
             >
               <ChevronRight className="w-6 h-6 rotate-180" />
             </Link>
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-foreground">
                 เปิดใช้งาน Dental Clinic Information System
               </h2>
-              <p className="text-blue-600 mt-1 text-sm font-medium">
+              <p className="text-primary mt-1 text-sm font-medium">
                 สิทธิ์ทดลองใช้งานฟรี 30 วัน (Free Trial)
               </p>
             </div>
@@ -131,10 +131,10 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
                   <div
                     className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm transition-colors duration-300 ${
                       isActive
-                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                        ? "bg-primary text-primary-foreground ring-4 ring-primary"
                         : isCompleted
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-200 text-gray-500"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? (
@@ -144,13 +144,13 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
                     )}
                   </div>
                   <span
-                    className={`ml-3 text-sm font-medium ${isActive ? "text-gray-900" : "text-gray-500"}`}
+                    className={`ml-3 text-sm font-medium ${isActive ? "text-foreground" : "text-muted-foreground"}`}
                   >
                     {label}
                   </span>
                   {index < steps.length - 1 && (
                     <div
-                      className={`w-8 md:w-16 h-1 mx-3 rounded-full transition-colors duration-300 ${isCompleted ? "bg-blue-600" : "bg-gray-200"}`}
+                      className={`w-8 md:w-16 h-1 mx-3 rounded-full transition-colors duration-300 ${isCompleted ? "bg-primary" : "bg-muted"}`}
                     />
                   )}
                 </div>
@@ -160,7 +160,7 @@ export default function NewDentalClinicClient({ orgId }: { orgId: string }) {
         )}
 
         {/* 🟢 โซน Render Component ตามสเต็ป */}
-        <div className="w-full bg-white border rounded-2xl p-8 shadow-sm">
+        <div className="w-full bg-card border rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
           {currentStep === 1 && (
             <StepWelcome onNext={() => setCurrentStep(2)} />
           )}

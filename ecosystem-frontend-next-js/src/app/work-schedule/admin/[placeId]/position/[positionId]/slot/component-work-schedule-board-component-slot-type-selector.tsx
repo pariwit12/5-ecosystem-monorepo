@@ -19,10 +19,10 @@ export function SlotTypeSelect({
   className = "",
 }: SlotTypeSelectProps) {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex w-full min-w-0 items-center gap-2 sm:w-auto ${className}`}>
       <label
         htmlFor="slot-type-filter"
-        className="text-sm font-medium text-gray-700 whitespace-nowrap"
+        className="text-sm font-medium text-foreground whitespace-nowrap"
       >
         กะการทำงาน:
       </label>
@@ -30,7 +30,7 @@ export function SlotTypeSelect({
         id="slot-type-filter"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none bg-white cursor-pointer min-w-45"
+        className="min-h-11 min-w-0 flex-1 cursor-pointer rounded-lg border border-input bg-card p-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 sm:min-w-45 sm:flex-none"
       >
         <option value="all">ทั้งหมด (All Types)</option>
         {options.map((option) => (

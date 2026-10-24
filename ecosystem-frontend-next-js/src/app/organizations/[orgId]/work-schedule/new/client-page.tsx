@@ -5,12 +5,12 @@ import { CreateWorkSchedulePlaceForm } from "@/features/work-schedule/places/com
 
 export default function NewWorkScheduleClient({ orgId }: { orgId: string }) {
   return (
-    <div className="p-8 w-full max-w-3xl mx-auto flex flex-col gap-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-3xl mx-auto flex flex-col gap-8">
       {/* 🟢 ส่วน Layout: หัวข้อและปุ่มย้อนกลับ */}
-      <div className="flex items-center gap-4 border-b pb-6">
+      <div className="flex flex-wrap items-start gap-3 border-b pb-6 sm:items-center sm:gap-4">
         <Link
           href={`/organizations/${orgId}/work-schedule`}
-          className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-all"
+          className="min-h-11 min-w-11 p-2 bg-muted text-muted-foreground rounded-full hover:bg-muted transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -28,10 +28,10 @@ export default function NewWorkScheduleClient({ orgId }: { orgId: string }) {
           </svg>
         </Link>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">
+          <h2 className="break-words text-2xl font-bold text-foreground sm:text-3xl">
             สร้างสถานที่ทำงานใหม่
           </h2>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-muted-foreground mt-1 text-sm">
             เพิ่มคลินิกสาขา แผนก หรือพื้นที่สำหรับการจัดตารางเวร
           </p>
         </div>

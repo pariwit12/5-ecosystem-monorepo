@@ -35,13 +35,13 @@ export const CreatePersonForm = ({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={`bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col gap-6 ${className}`}
+      className={`bg-card border border-border rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-6 ${className}`}
     >
       {/* ============================ */}
       {/* 🟢 Action Buttons Zone */}
       {/* ============================ */}
 
-      <div className="border-t border-gray-100 pt-6 mt-2 flex justify-end gap-3">
+      <div className="border-t border-border pt-6 mt-2 flex flex-col-reverse justify-end gap-3 sm:flex-row">
         {/*  */}
         {/* ==================== */}
         {/* Back Button */}
@@ -51,7 +51,7 @@ export const CreatePersonForm = ({
           type="button"
           onClick={() => router.push(`/`)}
           disabled={isPending}
-          className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all"
+          className="min-h-11 w-full px-6 py-3 sm:w-auto text-muted-foreground font-medium hover:bg-muted rounded-xl transition-all"
         >
           ยกเลิก
         </button>
@@ -67,7 +67,7 @@ export const CreatePersonForm = ({
         <button
           type="submit"
           disabled={isPending}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+          className="min-h-11 w-full px-6 py-3 sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
         </button>
