@@ -296,3 +296,61 @@
 - visual style สม่ำเสมอทั้งหน้า Home, Organizations, person creation, Organization settings และ Work Schedule ทุก role/subroute ที่มีอยู่
 - ไม่มีการเปลี่ยนเงื่อนไข signed-in/signed-out, query/mutation, form schema, redirect, error code, loading/error handling หรือ link target
 
+### ขั้นตอนที่ 4 — เพิ่ม/ปรับ regression tests
+
+งาน:
+- ใช้ Jest และ Testing Library ตาม `ecosystem-frontend-next-js/jest.config.mjs` (jsdom, `tests/**/*.test.ts(x)`); ปรับ test เดิมก่อนสร้าง test ใหม่และทำ mock ตาม conventions จริง
+- รักษา test baseline 4 ไฟล์ใน Section 4.5 โดยเฉพาะ holiday rendering/filtering, slot date range/timezone และ create-many holiday-blocking; อย่าเปลี่ยนข้อยืนยันของ business logic เหล่านี้เพื่อให้ responsive test ผ่าน
+- เพิ่ม regression tests สำหรับ shared shell/theme consumers และ route component ที่เปลี่ยนโครงสร้าง โดยครอบคลุม heading, link/route target, form/action, pending/disabled state และ loading/error/empty state ที่เกี่ยวข้อง; ให้ใช้ mock provider/query/token ตาม pattern ของ tests ปัจจุบันและไม่เรียก backend จริง
+- เพิ่ม assertions ที่ตรวจ responsive utility classes/structure ในหน้าที่แก้ (เช่น mobile padding, grid breakpoints, wrap/stack actions, min-w-0 และ scroll wrapper เฉพาะตาราง) โดยไม่อ้างว่า jsdom ตรวจวัด visual overflow จริงได้; ต้องตรวจทุก route ด้วย code review/class inspection แต่ไม่สร้าง test 90 ชุดซ้ำกันโดยไม่มี value
+- เพิ่ม/คง regression coverage ของ conditional auth UI, organization navigation/error-state และ invitation/person form interactions เท่าที่เข้ากับ test setup ที่มีอยู่
+- ไม่เพิ่ม Playwright/browser automation dependency เพียงเพื่องานนี้ หาก repository ไม่มี browser test harness อยู่แล้ว; การตรวจด้วย browser จริงไม่ใช่เงื่อนไขที่ Implementor ต้องทำผ่าน CLI
+
+เกณฑ์ผ่าน:
+- test ที่เกี่ยวข้องผ่านและมี assertions ต่อ behavior ที่เปลี่ยน/เสี่ยง ไม่ใช่เพียง snapshot กว้าง ๆ; test baseline ทั้ง 4 ไฟล์ยังอยู่และไม่ลด assertions เดิม
+- test ไม่ต้องเรียก backend จริง และไม่มี secrets/env จริงจำเป็นสำหรับ unit tests
+- ไม่มีการแก้ test เพื่อปิดบัง regression หรือข้าม assertions เดิม
+
+### ขั้นตอนที่ 5 — ตรวจสอบก่อนส่งงาน
+
+รันจาก root repository:
+```sh
+pnpm run test:frontend
+pnpm run lint:frontend
+pnpm run typecheck:frontend
+pnpm run build:frontend
+pnpm run verify
+```
+
+เกณฑ์ผ่าน:
+- ทุก command ที่ environment สามารถรันได้จบด้วย exit code 0; หาก command ใดทำไม่ได้เพราะ environment/dependency/secret ให้รายงาน command และ output จริงโดยไม่อ้างว่าผ่าน
+- `pnpm run verify` ใช้ตรวจแบบเดียวกับ `.github/workflows/ci.yml` ซึ่งติดตั้ง dependencies ด้วย frozen lockfile แล้วเรียก root verification script
+- ตรวจ diff รอบสุดท้ายว่าไม่มีการแก้ไฟล์ backend, API contract, database/schema/migration, route behavior หรือ dependencies โดยไม่จำเป็น
+- สรุป route ที่ตรวจจริง, test commands ที่รันจริง และผลที่พบ
+
+## 7. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
+
+- แก้ไข `src/app/globals.css` และ `src/app/layout.tsx` เพื่อจัด semantic theme tokens และ shared shell
+- ตรวจและปรับเฉพาะ presentation/layout ของ route component ทุก path ใน inventory Section 4.2 (รวม 90 ไฟล์ตาม source snapshot) โดยใช้ Section 4.3 สำหรับ route-local wizard/board/redirect helpers และ Section 4.4 สำหรับ shared UI/feature components ที่จำเป็น
+- ครอบคลุมทุก route family: root/fallback/error, Home, Agent, Organizations/settings, Dental Clinic list/wizard, Organization Work Schedule list/create, Person creation, Work Schedule landing/invitations/staff/admin dashboard, position list/detail, min-max, slot-template, slot-type, slot/slot creation flow และ staff-position assignment
+- ปรับ loading/error/layout boundary ของ nested routes ให้สอดคล้องกับหน้าหลัก โดยรักษา error boundary, loading skeleton, redirect helper และ UUIDv7 validation; ไม่สร้างหรือเปลี่ยน pathname
+- เพิ่ม/แก้ regression tests ภายใต้ `ecosystem-frontend-next-js/tests/` โดยใช้ `jest.config.mjs` และ conventions เดิม; คง test files 4 รายการที่ระบุใน Section 4.5 และเพิ่ม coverage เฉพาะ UI behavior ที่แก้
+- ไม่เพิ่ม dependency/browser test framework, ไม่แก้ package/lockfile, backend, API/database/migration, query/mutation contract หรือ CI scripts
+- `CURRENT_TASK_PLAN.md` เป็นไฟล์เอกสารที่ Planner ปรับในรอบนี้; เนื่องจากมีการแก้แผน ต้องคงทุกช่อง Approve CURRENT_TASK_PLAN ว่าง และห้าม mark approve ใน commit นี้
+
+## 8. สิ่งที่ต้องระวัง
+
+- ห้ามเปลี่ยน business logic ขณะ refactor className: อย่าย้าย/ลบ conditional branch, handler, hook, query, mutation, Zod/React Hook Form configuration หรือ redirect
+- ห้ามเปลี่ยน Clerk behavior, provider order, auth gate, route pathname, URL query parameter, error code, toast contents หรือ role-specific navigation
+- ห้ามลบ content หรือใช้ `hidden` เพื่อแก้ overflow; ให้เปลี่ยน wrapping/layout หรือทำ overflow เฉพาะ container ข้อมูลที่จำเป็น
+- อย่าตั้ง fixed width ที่เกิน viewport หรือใช้ `w-screen`/fixed positioning โดยไม่จำเป็น; ใช้ `w-full`, `max-w-*`, `min-w-0`, wrapping และ breakpoint utilities ตามบริบท
+- อย่าปรับ global button/input primitives จนกระทบทุกหน้าโดยไม่ตรวจ use sites; หากแก้ shared component ต้องรัน test และดู call sites ที่เกี่ยวข้อง
+- อย่าเปิด Sidebar ที่ปัจจุบันถูก comment, อย่าเปิด modal/feature ที่ปิดไว้, และอย่าเปลี่ยน Coming Soon state
+- อย่าแก้ package/lockfile, backend, database หรือ API เพียงเพื่อรองรับ styling
+- อย่ารายงาน visual browser testing ที่ไม่ได้ทำ; Jest/jsdom ใช้ตรวจ DOM/behavior ได้ แต่ไม่ใช่หลักฐานว่าไม่มี overflow จริงบน browser
+- ห้ามแต่ง route/file inventory: ใช้รายการ main ที่ยืนยันไว้ใน Section 4.2 แล้วเทียบกับ filesystem ของ working tree; ถ้าแตกต่างให้หยุดและรายงาน Planner ก่อนแก้ code ห้ามข้าม route เงียบ ๆ
+
+## 9. ข้อจำกัดของงาน
+
+- ขอบเขตคือ code, tests และ CI/CLI verification เท่านั้น ไม่รวมการ deploy, เปลี่ยน production config, ทดสอบบนอุปกรณ์จริง หรือการเปลี่ยน business/product policy
+- หากระหว่างตรวจพบว่าจำเป็นต้องเปลี่ยน business logic, API contract, route flow หรือเพิ่ม dependency เพื่อทำ UI ให้ responsive ให้หยุดการเปลี่ยนส่วนนั้นและรายงานเหตุผลก่อนขยาย scope
