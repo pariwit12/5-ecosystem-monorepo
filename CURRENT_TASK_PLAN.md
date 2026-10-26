@@ -146,7 +146,7 @@
 
    `pnpm run build:frontend`
 
-5. หาก environment และ dependencies พร้อม ให้รัน verification มาตรฐานของ repository ซึ่งเป็นคำสั่งเดียวกับที่ CI ใช้:
+5. หาก environment และ dependencies พร้อม ให้รัน verification มาตรฐานที่กำหนดไว้ใน root `package.json`:
 
    `pnpm run verify`
 
