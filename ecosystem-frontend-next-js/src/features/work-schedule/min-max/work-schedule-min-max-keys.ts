@@ -23,4 +23,10 @@ export const workScheduleMinMaxKeys = {
       startTime,
       endTime,
     ] as const,
+
+  details: (userId: string) =>
+    [...workScheduleMinMaxKeys.all(userId), "detail"] as const,
+
+  detail: (userId: string, positionId: string, minMaxId: string) =>
+    [...workScheduleMinMaxKeys.details(userId), positionId, minMaxId] as const,
 };

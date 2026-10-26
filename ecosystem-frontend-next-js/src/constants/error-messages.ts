@@ -51,6 +51,10 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.WORK_SCHEDULE_SLOT_NOT_FOUND]:
     "ไม่พบรายการเวร (SLOT) ที่เกี่ยวข้องในระบบ",
 
+  // Min/Max
+  [ErrorCode.WORK_SCHEDULE_MIN_MAX_NOT_FOUND]:
+    "ไม่พบรายการจำนวนพนักงานขั้นต่ำ/สูงสุด (MIN/MAX) ที่เกี่ยวข้องในระบบ",
+
   // Staff & Invitations
   [ErrorCode.WORK_SCHEDULE_STAFF_NOT_FOUND]:
     "ไม่พบข้อมูลพนักงานที่เกี่ยวข้องในสถานที่ทำงานนี้ หรือพนักงานถูกลบไปแล้ว",

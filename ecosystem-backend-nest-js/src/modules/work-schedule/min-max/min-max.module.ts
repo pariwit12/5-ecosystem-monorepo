@@ -8,6 +8,8 @@ import { MinMaxController } from './min-max.controller';
 // ============================
 
 import { CreateHandler } from './commands/create.handler';
+import { UpdateHandler } from './commands/update.handler';
+import { DeleteHandler } from './commands/delete.handler';
 
 // ============================
 // (จบ) Import Handler (Method)
@@ -18,6 +20,7 @@ import { CreateHandler } from './commands/create.handler';
 // ===========================
 
 import { GetMinMaxsByPositionIdStartTimeEndTimeHandler } from './queries/get-min-maxs-by-position-id-start-time-end-time.handler';
+import { GetMinMaxByIdHandler } from './queries/get-min-max-by-id.handler';
 
 // ===========================
 // (จบ) Import Handler (Query)
@@ -27,9 +30,12 @@ import { GetMinMaxsByPositionIdStartTimeEndTimeHandler } from './queries/get-min
 // จุดลงทะเบียน Handler (มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา)
 // ====================================================
 
-const CommandHandlers = [CreateHandler];
+const CommandHandlers = [CreateHandler, UpdateHandler, DeleteHandler];
 
-const QueryHandlers = [GetMinMaxsByPositionIdStartTimeEndTimeHandler];
+const QueryHandlers = [
+  GetMinMaxsByPositionIdStartTimeEndTimeHandler,
+  GetMinMaxByIdHandler,
+];
 
 // ====================================================
 // (จบ) จุดลงทะเบียน Handler (มัดรวมไว้ในตัวแปรจะได้ดูสะอาดตา)
