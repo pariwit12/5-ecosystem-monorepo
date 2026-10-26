@@ -29,9 +29,42 @@ import { DateTimeRangePicker } from "@/components/input/datetime-input";
 import { WorkScheduleBoard } from "./component-work-schedule-board";
 import {
   type AppliedSlotRange,
+  type SlotPeriod,
+  createSlotPeriodRange,
   formatSlotDateRange,
   parseSlotDateRange,
+  shiftSlotPeriodRange,
 } from "./slot-date-range";
+
+const periodControls: {
+  period: SlotPeriod;
+  groupLabel: string;
+  label: string;
+  previousLabel: string;
+  nextLabel: string;
+}[] = [
+  {
+    period: "month",
+    groupLabel: "เลือกช่วงเดือน",
+    label: "เดือนนี้",
+    previousLabel: "เดือนก่อนหน้า",
+    nextLabel: "เดือนถัดไป",
+  },
+  {
+    period: "week",
+    groupLabel: "เลือกช่วงสัปดาห์",
+    label: "สัปดาห์นี้",
+    previousLabel: "สัปดาห์ก่อนหน้า",
+    nextLabel: "สัปดาห์ถัดไป",
+  },
+  {
+    period: "day",
+    groupLabel: "เลือกช่วงวัน",
+    label: "1 วัน",
+    previousLabel: "วันก่อนหน้า",
+    nextLabel: "วันถัดไป",
+  },
+];
 
 export default function WorkScheduleAdminPositionSlotClient({
   placeId,
@@ -44,6 +77,7 @@ export default function WorkScheduleAdminPositionSlotClient({
 
   const [draftStartDateTime, setDraftStartDateTime] = useState("");
   const [draftEndDateTime, setDraftEndDateTime] = useState("");
+  const [navigationPeriod, setNavigationPeriod] = useState<SlotPeriod | null>(null);
   const [appliedRange, setAppliedRange] = useState<AppliedSlotRange | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -152,6 +186,29 @@ export default function WorkScheduleAdminPositionSlotClient({
     setAppliedRange(result.range);
   }
 
+  function selectPeriod(period: SlotPeriod, direction?: -1 | 1) {
+    if (isFetchingSlot) return;
+
+    const result = direction
+      ? shiftSlotPeriodRange(
+          period,
+          direction,
+          place?.timezone,
+          navigationPeriod === period ? draftStartDateTime : undefined,
+        )
+      : createSlotPeriodRange(period, place?.timezone);
+
+    if (!result.ok) {
+      setValidationError(result.error);
+      return;
+    }
+
+    setDraftStartDateTime(result.range.draftStartDateTime);
+    setDraftEndDateTime(result.range.draftEndDateTime);
+    setNavigationPeriod(period);
+    setValidationError(null);
+  }
+
   function refreshSlots() {
     if (appliedRange && !isFetchingSlot) {
       void refetchSlot();
@@ -248,6 +305,40 @@ export default function WorkScheduleAdminPositionSlotClient({
           disabled={isFetchingSlot}
           className="flex flex-wrap items-end gap-4"
         >
+          <div className="flex w-full flex-wrap gap-3">
+            {periodControls.map((control) => (
+              <div
+                key={control.period}
+                role="group"
+                aria-label={control.groupLabel}
+                className="flex items-center gap-1 rounded-xl border border-border p-1"
+              >
+                <button
+                  type="button"
+                  aria-label={control.previousLabel}
+                  onClick={() => selectPeriod(control.period, -1)}
+                  className="rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectPeriod(control.period)}
+                  className="rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  {control.label}
+                </button>
+                <button
+                  type="button"
+                  aria-label={control.nextLabel}
+                  onClick={() => selectPeriod(control.period, 1)}
+                  className="rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            ))}
+          </div>
           <DateTimeRangePicker
             startDateTime={draftStartDateTime}
             endDateTime={draftEndDateTime}
