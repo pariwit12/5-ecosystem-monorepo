@@ -63,7 +63,6 @@
 - Backend handler/query/API, query keys และ React Query options ไม่ต้องเปลี่ยน
 - `component-work-schedule-board.tsx` ไม่ต้องเปลี่ยน หากยังรับช่วงเวลาเต็มที่ส่งเข้าและแสดงผลได้ตามเดิม ห้ามแก้ logic ของ slot, holiday, staffing counts หรือ Min/Max เพียงเพื่อเพิ่ม controls
 - ไม่ต้องเพิ่ม dependency, environment variable, migration หรือ endpoint ใหม่
-- ตรวจ `VERIFICATION_TABLE.md` จาก `main` ก่อนแก้ไขพบว่าแถว `Approve CURRENT_TASK_PLAN` มีเครื่องหมาย `✓` อยู่ในช่องที่ 1 จึงต้อง reset เครื่องหมายทั้งหมดในแถวดังกล่าวเมื่อบันทึกแผนฉบับปรับปรุงนี้ และห้ามอนุมัติแผนในรอบเดียวกัน
 
 ## 6. รายละเอียดการเปลี่ยนแปลงระดับไฟล์
 
@@ -163,7 +162,3 @@
 - ห้ามลบหรือทำให้ tests เดิมอ่อนลงเพื่อให้ tests ใหม่ผ่าน; เพิ่ม assertion สำหรับ behavior ใหม่ควบคู่กับ regressions เดิม
 - งานนี้ไม่รวมการปรับดีไซน์หรือ logic ภายในกระดานรายชื่อเวรนอกเหนือจากการส่งช่วงเวลาใหม่ให้ board
 
-## 10. กติกาการตรวจแผน
-
-- หลังบันทึกแผนฉบับนี้ แถว `Approve CURRENT_TASK_PLAN` ใน `VERIFICATION_TABLE.md` ต้องว่างทั้งหมดเพื่อรอการตรวจแผนฉบับใหม่; ห้ามทำเครื่องหมายอนุมัติในรอบเดียวกับที่แก้แผน
-- ห้ามทำเครื่องหมายในแถวอื่นของ `VERIFICATION_TABLE.md`
