@@ -47,6 +47,10 @@ export const API_ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.WORK_SCHEDULE_SLOT_TEMPLATE_NOT_FOUND]:
     "ไม่พบรายการแบบร่าง (SLOT TEMPLATE) ที่เกี่ยวข้องในระบบ",
 
+  // Slot
+  [ErrorCode.WORK_SCHEDULE_SLOT_NOT_FOUND]:
+    "ไม่พบรายการเวร (SLOT) ที่เกี่ยวข้องในระบบ",
+
   // Staff & Invitations
   [ErrorCode.WORK_SCHEDULE_STAFF_NOT_FOUND]:
     "ไม่พบข้อมูลพนักงานที่เกี่ยวข้องในสถานที่ทำงานนี้ หรือพนักงานถูกลบไปแล้ว",

@@ -37,4 +37,10 @@ export const workScheduleSlotKeys = {
       startTime,
       endTime,
     ] as const,
+
+  details: (userId: string) =>
+    [...workScheduleSlotKeys.all(userId), "detail"] as const,
+
+  detail: (userId: string, positionId: string, slotId: string) =>
+    [...workScheduleSlotKeys.details(userId), positionId, slotId] as const,
 };

@@ -3,6 +3,10 @@ import {
   UseGuards,
   Get,
   Post,
+  Patch,
+  Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   Query,
   Body,
@@ -24,6 +28,16 @@ import {
   CreateManyDtoParam,
   CreateManyDtoBody,
 } from './commands/create-many.command';
+import {
+  UpdateSlotCommand,
+  UpdateSlotResponse,
+  UpdateSlotDtoParam,
+  UpdateSlotDtoBody,
+} from './commands/update-slot.command';
+import {
+  DeleteSlotCommand,
+  DeleteSlotDtoParam,
+} from './commands/delete-slot.command';
 
 // ===========================
 // (จบ) Import Type (Command)
@@ -45,6 +59,11 @@ import {
   GetMyWorkScheduleSlotsQuery,
   GetMyWorkScheduleSlotsResponse,
 } from './queries/get-my-work-schedule-slots.query';
+import {
+  GetSlotByIdQuery,
+  GetSlotByIdResponse,
+  GetSlotByIdDtoParam,
+} from './queries/get-slot-by-id.query';
 
 // =========================
 // (จบ) Import Type (Query)
@@ -71,6 +90,32 @@ export class SlotController {
   ) {
     return this.commandBus.execute<CreateManyCommand, void>(
       new CreateManyCommand(clerkUser.sub, param, body),
+    );
+  }
+
+  // 2
+  @Patch('positions/:position_id/slots/:slot_id')
+  @UseGuards(ClerkAuthGuard)
+  async updateSlot(
+    @Param() param: UpdateSlotDtoParam,
+    @Body() body: UpdateSlotDtoBody,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.commandBus.execute<UpdateSlotCommand, UpdateSlotResponse>(
+      new UpdateSlotCommand(clerkUser.sub, param, body),
+    );
+  }
+
+  // 3
+  @Delete('positions/:position_id/slots/:slot_id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(ClerkAuthGuard)
+  async deleteSlot(
+    @Param() param: DeleteSlotDtoParam,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.commandBus.execute<DeleteSlotCommand, void>(
+      new DeleteSlotCommand(clerkUser.sub, param),
     );
   }
 
@@ -113,6 +158,18 @@ export class SlotController {
         param,
         queryFromUrl,
       ),
+    );
+  }
+
+  // 3
+  @Get('positions/:position_id/slots/:slot_id')
+  @UseGuards(ClerkAuthGuard)
+  async getSlotById(
+    @Param() param: GetSlotByIdDtoParam,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ) {
+    return this.queryBus.execute<GetSlotByIdQuery, GetSlotByIdResponse>(
+      new GetSlotByIdQuery(clerkUser.sub, param),
     );
   }
 

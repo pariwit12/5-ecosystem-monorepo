@@ -8,6 +8,8 @@ import { SlotController } from './slot.controller';
 // ============================
 
 import { CreateWorkScheduleSlotHandler } from './commands/create-many.handler';
+import { UpdateSlotHandler } from './commands/update-slot.handler';
+import { DeleteSlotHandler } from './commands/delete-slot.handler';
 
 // ============================
 // (จบ) Import Handler (Method)
@@ -19,15 +21,21 @@ import { CreateWorkScheduleSlotHandler } from './commands/create-many.handler';
 
 import { GetSlotsByPositionIdStartTimeEndTimeHandler } from './queries/get-slots-by-position-id-start-time-end-time.handler';
 import { GetMyWorkScheduleSlotsHandler } from './queries/get-my-work-schedule-slots.handler';
+import { GetSlotByIdHandler } from './queries/get-slot-by-id.handler';
 
 // ===========================
 // (จบ) Import Handler (Query)
 // ===========================
 
-const CommandHandlers = [CreateWorkScheduleSlotHandler];
+const CommandHandlers = [
+  CreateWorkScheduleSlotHandler,
+  UpdateSlotHandler,
+  DeleteSlotHandler,
+];
 const QueryHandlers = [
   GetSlotsByPositionIdStartTimeEndTimeHandler,
   GetMyWorkScheduleSlotsHandler,
+  GetSlotByIdHandler,
 ];
 
 @Module({
