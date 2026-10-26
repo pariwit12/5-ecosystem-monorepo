@@ -148,7 +148,7 @@ PATCH รับ JSON fields เดียวกับข้อมูล Slot ร�
 - **ecosystem-frontend-next-js/src/features/work-schedule/slot/work-schedule-slot.queries.ts**: เพิ่ม query option สำหรับ Slot เดี่ยว
 - ไฟล์ frontend route ใหม่ด้านบนใช้ redirect mapping เพื่อพา error Slot not found กลับไป Board และจัดการ error ด้านสิทธิ์ตาม convention เดิม
 
-ไม่ต้องแก้ **VERIFICATION_TABLE.md** เพิ่มเติมใน commit นี้ เพราะได้ตรวจไฟล์จริงแล้วและทุกช่องของแถว **Approve CURRENT_TASK_PLAN** ว่างอยู่ครบ การเปลี่ยนแผนครั้งนี้จึงคงสถานะ reset เดิมไว้ ห้ามทำเครื่องหมาย approve ในรอบนี้หรือแก้แถวอื่น
+
 
 ### 5.4 ไฟล์ที่ไม่ควรเปลี่ยน
 
