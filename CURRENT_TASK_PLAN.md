@@ -95,7 +95,7 @@ PATCH รับ JSON fields เดียวกับข้อมูล Slot ร�
 
 ### 4.3 Delete
 
-ลบได้ต่อเมื่อ Admin ผ่านการตรวจสิทธิ์และพบ record ที่ตรงทั้ง Slot ID และ Position ID เท่านั้น ถ้าไม่พบให้ตอบ **WORK_SCHEDULE_SLOT_NOT_FOUND** / HTTP 404 หากลบสำเร็จให้ตอบ 204
+ลบได้ต่อเมื่อ Admin ผ่านการตรวจสิทธิ์และพบ record ที่ตรงทั้ง Slot ID และ Position ID เท่านั้น ถ้าไม่พบให้ตอบ **WORK_SCHEDULE_SLOT_NOT_FOUND** / HTTP 404 หากลบสำเร็จให้ตอบ 204 โดยตั้ง `@HttpCode(HttpStatus.NO_CONTENT)` บน DELETE controller method อย่างชัดเจน (NestJS ไม่ได้ใช้ 204 เป็นค่าเริ่มต้นของ DELETE โดยอัตโนมัติ) และห้ามคืน response body เมื่อสำเร็จ
 
 หน้าเว็บต้องมีการยืนยันก่อนลบ และมีปุ่มยกเลิกที่ไม่เรียก API ระหว่างลบให้ disable การยืนยันซ้ำ เมื่อสำเร็จให้แสดง toast, invalidate query list ของ Position และกลับไปหน้า Board
 
@@ -103,7 +103,7 @@ PATCH รับ JSON fields เดียวกับข้อมูล Slot ร�
 
 เพิ่ม route ให้ตรงกับลิงก์ที่ Board สร้างไว้ ป้อนค่าปัจจุบันในฟอร์มและให้แก้ได้เฉพาะ Staff, Slot Type, เวลาเริ่ม และเวลาสิ้นสุด ห้ามแก้ Position ผ่านฟอร์ม เนื่องจาก Position เป็นส่วนหนึ่งของ identity/ขอบเขตสิทธิ์ของ URL
 
-ใช้ข้อมูล Place เพื่อแสดงและ parse เวลาใน timezone ของ Place ไม่ใช่ timezone ของ browser โดยแปลงค่าที่ส่ง API เป็น ISO datetime ที่มี offset/UTC อย่างถูกต้อง ใช้รายชื่อ StaffPosition และ Slot Type ของ Position ปัจจุบันเป็นตัวเลือก
+ใช้ข้อมูล Place เพื่อแสดงและ parse เวลาใน timezone ของ Place ไม่ใช่ timezone ของ browser โดยแปลงค่าที่ส่ง API เป็น ISO datetime ที่มี offset/UTC อย่างถูกต้อง ใช้รายชื่อ StaffPosition และ Slot Type ของ Position ปัจจุบันเป็นตัวเลือก หาก `staffId` หรือ `slotTypeId` ปัจจุบันไม่มีในรายการ active (เช่น relation หรือ Slot Type ถูก soft-delete แต่ Slot ยังอยู่) ต้องยังแสดงค่าปัจจุบันจาก GET อย่างชัดเจนในตัวเลือกที่ระบุว่าไม่ active ห้ามปล่อย select ว่างหรือแทนค่าด้วยตัวเลือกแรกแบบเงียบ ๆ ตาม validation ที่กำหนดไว้ ผู้ใช้ต้องเลือก StaffPosition และ Slot Type ที่ active ก่อนบันทึกได้ แต่ต้องยังลบ Slot ดังกล่าวได้
 
 เมื่อ update สำเร็จแสดง toast และ invalidate query รายการ Slot ของ Position รวมทั้ง query รายละเอียด Slot; เมื่อผิดพลาดให้คงค่าที่ผู้ใช้กรอกไว้และแสดงข้อผิดพลาดให้ลองใหม่ได้ ห้ามทำ optimistic update ที่ทำให้ Slot ดูเหมือนบันทึกสำเร็จก่อน server ยืนยัน
 
@@ -202,6 +202,7 @@ PATCH รับ JSON fields เดียวกับข้อมูล Slot ร�
 **ผ่านเมื่อ**
 - คลิก Slot บน Board เปิด route **/work-schedule/admin/{placeId}/position/{positionId}/slot/{slotId}** ได้
 - ฟอร์มแสดง Staff, Slot Type, เวลาเริ่ม และเวลาสิ้นสุดของ Slot ที่เลือกอย่างถูกต้อง และแสดง/แปลงเวลาตาม timezone ของ Place
+- หาก StaffPosition หรือ Slot Type ที่ผูกกับ Slot ปัจจุบันไม่อยู่ในรายการ active ฟอร์มยังแสดงค่าปัจจุบันและระบุว่าไม่ active อย่างชัดเจน ไม่แทนค่าด้วยตัวเลือกอื่นโดยเงียบ ๆ และจะบันทึกได้ต่อเมื่อเลือกค่าที่ active ตาม validation; การลบยังใช้งานได้
 - บันทึกส่งข้อมูลรูปแบบ API ที่ถูกต้อง พร้อมเวลา ISO ที่มี offset/UTC ตาม contract
 - ระหว่าง update/delete มี pending state ป้องกันการส่งซ้ำ
 - update สำเร็จแสดง toast และ invalidate query detail/list ที่เกี่ยวข้อง
@@ -241,6 +242,7 @@ PATCH รับ JSON fields เดียวกับข้อมูล Slot ร�
 
 เพิ่ม **tests/work-schedule/admin-slot-edit-delete.test.tsx** โดยใช้รูปแบบ mocks ที่มีอยู่ใน tests ปัจจุบัน:
 - แสดงค่าจาก query เดี่ยวและฟอร์มตาม timezone ของ Place
+- current StaffPosition/Slot Type ที่ไม่อยู่ในรายการ active ยังแสดงเป็นค่าปัจจุบันที่ระบุสถานะไม่ active; ไม่มีการแทนค่าเงียบ ๆ และต้องเลือกค่าที่ active ก่อน update
 - validate ช่วงเวลาไม่ถูกต้องก่อนส่ง request
 - update สำเร็จเรียก API ด้วย ID/fields ถูกต้อง แสดงผลสำเร็จ และ invalidate query
 - update ล้มเหลวคงฟอร์มและแสดง error
