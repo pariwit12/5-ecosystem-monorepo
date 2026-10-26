@@ -41,7 +41,7 @@ admin สามารถเข้าไปจัดการ min/max (แก้�
 
 1. ผู้ดูแลที่มีสิทธิ์ของตำแหน่งงานสามารถเปิดรายการจากลิงก์ “เลือก” อ่านค่า min/max และช่วงเวลาเดิม แก้ไขแล้วบันทึก หรือเลือกยืนยันลบได้
 2. การอ่าน/แก้ไข/ลบต้องตรวจสิทธิ์ของตำแหน่งงานฝั่ง backend เสมอ และต้องตรวจว่ารายการ ID นั้นเป็นของ `position_id` ที่ส่งมาด้วย ห้ามแก้ไขหรือลบข้ามตำแหน่งงาน
-3. การแก้ไขต้องใช้ validation หลักเดียวกับการสร้าง: min/max เป็นจำนวนเต็มไม่ติดลบ, ต้องเหลือค่า min หรือ max อย่างน้อยหนึ่งค่า, min ไม่เกิน max เมื่อระบุทั้งคู่ และ end time ต้องมากกว่า start time
+3. การแก้ไขต้องรักษา validation ธุรกิจเดียวกับ create: `min`/`max` เป็นจำนวนเต็มไม่ติดลบเมื่อเป็นตัวเลข, ต้องเหลืออย่างน้อยหนึ่งค่า, `min` ไม่เกิน `max` เมื่อทั้งคู่เป็นตัวเลข และ `end_time > start_time` โดย contract ของ `PATCH` เป็นการแทนค่าฟอร์มทั้งชุด ไม่ใช่ partial update: ต้องส่ง `min`, `max`, `start_time`, `end_time` ครบทุก field; `min` และ `max` รับ `number | null`; `start_time` และ `end_time` ต้องเป็น ISO 8601 ที่มี timezone. ห้ามใช้ `undefined` หรือ omit field เพื่อแทนการล้างค่า.
 4. ใน payload ของการแก้ไขให้แทนช่อง min/max ที่ผู้ใช้ล้างเป็น `null` อย่างชัดเจน เพื่อให้สามารถล้างค่าเดิมของ field นั้นในฐานข้อมูลได้; อย่าใช้ `undefined` ที่ Prisma ตีความว่าไม่ต้องแก้ field. อนุญาตให้ล้างได้หนึ่ง field แต่ห้ามล้างทั้งสอง field พร้อมกันตามกฎเดิม
 5. การแก้ไขต้องไม่ทำให้เกิดช่วงเวลาทับซ้อนกับรายการอื่นของตำแหน่งงานเดียวกัน ต้องตัดรายการที่กำลังแก้ไขออกจากการตรวจ overlap และใช้ transaction/row lock แบบเดียวกับ create เพื่อไม่ให้ชนกับการสร้างหรือแก้ไขพร้อมกัน
 6. การลบเป็น hard delete เพราะ model ไม่มี `deletedAt`; ก่อนลบต้องตรวจสิทธิ์และ scope ด้วยทั้ง `min_max_id` และ `position_id`. หากไม่พบรายการในตำแหน่งงานนั้น ให้ตอบ not-found ที่ชัดเจน ไม่ลบรายการอื่น
@@ -55,7 +55,7 @@ admin สามารถเข้าไปจัดการ min/max (แก้�
 
 API contract ใหม่ภายใต้ `/api/work-schedule/min-max`:
 - `GET /positions/:position_id/min-maxs/:min_max_id` — อ่านรายการเดียว
-- `PATCH /positions/:position_id/min-maxs/:min_max_id` — แก้ไขค่า min/max และเวลา
+- `PATCH /positions/:position_id/min-maxs/:min_max_id` — แก้ไขค่า min/max และเวลา โดย body ต้องมีครบทั้ง `{ min: number | null, max: number | null, start_time: string, end_time: string }`; `start_time`/`end_time` ต้องเป็น ISO 8601 ที่มี timezone และไม่รองรับ partial update
 - `DELETE /positions/:position_id/min-maxs/:min_max_id` — ลบรายการและตอบ `204 No Content`
 
 คง endpoint ปัจจุบัน `POST /:position_id` และ `GET /by-position-id-start-time-end-time/:position_id` ไว้โดยไม่เปลี่ยน contract
@@ -63,7 +63,8 @@ API contract ใหม่ภายใต้ `/api/work-schedule/min-max`:
 รายละเอียด:
 - DTO ของทุก route ที่มี ID ต้องตรวจ UUID v7 ทั้ง `position_id` และ `min_max_id`
 - response ของ detail ใช้ `{ id, min, max, startTime, endTime }` โดยเวลาเป็น ISO string ในรูปแบบเดียวกับ query list
-- ใน update ให้ตรวจสิทธิ์ก่อน แล้วล็อกแถว position ใน transaction; อ่านรายการด้วยทั้ง ID และ position ID; ตรวจ overlap เฉพาะรายการอื่น; จากนั้น update เฉพาะรายการเป้าหมาย
+- สร้าง `UpdateDtoBodySchema` แยกสำหรับ update เพราะ create schema ปัจจุบันอนุญาต `undefined` และไม่รับ `null`; update schema ต้องกำหนดให้มี key ทั้งสี่ (`min`, `max`, `start_time`, `end_time`) ครบ, รับ `null` เฉพาะ `min`/`max`, ปฏิเสธ `min` และ `max` ที่เป็น `null` พร้อมกัน และใช้เงื่อนไขตัวเลข/เวลาเดียวกับ create
+- ใน update ให้ตรวจสิทธิ์ก่อน แล้วล็อกแถว position ใน transaction; อ่านรายการด้วยทั้ง ID และ position ID; ตรวจ overlap เฉพาะรายการอื่น; จากนั้น update เฉพาะรายการเป้าหมาย โดยส่ง `min`, `max`, `startTime`, `endTime` ลง Prisma `data` ทุก field ตาม body รวมถึง `null` เพื่อเขียนทับค่าที่มีอยู่
 - ใน delete ให้ตรวจสิทธิ์ แล้วลบด้วยเงื่อนไขทั้ง ID และ position ID; ถ้าไม่พบรายการ ให้ส่ง not-found
 - เพิ่ม `WORK_SCHEDULE_MIN_MAX_NOT_FOUND` ใน `ErrorCode` และข้อความใน `API_ERROR_MESSAGES` เพื่อให้ frontend จัดการ not-found ได้ตาม pattern ของ Slot
 - ลงทะเบียน controller routes และ query/command handlers ใหม่ใน `MinMaxModule`
@@ -111,8 +112,8 @@ API contract ใหม่ภายใต้ `/api/work-schedule/min-max`:
 เพิ่ม backend tests สำหรับ DTO และ handler ใหม่ และ frontend tests สำหรับ form/detail route โดยทำตามรูปแบบ mock ของ tests ที่มีอยู่ ห้ามให้ unit tests เชื่อมต่อฐานข้อมูลจริง
 
 เกณฑ์ผ่านขั้นต่ำ:
-- Backend: validation ของ ID, min/max และช่วงเวลา; update สำเร็จ; ปฏิเสธ overlap; ไม่ถือช่วงเวลาต่อกันเป็น overlap; ตัด ID ปัจจุบันออกจาก overlap check; not-found; authorization; delete ต้องลบเฉพาะ ID + position ที่ตรงกัน
-- Frontend: prefill/แปลง timezone; validation และส่ง `null` เมื่อล้าง min หรือ max; update success/error; confirm/cancel delete; disable controls ระหว่าง pending; invalidate list/detail cache; redirect not-found/permission
+- Backend: validation ของ ID, key ที่ขาดใน update body, min/max รวมถึง `null`/undefined และช่วงเวลา; update สำเร็จและเขียน `null` ทับค่าที่มีอยู่; ปฏิเสธเมื่อ min/max เป็น null ทั้งคู่; ปฏิเสธ overlap; ไม่ถือช่วงเวลาต่อกันเป็น overlap; ตัด ID ปัจจุบันออกจาก overlap check; not-found; authorization; delete ต้องลบเฉพาะ ID + position ที่ตรงกัน
+- Frontend: API client ตรวจ param/body ก่อนส่ง requestและแนบ Authorization; prefill/แปลง timezone; validation และส่ง `null` เมื่อล้าง min หรือ max; ป้องกัน submit เมื่อไม่ผ่าน validation; update success/error; confirm/cancel delete; disable controls ระหว่าง pending; invalidate list/detail cache; redirect not-found/permission
 - Tests ใช้ Prisma mock และ API mock ไม่เรียกฐานข้อมูลหรือ service ภายนอกจริง
 
 ## 6. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
