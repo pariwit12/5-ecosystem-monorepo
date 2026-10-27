@@ -304,6 +304,17 @@ afterEach(() => {
 });
 
 describe("Admin slot date range integration", () => {
+  test("offers the existing slot and min/max creation routes before displaying a schedule", async () => {
+    await renderPage();
+
+    expectNoResult();
+    expect(mockGetSlots).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "สร้าง Min / Max" }).getAttribute("href"))
+      .toBe("/work-schedule/admin/test-place/position/test-position/min-max/new");
+    expect(screen.getByRole("link", { name: "+ สร้าง workScheduleSlot ใหม่" }).getAttribute("href"))
+      .toBe("/work-schedule/admin/test-place/position/test-position/slot/new/menu");
+  });
+
   test("keeps empty and edited drafts local until a range is submitted", async () => {
     await renderPage();
     const [startInput, endInput] = inputs();

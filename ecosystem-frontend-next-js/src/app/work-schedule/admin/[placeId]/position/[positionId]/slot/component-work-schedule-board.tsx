@@ -686,11 +686,13 @@ export function WorkScheduleBoard({
                     }).toFormat("dd/MM HH:mm");
 
                     return (
-                      <div
+                      <Link
                         key={mm.id}
+                        href={`/work-schedule/admin/${placeId}/position/${positionId}/min-max/${mm.id}`}
                         style={{ left: coords.left, width: coords.width }}
                         className={cn(
                           "absolute top-1.5 bottom-1.5 bg-muted border border-border rounded flex flex-col justify-center text-xs text-foreground z-10",
+                          "transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                           coords.isClippedLeft &&
                             "rounded-l-none border-l-0 border-dashed",
                           coords.isClippedRight &&
@@ -712,7 +714,7 @@ export function WorkScheduleBoard({
                             zone: timezone,
                           }).toFormat("HH:mm")}
                         </span>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

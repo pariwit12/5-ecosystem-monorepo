@@ -58,6 +58,18 @@ describe("admin work schedule board holidays", () => {
     );
   }
 
+  it("links the displayed min/max to its management page", () => {
+    renderBoard();
+
+    const minMax = screen.getByTitle("เกณฑ์ช่วงเวลา: 24/10 08:00 - 24/10 12:00 | Min: 2, Max: 3");
+    expect(minMax.tagName).toBe("A");
+    expect(minMax.getAttribute("href"))
+      .toBe("/work-schedule/admin/place-1/position/position-1/min-max/min-max");
+    expect(minMax.style.left).toBe("0%");
+    expect(minMax.style.width).toBe("100%");
+    expect(minMax.textContent).toContain("Min: 2 / Max: 3");
+  });
+
   it("renders a clipped holiday on the matching staff row without including it in staffing counts", () => {
     renderBoard();
 

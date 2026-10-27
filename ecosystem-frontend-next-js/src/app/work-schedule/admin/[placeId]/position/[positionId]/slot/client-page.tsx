@@ -6,6 +6,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
 import { useState, type FormEvent } from "react";
 
@@ -299,6 +300,15 @@ export default function WorkScheduleAdminPositionSlotClient({
         dataUpdatedAt={appliedRange ? dataUpdatedAtSlot : undefined}
         // (จบ) กรณี: ใช้ status bar
       />
+
+      <div>
+        <Link
+          href={`/work-schedule/admin/${placeId}/position/${positionId}/min-max/new`}
+          className="inline-flex rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          สร้าง Min / Max
+        </Link>
+      </div>
 
       <form noValidate onSubmit={handleSubmit} aria-label="เลือกช่วงเวลาตารางเวร">
         <fieldset
