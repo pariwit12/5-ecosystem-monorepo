@@ -57,6 +57,7 @@ Auto Create ต้องใช้ transaction/lock/retry style เดิมเ�
 - `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.command.ts`
 - `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.handler.ts`
 - `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/update.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
 
 Behavior ที่เกี่ยวข้อง:
 
@@ -64,15 +65,16 @@ Behavior ที่เกี่ยวข้อง:
 - ต้องมีอย่างน้อย `min` หรือ `max`
 - หากมีทั้งคู่ต้อง `min <= max`
 - MinMax ของ Position เดียวกันถูกห้ามไม่ให้ overlap ตอน create/update
-- Slot flow ปัจจุบันใช้ `max` เป็นข้อจำกัด concurrency
+- Slot flow ปัจจุบันใช้ `max` เป็นข้อจำกัด concurrency ของ Slot
 - ยังไม่มี flow ที่สร้าง Slot อัตโนมัติเพื่อเติม `min`
+- Holiday creation ปัจจุบันใช้ `min` เป็น availability guard คนละมุมกับ Auto planner: `verifyMinimumStaff()` นับจำนวน Staff ที่ยัง active ใน Position แล้วหัก Staff ที่มี Holiday overlap ในแต่ละ atomic holiday segment; logic นี้ **ไม่ได้** นับ `WorkScheduleSlot` เพื่อหาว่ามีคนถูกจัดเวรครบ Min หรือไม่
 
-สำหรับ Auto Create ให้ตีความ `min` เป็น target จำนวน concurrent `WorkScheduleSlot` ของ Position ในช่วง rule นั้น:
+สำหรับ Auto Create ให้ตีความ `min` เป็น target จำนวน concurrent `WorkScheduleSlot` ของ Position ในช่วง rule นั้นตาม requirement “ลงให้ถึงจำนวนขั้นต่ำสำหรับแต่ละช่วงเวลา”:
 
 - Slot เดิมของ Position ทุก Staff นับเป็น coverage ก่อน
 - Auto สร้างเฉพาะ deficit ที่ขาด
 - `min = 0`, `min = null` หรือช่วงที่ถึง Min อยู่แล้วไม่ต้องสร้างเพิ่ม
-- semantic นี้เป็นของ Auto planner เท่านั้น ห้ามเปลี่ยน Holiday/MinMax CRUD semantics เดิม
+- semantic นี้เป็นของ Auto planner เท่านั้น ห้ามเปลี่ยน Holiday/MinMax CRUD semantics เดิม และห้ามแก้ `CreateHolidayHandler.verifyMinimumStaff()` ให้เปลี่ยนไปนับ Slot ใน task นี้
 
 ### 3.3 Slot Template / Slot Type ปัจจุบัน
 
@@ -105,27 +107,32 @@ Behavior ที่เกี่ยวข้อง:
 
 ไฟล์ที่ยืนยัน:
 
+- `ecosystem-backend-nest-js/src/modules/work-schedule/staff-position/commands/create-many.handler.ts`
 - `ecosystem-backend-nest-js/src/modules/work-schedule/staff-position/queries/get-staff-positions-by-position-id.handler.ts`
 - `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
 
 Behavior ที่เกี่ยวข้อง:
 
-- Staff ที่เลือกต้องมี `WorkScheduleStaffPosition` ของ Position และ `deletedAt = null`
-- Staff list เรียงตาม Staff ID
-- Staff availability ต้องดู Slot ของ Staff จากทุก Position ไม่ใช่เฉพาะ target Position
+- Staff ที่เลือกสำหรับ Slot flow ต้องมี `WorkScheduleStaffPosition` ของ Position และ `deletedAt = null`
+- StaffPosition list เรียงตาม Staff ID และ query ปัจจุบันกรองที่ `WorkScheduleStaffPosition.deletedAt` แต่ไม่ได้เพิ่ม filter `WorkScheduleStaff.deletedAt`
+- StaffPosition CreateMany ปัจจุบัน authorize Position แล้วเขียนคู่ Staff/Position โดยตรง; task นี้ห้ามขยายไปแก้ CRUD ดังกล่าว
+- Staff availability ของ Auto ต้องดู Slot ของ Staff จากทุก Position ไม่ใช่เฉพาะ target Position เพราะ Manual CreateMany ก็ตรวจ conflict ของ Staff ข้าม Position
 - Holiday ที่ overlap occurrence ทำให้ Staff คนนั้นลง occurrence นั้นไม่ได้
-- Holiday flow ใช้ Serializable/lock/retry pattern และ half-open semantics
+- Holiday create flow ใช้ Serializable transaction + retry เฉพาะ `P2034` และใช้ half-open overlap semantics แต่ **ไม่ได้** lock Position ด้วย `SELECT ... FOR UPDATE`
+- Holiday minimum-staff logic มี filter เพิ่มสำหรับ active `WorkScheduleStaff` และ active `WorkSchedulePosition` ใน Place; logic นี้เป็นกติกาของ Holiday availability ไม่ใช่เหตุผลให้เปลี่ยน eligibility contract ของ Manual Slot/StaffPosition ใน task นี้
 
-ห้ามเพิ่ม Staff soft-delete semantics ใหม่ที่ query/flow ปัจจุบันไม่ได้กำหนดไว้โดยไม่จำเป็น
+สำหรับ Auto Create ให้ยึด active `WorkScheduleStaffPosition` เป็น selected-staff eligibility baseline แบบ Slot flow ปัจจุบัน และห้ามเพิ่ม Staff soft-delete/cross-Place validation ใหม่โดยพลการใน V1; หากพบว่าจำเป็นต้องแก้ invariant ของ StaffPosition เอง ต้องหยุดและแจ้งผู้ใช้เพราะเป็น Business Logic นอก scope
 
 ### 3.5 Authorization / Place / timezone ปัจจุบัน
 
 ไฟล์:
 
 - `ecosystem-backend-nest-js/src/common/access-control/access-control.service.ts`
-- Prisma Work Schedule schema
+- `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`
 
-`verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, positionId)` ตรวจ authorization จาก Position/Place ก่อน transaction แต่ Auto planner ยังต้อง re-read Position + Place ใน transaction หลัง lock เพื่อไม่ใช้ timezone/state ที่เปลี่ยนระหว่าง authorization กับ planning
+`verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, positionId)` ตรวจ Position ว่ายังไม่ถูก soft-delete, ตรวจ Place ว่ายังไม่ถูก soft-delete และตรวจ active WorkScheduleAdmin ก่อน transaction แต่ Auto planner ยังต้อง re-read Position + Place ใน transaction หลัง lock เพื่อไม่ใช้ timezone/state ที่เปลี่ยนระหว่าง authorization กับ planning
+
+Prisma schema ยืนยันว่า Position และ Place มี `deletedAt`, Place มี `timezone`, Template ไม่มี recurrence field และ Slot/Holiday/MinMax ใช้ `Timestamptz`
 
 ### 3.6 Frontend ปัจจุบัน
 
@@ -134,19 +141,29 @@ Behavior ที่เกี่ยวข้อง:
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu/client-page.tsx`
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/page.tsx`
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/page.tsx`
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/client-page.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/error.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/loading.tsx`
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/error-code-redirect-list.ts`
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`
 - `ecosystem-frontend-next-js/src/features/work-schedule/min-max/components/create-form.tsx`
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/create-many.api.ts`
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/hooks/use-create-many.ts`
+- `ecosystem-frontend-next-js/src/features/work-schedule/place/work-schedule-place.queries.ts`
+- `ecosystem-frontend-next-js/src/features/work-schedule/place/api/queries/get-work-schedule-place-by-id.api.ts`
+- `ecosystem-frontend-next-js/jest.config.mjs`
+- `ecosystem-frontend-next-js/package.json`
 
 Pattern ที่ต้องรักษา:
 
 - React Query + Clerk token
 - Zod schema จาก backend ถูก import มาใช้ใน frontend API layer
-- `datetime-local` ถูกตีความด้วย timezone ของ Place ก่อนแปลงเป็น ISO with offset
+- `datetime-local` ใน MinMax flow ถูกตีความด้วย timezone ของ Place ก่อนแปลงเป็น ISO with offset
+- Place detail query ที่มีอยู่แล้วคืน `timezone` และใช้ซ้ำได้
 - mutation hook invalidate Slot list หลัง success
-- page/client/loading/error/redirect ใช้ pattern sibling routes
+- page/client/loading/error/redirect ใช้ pattern sibling routes แบบ “Server Internal Only + CSR”; sibling `page.tsx` ไม่ได้ใช้ Suspense wrapper
+- Frontend test runner คือ Jest (`jest --runInBand`) และ `jest.config.mjs` match เฉพาะ `tests/**/*.test.ts` / `tests/**/*.test.tsx`; test ใหม่ที่ต้องอยู่ใน suite จึงต้องวางใต้ `ecosystem-frontend-next-js/tests/`
 
 ## 4. Business Logic ที่คาดหวังหลัง Implement
 
@@ -479,19 +496,22 @@ ecosystem-backend-nest-js/
       └─ create-many.handler.ts                                    -
 
 ecosystem-frontend-next-js/
-└─ src/
-   ├─ app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/
-   │  ├─ menu/client-page.tsx                                      M
-   │  └─ auto/
-   │     ├─ page.tsx                                               A
-   │     └─ client-page.tsx                                        A
-   └─ features/work-schedule/slot/
-      ├─ api/mutations/auto-create.api.ts                          A
-      ├─ hooks/use-auto-create.ts                                  A
-      └─ components/
-         ├─ auto-create-form.tsx                                   A
-         └─ auto-create-form.test.tsx                              A
+├─ src/
+│  ├─ app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/
+│  │  ├─ menu/client-page.tsx                                      M
+│  │  └─ auto/
+│  │     ├─ page.tsx                                               A
+│  │     └─ client-page.tsx                                        A
+│  └─ features/work-schedule/slot/
+│     ├─ api/mutations/auto-create.api.ts                          A
+│     ├─ hooks/use-auto-create.ts                                  A
+│     └─ components/
+│        └─ auto-create-form.tsx                                   A
+└─ tests/work-schedule/
+   └─ auto-create-form.test.tsx                                    A
 ```
+
+ไฟล์ UI ที่มีอยู่แล้วใต้ `slot/new/` ได้แก่ `loading.tsx`, `error.tsx`, `error-code-redirect-list.ts`; Auto child route ให้ reuse ไฟล์/logic เหล่านี้ผ่าน import ที่เหมาะสมหรือการ inherit route boundary และไม่ต้องสร้างสำเนาโดย default
 
 ไม่คาดหวังการแก้:
 
@@ -682,10 +702,12 @@ register Auto Create handler ใน CommandHandlers ตาม pattern เดิ�
 
 ### 6.9 `app/.../slot/new/auto/page.tsx` — A
 
-ใช้ sibling route pattern:
+ใช้ sibling route pattern ที่ยืนยันจาก `slot/new/pre-fill/page.tsx`:
 
-- Server Internal Only + CSR/Suspense pattern ตาม route เดิม
-- ส่ง `placeId` / `positionId` ให้ client page
+- Server Internal Only + CSR
+- `params` เป็น Promise ตาม Next route ปัจจุบัน, resolve `placeId` / `positionId` แล้วส่งให้ client page
+- ไม่ต้องเพิ่ม Suspense wrapper เพราะ sibling route ปัจจุบันไม่ได้ใช้
+- ใช้ parent `slot/new/loading.tsx` / `error.tsx` route boundary ที่มีอยู่แล้ว เว้นแต่พบ requirement ที่ยืนยันได้ว่าต้องมี child-specific boundary
 
 ### 6.10 `app/.../slot/new/auto/client-page.tsx` — A
 
@@ -697,7 +719,7 @@ query อย่างน้อย:
 
 Behavior:
 
-- loading/error/redirect ตาม sibling flow
+- loading/error/redirect ตาม sibling flow; reuse `slot/new/loading.tsx`, `slot/new/error.tsx` และ redirect mapping ที่มีอยู่เมื่อ error code ครอบคลุม ไม่สร้าง duplicate โดยไม่จำเป็น
 - ไม่มี Template => แจ้งให้สร้าง Template ก่อนและไม่ render submit-able form
 - ไม่มี StaffPosition => แจ้งให้เพิ่ม Staff ก่อนและไม่ render submit-able form
 - ข้อมูลครบ => render AutoCreateForm
@@ -738,7 +760,9 @@ Success:
 - `createdCount === 0` => แจ้งว่าไม่มี Slot ที่ต้องเพิ่ม + กลับหน้า Slot
 - error => อยู่หน้าเดิมให้แก้ input
 
-### 6.12 `auto-create-form.test.tsx` — A
+### 6.12 `tests/work-schedule/auto-create-form.test.tsx` — A
+
+ต้องวางใต้ `ecosystem-frontend-next-js/tests/` เพราะ `jest.config.mjs` match เฉพาะ test ใต้ directory นี้
 
 อย่างน้อย:
 
@@ -749,7 +773,7 @@ Success:
 - ambiguous DST wall time block ก่อน mutation
 - success path แสดง/ใช้ `createdCount` และ navigation ตาม contract
 
-หาก query invalidation assertion เหมาะกับ hook test มากกว่า ให้เพิ่ม hook test ได้ แต่ acceptance behavior ต้องยังถูกตรวจจริง
+หาก query invalidation assertion เหมาะกับ hook test มากกว่า ให้เพิ่ม test ใต้ `ecosystem-frontend-next-js/tests/work-schedule/` ได้ แต่ acceptance behavior ต้องยังถูกตรวจจริง
 
 ### 6.13 `slot/new/menu/client-page.tsx` — M
 
@@ -825,6 +849,7 @@ Description สื่อว่าเลือกช่วงเวลา + Templ
 - ambiguous/nonexistent user wall time ถูก block ก่อน API
 - payload ใช้ ISO with offset
 - success invalidate Slot list และกลับ flow Slot
+- Jest test ใหม่อยู่ใต้ `ecosystem-frontend-next-js/tests/` และถูกรันจริงโดย `pnpm run test:frontend`
 - Manual/Pre-fill ไม่เปลี่ยน behavior
 
 ## 8. สิ่งที่ Implementor ต้องระวัง
@@ -848,6 +873,7 @@ Description สื่อว่าเลือกช่วงเวลา + Templ
 17. ห้ามเพิ่ม arbitrary range cap โดยไม่มี requirement เพิ่ม
 18. ห้ามแก้ Manual CreateMany / Holiday / MinMax / Template / SlotType / StaffPosition Business Logic โดยพลการ
 19. ห้ามแก้ Prisma schema/migration สำหรับงานนี้
+20. ห้ามวาง frontend Jest test ใต้ `src/` แล้วถือว่าผ่าน เพราะ config ปัจจุบันไม่เก็บ test จาก path นั้น
 
 ## 9. Tests และคำสั่งตรวจสอบ
 
@@ -863,7 +889,11 @@ pnpm --dir ecosystem-backend-nest-js exec jest src/modules/work-schedule/slot/co
 
 ### 9.2 Frontend test
 
-รัน test file ใหม่ด้วย test runner/script ที่มีอยู่ใน frontend package เช่นผ่าน root frontend test script พร้อม filter ที่รองรับโดย Vitest; หาก filter syntax ต่างจาก local version ให้ใช้ script ที่ประกาศจริงใน `ecosystem-frontend-next-js/package.json` และอย่าเดาคำสั่งที่ runner ไม่รองรับ
+Frontend package ใช้ Jest และ config เก็บ test ใต้ `tests/**` เท่านั้น ให้รัน test ใหม่แบบ narrow ด้วยคำสั่ง:
+
+```bash
+pnpm --dir ecosystem-frontend-next-js exec jest tests/work-schedule/auto-create-form.test.tsx --runInBand
+```
 
 จากนั้นต้องรัน frontend test suite ผ่าน root script:
 
@@ -912,5 +942,6 @@ Root `verify` ครอบคลุม frontend tests, Prisma validate/generate,
 - infeasible plan ล้มทั้ง request ไม่มี partial insert
 - Serializable retry re-read/re-plan ทุก attempt
 - Manual/Pre-fill/MinMax/Holiday/Template/SlotType/StaffPosition Business Logic เดิมไม่เปลี่ยน
+- frontend test ใหม่ถูก Jest suite เก็บและรันจริง
 - ไม่มี Prisma schema/migration change
 - test ที่เพิ่ม, regression tests และ `pnpm run verify` ผ่านใน environment ของ Implementor
