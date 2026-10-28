@@ -208,11 +208,6 @@ export class AutoCreateHandler implements ICommandHandler<
           planned.push({ ...occurrence, staffId });
           assigned++;
         }
-        if (assigned < requiredAdditional) {
-          throw new BadRequestException(
-            'พนักงานที่เลือกไม่เพียงพอสำหรับจำนวนขั้นต่ำในช่วงเวลาที่ต้องการ',
-          );
-        }
       }
 
       if (planned.length === 0) return { createdCount: 0 };
@@ -381,11 +376,7 @@ export class AutoCreateHandler implements ICommandHandler<
           (candidate) =>
             candidate.start <= segment.start && candidate.end >= segment.end,
         );
-        if (!occurrence) {
-          throw new BadRequestException(
-            'Slot Template ที่เลือกไม่ครอบคลุมช่วงเวลาที่จำนวนเวรต่ำกว่าขั้นต่ำ',
-          );
-        }
+        if (!occurrence) continue;
         requirements.set(
           occurrence,
           Math.max(requirements.get(occurrence) ?? 0, deficit),

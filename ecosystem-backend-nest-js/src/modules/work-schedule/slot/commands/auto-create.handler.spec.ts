@@ -615,11 +615,22 @@ describe('AutoCreateHandler', () => {
     });
   });
 
-  it('fails atomically when a deficient segment has no fully contained candidate', async () => {
+  it('creates slots for covered deficient segments and skips deficient segments without template coverage', async () => {
     tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
       template({ durationMinute: 120 }),
     ]);
-    await expectAtomicFailure();
+    await expect(handler.execute(command())).resolves.toEqual({
+      createdCount: 1,
+    });
+    expect(insertedSlots()).toEqual([
+      {
+        positionId,
+        staffId,
+        slotTypeId,
+        actualStartTime: new Date(start),
+        actualEndTime: new Date('2026-10-24T03:00:00.000Z'),
+      },
+    ]);
   });
 
   it.each<[string, ReturnType<typeof slot>[], ReturnType<typeof holiday>[]]>([
@@ -673,9 +684,18 @@ describe('AutoCreateHandler', () => {
     },
   );
 
-  it('rejects when selected staff are insufficient without using unselected staff', async () => {
+  it('creates slots for available selected staff when staff are insufficient, without using unselected staff', async () => {
     tx.workScheduleMinMax.findMany.mockResolvedValue([rule(3)]);
-    await expectAtomicFailure();
+    await expect(handler.execute(command())).resolves.toEqual({
+      createdCount: 2,
+    });
+    expect(insertedSlots().map((s) => s.staffId)).toEqual([
+      staffId,
+      secondStaffId,
+    ]);
+    expect(insertedSlots().some((s) => s.staffId === unselectedStaffId)).toBe(
+      false,
+    );
   });
 
   it('guards against a planned slot overlap while allowing another staff or a touching boundary', () => {
@@ -715,7 +735,7 @@ describe('AutoCreateHandler', () => {
     ).toBe(true);
   });
 
-  it('does not insert an earlier feasible occurrence when a later one lacks staff', async () => {
+  it('inserts an earlier feasible occurrence when a later occurrence lacks available staff', async () => {
     tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
       template({ durationMinute: 120 }),
       template({
@@ -728,9 +748,32 @@ describe('AutoCreateHandler', () => {
       holiday(staffId, '2026-10-24T03:00:00.000Z', end),
       holiday(secondStaffId, '2026-10-24T03:00:00.000Z', end),
     ]);
-    await expectAtomicFailure(
-      command({ slot_template_ids: [templateId, secondTemplateId] }),
-    );
+    await expect(
+      handler.execute(
+        command({ slot_template_ids: [templateId, secondTemplateId] }),
+      ),
+    ).resolves.toEqual({ createdCount: 1 });
+    expect(insertedSlots()).toEqual([
+      {
+        positionId,
+        staffId,
+        slotTypeId,
+        actualStartTime: new Date(start),
+        actualEndTime: new Date('2026-10-24T03:00:00.000Z'),
+      },
+    ]);
+  });
+
+  it('returns zero without inserting when all selected staff are unavailable due to holidays', async () => {
+    tx.workScheduleMinMax.findMany.mockResolvedValue([rule(1)]);
+    tx.workScheduleHoliday.findMany.mockResolvedValue([
+      holiday(staffId, start, end),
+      holiday(secondStaffId, start, end),
+    ]);
+    await expect(handler.execute(command())).resolves.toEqual({
+      createdCount: 0,
+    });
+    expect(tx.workScheduleSlot.createMany).not.toHaveBeenCalled();
   });
 
   it('rejects planned plus existing coverage above maximum in a touched segment', async () => {
