@@ -15,188 +15,163 @@
 - Version นี้ใช้กติกา deterministic แบบง่ายตามไอเดียต้นฉบับ: เมื่อจำเป็นต้องเพิ่มพนักงาน ให้พิจารณา `staffId` จากน้อยไปมาก และเลือกคนแรกที่ลงเวร occurrence นั้นได้
 - Version นี้ไม่ทำ optimization, balancing, randomization, rotation, fairness ตามจำนวนเวรย้อนหลัง หรือ backtracking เพื่อหาชุดคำตอบที่ดีที่สุด
 - Version นี้ไม่เพิ่ม/แก้ Prisma model และไม่ต้องมี migration เพราะข้อมูลหลักที่ต้องใช้มีอยู่แล้วใน `WorkScheduleSlotTemplate`, `WorkScheduleStaffPosition`, `WorkScheduleMinMax`, `WorkScheduleSlot`, `WorkScheduleHoliday`, `WorkScheduleSlotType` และ timezone ของ Place
-- ช่วงเวลาทั้งหมดใช้หลัก half-open interval `[start, end)` เช่นเดียวกับ logic overlap ปัจจุบัน: ช่วงที่ปลายของรายการหนึ่งเท่ากับต้นของอีกรายการถือว่าไม่ทับกัน
-- Backend เป็น source of truth ของการวางแผนทั้งหมด; Frontend มีหน้าที่เลือก input และส่ง request เท่านั้น ห้าม generate Slot สำเร็จรูปเพื่อเลี่ยง validation ฝั่ง Backend
+- ช่วงเวลาทั้งหมดใช้ half-open interval `[start, end)` เช่นเดียวกับ logic overlap ปัจจุบัน: ปลายของรายการหนึ่งเท่ากับต้นของอีกรายการถือว่าไม่ทับกัน
+- Backend เป็น source of truth ของการวางแผนทั้งหมด; Frontend มีหน้าที่เลือก input, validate local datetime ที่ผู้ใช้กรอก และส่ง request เท่านั้น ห้าม generate Slot สำเร็จรูปเพื่อเลี่ยง validation ฝั่ง Backend
+- ไม่เพิ่ม arbitrary maximum scheduling range ใน Version นี้ เพราะ requirement ปัจจุบันไม่ได้กำหนดเพดานดังกล่าว
 
 ## 3. Business Logic ที่เกี่ยวข้องก่อนเริ่ม
 
-### 3.1 Slot และการสร้าง Slot ปัจจุบัน
+### 3.1 Slot และ CreateMany ปัจจุบัน
 
-`WorkScheduleSlot` ผูกกับ Position, Staff และ Slot Type และเก็บ `actualStartTime` / `actualEndTime` เป็น `Timestamptz`
+ไฟล์ที่ยืนยันจากโค้ดจริง:
 
-การสร้าง Slot แบบหลายรายการ (`CreateMany`) ปัจจุบันมี behavior ที่ต้องรักษาเป็น reference:
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.command.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.handler.spec.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.module.ts`
 
-- ตรวจสิทธิ์ Admin ของ Position ก่อน
-- ตรวจว่า Staff ทุกคนที่ส่งมามี `WorkScheduleStaffPosition` ของ Position และ link นั้นยังไม่ถูกลบ
-- ปฏิเสธ Slot ที่ทับกันภายใน payload สำหรับ Staff คนเดียวกัน
-- ตรวจ Slot เดิมที่ทับกับช่วงคำขอ โดย Staff คนเดียวกันห้ามมี Slot ทับกันแม้จะเป็นคนละ Position
-- ตรวจ Holiday ของ Staff และปฏิเสธหาก Holiday ทับกับ Slot
-- ตรวจ `WorkScheduleMinMax.max` ของ Position และปฏิเสธเมื่อจำนวน Slot พร้อมกันเกิน `max`
-- ทำงานใน Serializable transaction, lock Position และ retry เมื่อ Prisma แจ้ง serialization conflict (`P2034`)
-- ทั้ง batch เป็น all-or-nothing; validation conflict ต้องเกิดก่อน `createMany`
+Behavior ปัจจุบันที่ต้องใช้เป็น reference:
 
-ข้อสังเกตที่ยืนยันจากโค้ดจริง:
+- DTO ใช้ UUID v7 และ ISO datetime ที่มี offset
+- ตรวจ Admin ของ Position ก่อน mutation
+- Manual CreateMany ตรวจ payload overlap ของ Staff คนเดียวกันก่อน transaction
+- Manual CreateMany ตรวจ active `WorkScheduleStaffPosition` ก่อน transaction
+- transaction เป็น Serializable
+- transaction lock Position ด้วย `SELECT ... FOR UPDATE`
+- query existing Slot ของ selected Staff ทุก Position และ Slot ของ target Position เพื่อใช้ overlap/Max validation
+- Holiday overlap และ Slot overlap ใช้ half-open semantics
+- validate `WorkScheduleMinMax.max`
+- insert batch หลัง validation ผ่าน
+- retry Prisma serialization conflict `P2034`
+- request เป็น all-or-nothing
 
-- StaffPosition validation ของ manual CreateMany ปัจจุบันทำก่อน transaction แต่ Auto Create ใน task นี้จะอ่าน StaffPosition ที่ใช้วางแผนซ้ำภายใน transaction เพราะ StaffPosition เป็น input ของ planner
-- Manual CreateMany ไม่ validate ว่า `slot_type_id` เป็นของ Position เดียวกันกับ `position_id`; task นี้ห้ามแก้ behavior manual แต่ Auto Create ต้องไม่ขยายช่องโหว่นี้จากข้อมูล Template
+Auto Create ต้องใช้ transaction/lock/retry style เดิมเป็น baseline แต่ **ต้องอ่าน StaffPosition/Template/ข้อมูลที่ใช้ planner ซ้ำภายใน transaction** เพราะข้อมูลเหล่านี้เป็น input ของ planning และต้องอยู่ใน snapshot เดียวกับ Slot/Holiday/MinMax ที่ใช้ตัดสินใจ
 
-### 3.2 Min/Max ปัจจุบัน และความหมายที่ใช้ใน Auto Create
+ห้ามแก้ behavior ของ Manual CreateMany ใน task นี้
 
-- `WorkScheduleMinMax` มี `min`, `max`, `startTime`, `endTime` ต่อ Position
-- `min` หรือ `max` อย่างน้อยหนึ่งค่าต้องมี; หากมีทั้งคู่ `min <= max`
-- Min/Max ของ Position เดียวกันถูกห้ามไม่ให้มีช่วงเวลาทับซ้อนกันตั้งแต่ตอนสร้าง
-- การสร้าง Slot ปัจจุบันใช้ `max` เป็นข้อจำกัดจำนวน Slot พร้อมกัน แต่ยังไม่มี flow ที่สร้าง Slot อัตโนมัติเพื่อเติมจำนวนให้ถึง `min`
-- Holiday flow ปัจจุบันใช้ `min` เพื่อป้องกันการสร้าง Holiday เมื่อจำนวน StaffPosition ที่ยังพร้อมทำงานหลังหัก Holiday จะต่ำกว่า `min`; flow นี้ไม่ได้ตรวจจำนวน WorkScheduleSlot ที่ถูกจัดจริง
+### 3.2 Min/Max ปัจจุบัน
 
-สำหรับ task นี้ ให้ยึดไอเดียต้นฉบับว่า “ลงให้ถึงจำนวนขั้นต่ำสำหรับแต่ละช่วงเวลา” ดังนั้น **เฉพาะ Auto Create** ให้ตีความ `WorkScheduleMinMax.min` เป็น target จำนวน concurrent `WorkScheduleSlot` ของ Position ที่ planner ต้องทำให้ถึงในช่วง rule นั้น โดย:
+ไฟล์ที่ยืนยัน:
 
-- Slot เดิมของ Position นับเป็น coverage ก่อน
-- planner สร้างเพิ่มเฉพาะ deficit
-- ห้ามแก้ Holiday behavior เดิมหรืออ้างว่า Holiday flow เปลี่ยนมาใช้จำนวน Slot
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.command.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/update.handler.ts`
 
-เหตุผล: เป็น behavior ใหม่ที่จำเป็นต่อ feature ตามข้อความต้นฉบับ ขณะที่โค้ดเดิมยังไม่มี auto-scheduling logic ให้ reuse ตรง ๆ
+Behavior ที่เกี่ยวข้อง:
 
-### 3.3 Slot Template และ Slot Type ปัจจุบัน
+- `WorkScheduleMinMax` มี `startTime`, `endTime`, `min`, `max` ต่อ Position
+- ต้องมีอย่างน้อย `min` หรือ `max`
+- หากมีทั้งคู่ต้อง `min <= max`
+- MinMax ของ Position เดียวกันถูกห้ามไม่ให้ overlap ตอน create/update
+- Slot flow ปัจจุบันใช้ `max` เป็นข้อจำกัด concurrency
+- ยังไม่มี flow ที่สร้าง Slot อัตโนมัติเพื่อเติม `min`
 
-`WorkScheduleSlotTemplate` เก็บ:
+สำหรับ Auto Create ให้ตีความ `min` เป็น target จำนวน concurrent `WorkScheduleSlot` ของ Position ในช่วง rule นั้น:
 
-- `workSchedulePositionId`
-- `slotTypeId`
-- `name`
-- `startTime` รูปแบบ `HH:mm`
-- `durationMinute`
+- Slot เดิมของ Position ทุก Staff นับเป็น coverage ก่อน
+- Auto สร้างเฉพาะ deficit ที่ขาด
+- `min = 0`, `min = null` หรือช่วงที่ถึง Min อยู่แล้วไม่ต้องสร้างเพิ่ม
+- semantic นี้เป็นของ Auto planner เท่านั้น ห้ามเปลี่ยน Holiday/MinMax CRUD semantics เดิม
 
-พฤติกรรมปัจจุบันที่ยืนยันแล้ว:
+### 3.3 Slot Template / Slot Type ปัจจุบัน
 
-- Template เป็นแบบร่างช่วยกรอกการสร้าง Slot; ยังไม่สร้าง Slot เอง
-- Template ไม่มี field วันในสัปดาห์หรือ recurrence
-- DTO สร้าง Template บังคับ `startTime` เป็น `HH:mm` และ `durationMinute >= 1`
-- list Template ของ Position คืนเพียง `id`, `name` และเรียง `id` ascending
-- detail Template คืน `slotTypeId`, `startTime`, `durationMinute`
-- `WorkScheduleSlotType` มี `positionId` และ `deletedAt`; list Slot Type ของ Position ปัจจุบันคืนเฉพาะ `deletedAt = null`
-- schema ของ Template มี `workSchedulePositionId` และ `slotTypeId` เป็น relation แยกกัน และ handler สร้าง Template ปัจจุบันไม่ได้ validate ว่า Slot Type เป็นของ Position เดียวกัน
+ไฟล์ที่ยืนยัน:
 
-ผลต่อ Auto Create:
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/commands/create.command.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/commands/create.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/queries/get-slot-templates-by-position-id.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/queries/get-slot-template-by-id.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-type/queries/get-slot-types-by-position-id.handler.ts`
 
-- เมื่อเลือก Template ระบบจะถือว่า Template เป็น candidate ของทุก local calendar day ภายในช่วงที่ Admin เลือก เพราะไม่มีข้อมูล recurrence แบบอื่นให้ใช้
-- Backend ต้องอ่าน Template detail พร้อม relation ของ Slot Type ภายใน transaction
-- ต้อง reject request หาก Template ไม่ใช่ของ Position, Slot Type ของ Template ไม่ใช่ Position เดียวกัน หรือ Slot Type ถูก soft-delete แล้ว
-- ห้ามแก้ Template CRUD/Slot Type CRUD เพื่อแก้ invariant นี้ใน task นี้; validation ต้องอยู่ใน Auto Create เท่านั้น
+ข้อเท็จจริงจากโค้ด:
 
-### 3.4 Staff ของ Position ปัจจุบัน
+- Template มี `workSchedulePositionId`, `slotTypeId`, `startTime`, `durationMinute`
+- DTO สร้าง Template บังคับ `startTime` รูปแบบ `HH:mm`
+- `durationMinute >= 1`
+- Template ไม่มี weekday/recurrence field
+- Template creation ปัจจุบันเขียน `slotTypeId` ลงตรง ๆ และไม่ได้ validate ใน handler ว่า Slot Type เป็น Position เดียวกันหรือ active
+- Slot Type มี `positionId` และ `deletedAt`
 
-- รายการ Staff ที่ใช้กับ Position มาจาก `WorkScheduleStaffPosition` ที่ `deletedAt = null`
-- Query ปัจจุบันคืน `staffId` และชื่อของ Staff และเรียงตาม `workScheduleStaffId` จากน้อยไปมาก
-- Auto Create ใช้เฉพาะ Staff ที่ Admin เลือกจากกลุ่มนี้เท่านั้น
-- Slot overlap ของ Staff ต้องตรวจทุก Position ไม่ใช่เฉพาะ Position ปัจจุบัน ตาม behavior ของ manual CreateMany
+ดังนั้น Auto Create ต้องป้องกันตัวเองภายใน transaction:
 
-### 3.5 Authorization และ Place ปัจจุบัน
+- selected Template ต้องอยู่ target Position
+- Slot Type ของ Template ต้องอยู่ Position เดียวกันและ `deletedAt = null`
+- Template `startTime`/`durationMinute` ที่อ่านจาก DB ต้องยัง valid ตาม invariant ปัจจุบัน; ข้อมูล legacy/malformed ต้องถูก reject ไม่ใช่ normalize เงียบ ๆ
 
-- `verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, positionId)` ตรวจว่า Position มีอยู่, Position/Place ไม่ถูกลบ และผู้ใช้เป็น Work Schedule Admin ของ Place
-- method นี้คืน `organizationWorkSchedulePlaceId` ได้ แต่เป็น authorization step ก่อน transaction
-- Auto Create ยังต้องอ่าน Position/Place timezone ที่ใช้วางแผนจาก database ภายใน transaction เพื่อให้ planning ใช้ transaction snapshot เดียวกับข้อมูลอื่น
+ห้ามแก้ Template CRUD หรือ Slot Type CRUD เพื่อแก้ gap นี้ใน task ปัจจุบัน
+
+### 3.4 StaffPosition / Holiday ปัจจุบัน
+
+ไฟล์ที่ยืนยัน:
+
+- `ecosystem-backend-nest-js/src/modules/work-schedule/staff-position/queries/get-staff-positions-by-position-id.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
+
+Behavior ที่เกี่ยวข้อง:
+
+- Staff ที่เลือกต้องมี `WorkScheduleStaffPosition` ของ Position และ `deletedAt = null`
+- Staff list เรียงตาม Staff ID
+- Staff availability ต้องดู Slot ของ Staff จากทุก Position ไม่ใช่เฉพาะ target Position
+- Holiday ที่ overlap occurrence ทำให้ Staff คนนั้นลง occurrence นั้นไม่ได้
+- Holiday flow ใช้ Serializable/lock/retry pattern และ half-open semantics
+
+ห้ามเพิ่ม Staff soft-delete semantics ใหม่ที่ query/flow ปัจจุบันไม่ได้กำหนดไว้โดยไม่จำเป็น
+
+### 3.5 Authorization / Place / timezone ปัจจุบัน
+
+ไฟล์:
+
+- `ecosystem-backend-nest-js/src/common/access-control/access-control.service.ts`
+- Prisma Work Schedule schema
+
+`verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, positionId)` ตรวจ authorization จาก Position/Place ก่อน transaction แต่ Auto planner ยังต้อง re-read Position + Place ใน transaction หลัง lock เพื่อไม่ใช้ timezone/state ที่เปลี่ยนระหว่าง authorization กับ planning
 
 ### 3.6 Frontend ปัจจุบัน
 
-- หน้า `slot/new/menu` มี 2 วิธีสร้าง Slot: ใช้แบบร่าง และไม่ใช้แบบร่าง
-- Manual create page มี pattern ที่ใช้ได้กับ feature นี้อยู่แล้ว:
-  - React Query + Clerk token
-  - query Staff Position
-  - query Place เพื่อเอา timezone
-  - query Template/detail เมื่อใช้ prefill
-  - แปลงค่าจาก input เป็น ISO ด้วย Luxon และ timezone ของ Place ก่อนส่ง Backend
-  - mutation hook invalidate Slot list หลังสร้างสำเร็จ
-- หน้าเลือก prefill ใช้ query list Template ของ Position ซึ่งคืน `id`, `name`; data รูปแบบนี้เพียงพอสำหรับ checkbox รายการ Template ของ Auto Create
-
-## 4. ส่วนของโค้ดที่เกี่ยวข้องก่อนเริ่ม
-
-### Backend
-
-- `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`
-  - schema ของ Place/Position/StaffPosition/MinMax/SlotType/SlotTemplate/Slot/Holiday
-  - ยืนยันว่า Template→Position และ Template→SlotType ไม่ได้ enforce ว่าอยู่ Position เดียวกัน
-  - ห้ามแก้ schema ใน task นี้
-- `ecosystem-backend-nest-js/src/common/access-control/access-control.service.ts`
-  - `verifyWorkSchedulePositionByWorkScheduleAdmin`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts`
-  - endpoint CreateMany/Update/Delete/Get Slot ปัจจุบัน
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.module.ts`
-  - register Slot command/query handlers
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.command.ts`
-  - DTO pattern ของ Slot command และ UUID v7/ISO validation
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.handler.ts`
-  - reference กติกา StaffPosition, Staff-slot overlap, Holiday, Max, transaction/lock/retry
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.handler.spec.ts`
-  - regression reference สำหรับ half-open Holiday overlap, atomic insert และ Serializable retry
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/commands/create.command.ts`
-  - ยืนยัน format `HH:mm` และ `durationMinute >= 1`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/commands/create.handler.ts`
-  - ยืนยันว่า Template creation ปัจจุบันไม่ได้ validate Slot Type ว่าเป็น Position เดียวกัน
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/queries/get-slot-templates-by-position-id.handler.ts`
-  - list Template คืน `id`, `name`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-template/queries/get-slot-template-by-id.handler.ts`
-  - detail Template คืน `slotTypeId`, `startTime`, `durationMinute`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot-type/queries/get-slot-types-by-position-id.handler.ts`
-  - ยืนยันว่า active Slot Type ใช้ `deletedAt = null`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.handler.ts`
-  - ยืนยัน Min/Max ของ Position เดียวกันห้าม overlap
-- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.command.ts`
-  - validation `min`, `max`, `start_time`, `end_time`
-- `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
-  - reference half-open interval, Serializable retry, Luxon timezone และ semantic ปัจจุบันของ `min` ใน Holiday flow
-- `ecosystem-backend-nest-js/src/modules/work-schedule/staff-position/queries/get-staff-positions-by-position-id.handler.ts`
-  - source ของ Staff ใน Position และ order ตาม ID
-- `ecosystem-backend-nest-js/package.json`
-  - มี `luxon` และ `@types/luxon` อยู่แล้ว
-
-### Frontend
+ไฟล์ reference:
 
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/menu/client-page.tsx`
-  - จุดเพิ่มเมนู “จัดเวรอัตโนมัติ”
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/page.tsx`
-  - reference Server Internal Only + CSR route pattern
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/client-page.tsx`
-  - reference query Staff/Place/error/loading pattern
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/pre-fill/client-page.tsx`
-  - reference list Template ของ Position
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/create-many-form.tsx`
-  - reference Staff selection, Luxon timezone และ submit UX
 - `ecosystem-frontend-next-js/src/features/work-schedule/min-max/components/create-form.tsx`
-  - reference `datetime-local` + Place timezone
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/create-many.api.ts`
-  - reference import Zod schema จาก backend, safeParse และ axios pattern
 - `ecosystem-frontend-next-js/src/features/work-schedule/slot/hooks/use-create-many.ts`
-  - reference Clerk token + React Query invalidate
 
-### Repository verification
+Pattern ที่ต้องรักษา:
 
-- `AGENTS.md`
-  - Unit test ต้อง mock Prisma และห้ามต่อ database จริง
-  - ให้รัน narrow test ก่อน แล้ว typecheck/lint
-  - `pnpm run verify` เป็น standard pre-commit verification และไม่รวม e2e
-- `package.json`
-  - ยืนยัน root scripts สำหรับ typecheck/lint/build/test/verify
+- React Query + Clerk token
+- Zod schema จาก backend ถูก import มาใช้ใน frontend API layer
+- `datetime-local` ถูกตีความด้วย timezone ของ Place ก่อนแปลงเป็น ISO with offset
+- mutation hook invalidate Slot list หลัง success
+- page/client/loading/error/redirect ใช้ pattern sibling routes
 
-## 5. Business Logic ที่คาดหวังหลัง Implement
+## 4. Business Logic ที่คาดหวังหลัง Implement
 
-### 5.1 API contract ใหม่
+### 4.1 API contract
 
-เพิ่ม endpoint ของ Slot สำหรับ Admin:
+เพิ่ม endpoint:
 
 `POST /api/work-schedule/slot/positions/:position_id/auto`
 
-Request body:
+Param:
+
+- `position_id`: UUID v7
+
+Body:
 
 ```ts
 {
-  start_time: string;          // ISO 8601 มี offset
-  end_time: string;            // ISO 8601 มี offset และต้อง > start_time
-  slot_template_ids: string[]; // UUID v7, อย่างน้อย 1, ห้ามซ้ำ
-  staff_ids: string[];         // UUID v7, อย่างน้อย 1, ห้ามซ้ำ
+  start_time: string;          // ISO 8601 มี explicit offset
+  end_time: string;            // ISO 8601 มี explicit offset และ > start_time
+  slot_template_ids: string[]; // UUID v7, min 1, unique
+  staff_ids: string[];         // UUID v7, min 1, unique
 }
 ```
 
-Response เมื่อสำเร็จ:
+Response:
 
 ```ts
 {
@@ -204,181 +179,292 @@ Response เมื่อสำเร็จ:
 }
 ```
 
-กติกา response:
+กติกา:
 
-- `createdCount > 0`: จำนวน Slot ที่สร้างจริง
-- `createdCount = 0`: success ที่ถูกต้องเมื่อไม่มี Min deficit ที่ต้องเติมภายในช่วง request
-- หากมี Min deficit แต่ทำให้ถึง Min ไม่ได้ด้วย Template/Staff ที่เลือก ต้อง reject request ไม่ใช่ตอบ `0`
+- ไม่มี Min deficit ที่ต้องเติม => success `{ createdCount: 0 }`
+- มี deficit แต่ Template/Staff ที่เลือกทำให้ถึง Min ไม่ได้ => reject ทั้ง request
+- backend ห้าม silently skip invalid selection
 
-เหตุผล: Backend ต้องเป็น source of truth เพราะ Slot/Holiday/StaffPosition/Template/MinMax อาจเปลี่ยนพร้อมกันได้
+### 4.2 DTO validation
 
-### 5.2 Authorization และ validation ของ selection
+`auto-create.command.ts` ต้อง validate:
 
-ก่อน planning:
+- param `position_id` เป็น UUID v7
+- `start_time`/`end_time` เป็น string datetime with offset แบบเดียวกับ `create-many.command.ts`
+- `end_time > start_time`
+- Template array / Staff array อย่างน้อย 1
+- ทุก ID เป็น UUID v7
+- ID ในแต่ละ array ห้ามซ้ำ
 
-1. เรียก `verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, position_id)` เพื่อ authorize ตาม behavior เดิม
-2. DTO ต้อง reject:
-   - invalid UUID v7
-   - invalid ISO datetime
-   - `end_time <= start_time`
-   - `slot_template_ids` ว่าง
-   - `staff_ids` ว่าง
-   - ID ซ้ำภายในแต่ละ array
-3. ภายใน Serializable transaction อ่าน selected Templates ใหม่และต้องได้ครบทุก ID
-4. Template ทุกตัวต้องมี `workSchedulePositionId === position_id`
-5. Slot Type ของ Template ทุกตัวต้อง:
-   - `slotType.positionId === position_id`
-   - `slotType.deletedAt === null`
-6. ภายใน transaction อ่าน selected StaffPosition ใหม่และต้องได้ครบทุก Staff ID โดย `workSchedulePositionId === position_id` และ `deletedAt === null`
-7. หาก Template/SlotType/Staff รายการใดไม่ผ่าน ให้ reject ทั้ง request ห้าม silently skip
+DTO validation ไม่ทำ scheduling logic
 
-เหตุผลของข้อ 5: schema/Template create handler ปัจจุบันไม่ enforce cross-relation นี้ จึงต้องกัน Auto Create ไม่ให้สร้าง Slot ที่ Position กับ Slot Type คนละ Position หรือใช้ Slot Type ที่ถูกลบแล้ว โดยไม่เปลี่ยน behavior ของ feature เดิม
+### 4.3 Authorization + transaction boundary
 
-### 5.3 Timezone และการสร้าง occurrence จาก Template
+ลำดับบังคับ:
 
-ภายใน transaction:
+1. authorize ด้วย `verifyWorkSchedulePositionByWorkScheduleAdmin(clerkId, position_id)` ก่อน transaction
+2. เปิด Serializable transaction ผ่าน retry helper แบบเดียวกับ CreateMany
+3. lock target Position ด้วย `SELECT ... FOR UPDATE`
+4. หลัง lock re-read Position พร้อม Place ใน transaction และ validate:
+   - Position ยังไม่ถูก soft-delete
+   - Place ยังไม่ถูก soft-delete
+   - Position ยังผูกกับ Place ที่ใช้งานได้
+   - Place timezone เป็น IANA timezone ที่ Luxon ใช้งานได้
+5. ทุก read ที่ใช้วาง plan ต้องเกิดใหม่ในแต่ละ retry attempt
+6. domain validation failure ห้าม retry; retry เฉพาะ `P2034`
 
-1. อ่าน Position พร้อม Place timezone ที่สัมพันธ์กับ `position_id`
-2. parse `start_time` / `end_time` เป็น instant แล้วแปลงมุมมองเป็น Place timezone เมื่อต้องแตก local calendar date
-3. สำหรับทุก local date ตั้งแต่ local date ของ request start ถึง local date ของ request end:
-   - นำ `Template.startTime` (`HH:mm`) มาประกอบกับ local date ใน Place timezone
-   - `occurrenceEnd = occurrenceStart.plus({ minutes: durationMinute })`
-4. ถ้า Luxon สร้าง local DateTime ไม่ valid ให้ reject request แทนการเดาเวลา
-5. occurrence ที่ใช้เป็น candidate สำหรับสร้าง Slot ต้องอยู่ภายใน request ทั้งช่วง:
-   - `occurrenceStart >= requestStart`
-   - `occurrenceEnd <= requestEnd`
-6. ใช้ Luxon/timezone-aware DateTime สำหรับการประกอบ local time และบวก duration; หลัง resolve เป็น instant แล้วจึงใช้ timestamp/`Date` เพื่อ compare
+เหตุผล: authorization ก่อน transaction เพียงอย่างเดียวไม่พอสำหรับ state/timezone ที่ใช้คำนวณแผน
 
-เหตุผลที่ใช้ทุก local day: Template schema ไม่มี weekday/recurrence field จึงไม่มีข้อมูลรองรับ recurrence แบบอื่นโดยไม่แต่ง Business Logic เพิ่ม
+### 4.4 Validate selected Templates / Slot Types / Staff ใน transaction
 
-### 5.4 กฎ “Template ห้ามเวลาทับซ้อนกัน”
+#### Template
 
-กติกานี้ต้องตรวจจาก occurrence จริงใน Place timezone ไม่เทียบเพียง string `HH:mm`
+อ่าน selected Templates โดย ID และ validate:
 
-1. generate occurrence ของ selected Templates สำหรับ local dates ที่เกี่ยวข้องกับ request
-2. สำหรับ overlap validation ให้พิจารณา occurrence ที่มี intersection กับ request เพื่อไม่ให้ Template ที่เลือกซ้อนกันในช่วง scheduling window แม้ occurrence หนึ่งจะถูกตัดออกจาก candidate เพราะเลย request boundary
-3. sort ด้วย `start`, `end`, `templateId`
-4. overlap ใช้ half-open rule: `a.start < b.end && a.end > b.start`
-5. ถ้าพบ overlap ระหว่าง occurrence ใด ๆ ของ selected Templates ให้ reject ทั้ง request
-6. ต้องครอบคลุมกรณี duration ข้ามวัน และกรณี occurrence ของ Template เดียวกันซ้อน occurrence วันถัดไป
-7. boundary ที่แตะกันพอดี เช่น A จบ 12:00 และ B เริ่ม 12:00 อนุญาต
+- จำนวนที่พบเท่ากับจำนวน ID ที่ request
+- ทุก Template มี `workSchedulePositionId === position_id`
+- `startTime` ตรง `HH:mm` จริง
+- `durationMinute` เป็น integer และ `>= 1`
+- related Slot Type มี `positionId === position_id`
+- related Slot Type มี `deletedAt === null`
 
-หลัง overlap validation ให้ใช้เฉพาะ occurrence ที่ fully contained ตามข้อ 5.3 เป็น scheduling candidates
+หากข้อมูล DB เก่าผิด invariant ให้ reject request โดยไม่เดาค่าแทน
 
-### 5.5 การตีความ Min และการคำนวณ deficit
+#### StaffPosition
 
-พิจารณาเฉพาะ `WorkScheduleMinMax` ของ Position ที่:
+อ่าน active StaffPosition ใหม่ใน transaction:
 
-- ทับกับ request range
-- `min != null`
+- target Position ตรงกัน
+- `deletedAt = null`
+- จำนวน unique Staff ที่พบเท่ากับจำนวน `staff_ids`
 
-สำหรับ Auto Create เท่านั้น:
+ถ้าไม่ครบให้ reject ทั้ง request
 
-- target ของแต่ละ rule คือ intersection ระหว่าง Min rule กับ request range
-- `min` คือจำนวน concurrent Slot ของ Position ที่ต้องมีตลอด target interval
-- Slot เดิมของ Position ทุก Staff นับเป็น coverage ไม่ว่าจะเป็น Staff ที่ Admin เลือกใน request นี้หรือไม่
-- `min = 0` ไม่ต้องสร้างเพิ่ม
-- ถ้าไม่มี Min rule ที่ต้องเติม หรือ Slot เดิมทำให้ถึง Min แล้วทุก segment ให้ตอบ `{ createdCount: 0 }`
+เรียง Staff candidates ตาม `staffId` ascending ใน backend เสมอ ไม่เชื่อลำดับจาก request/Prisma
 
-วิธีคำนวณให้ถูกต้องตลอดช่วง:
+### 4.5 Time model และ half-open interval
 
-1. สำหรับแต่ละ target Min interval สร้าง boundary จาก:
-   - target start/end
-   - start/end ของ existing Position Slot ที่ตัดผ่าน target
-   - start/end ของ candidate Template occurrence ที่ตัดผ่าน target
-2. clip boundary ที่มาจาก Slot/occurrence ให้อยู่ใน target, sort และ deduplicate
-3. พิจารณา atomic segment ทุกคู่ `[boundary[i], boundary[i+1])`
-4. นับ existing Position Slot ที่ครอบ segment นั้นด้วย half-open semantics
-5. `deficit = max(0, min - existingCount)`
-6. หาก `deficit > 0`:
-   - segment ต้องถูกครอบทั้งหมดโดย candidate Template occurrence 1 รายการ
-   - เพราะ selected Template occurrences ถูกห้าม overlap จึงต้องมีได้ไม่เกิน 1 occurrence ที่ครอบ segment
-   - ถ้าไม่มี occurrence ครอบ segment ให้ reject ทั้ง request เพราะ Template ที่เลือกไม่สามารถทำให้ถึง Min
-7. สำหรับ Template occurrence หนึ่งรายการ ให้ `requiredAdditional` เท่ากับ deficit สูงสุดของทุก under-covered segment ที่ occurrence นั้นครอบ
-8. occurrence ที่ `requiredAdditional = 0` ไม่ต้องสร้าง Slot ใหม่
+ทุก overlap ใช้ `[start, end)`:
 
-เหตุผลของข้อ 7: Slot ที่สร้างจาก occurrence เดียวครอบทุก segment ของ occurrence พร้อมกัน จึงต้องสร้างเท่ากับ deficit สูงสุด ไม่ใช่ sum deficit ของแต่ละ segment
+```text
+overlap = a.start < b.end && a.end > b.start
+```
 
-### 5.6 การเลือก Staff ตาม ID
+`a.end === b.start` และ `b.end === a.start` ไม่ overlap
 
-process candidate occurrences ที่ `requiredAdditional > 0` ตามลำดับ:
+หลัง resolve local template wall time เป็น instant แล้ว การ compare overlap ใช้ instant/timestamp ไม่ใช้ string local time
 
-1. occurrence start จากน้อยไปมาก
-2. occurrence end จากน้อยไปมาก
-3. `templateId` จากน้อยไปมากเป็น tie-breaker
+### 4.6 Generate Template occurrence พร้อม duration lookback
 
-sort `staff_ids` จากน้อยไปมากก่อนเลือก
+Template ไม่มี recurrence metadata ดังนั้น selected Template เป็น candidate ทุก local calendar day
 
-Staff คนหนึ่ง “ลงได้” สำหรับ occurrence เมื่อครบทุกเงื่อนไข:
+**ห้ามเริ่ม generate จาก local date ของ request start อย่างเดียว** เพราะ occurrence ของวันก่อนหน้าอาจมี duration ยาวจนลากเข้ามาทับ request และทับ Template อื่น
 
-- มี active StaffPosition ของ Position ตาม validation ข้อ 5.2
-- ไม่มี existing Slot ของ Staff คนนั้นทับ occurrence ไม่ว่าจะเป็น Position ใด
-- ไม่มี Holiday ของ Staff คนนั้นทับ occurrence
-- ไม่มี planned Slot ก่อนหน้าจาก request เดียวกันทับ occurrence
+สำหรับ Template แต่ละรายการที่มี duration `D` นาที:
 
-จากนั้นเลือก Staff ตาม ID จนครบ `requiredAdditional`
+1. parse request start/end เป็น instants
+2. คำนวณ `generationStartInstant = requestStart - D minutes`
+3. แปลง `generationStartInstant` เป็น Place timezone แล้วเอา local calendar date เป็นวันเริ่ม generate ของ Template นั้น
+4. local date สุดท้ายคือ local calendar date ของ request end ใน Place timezone
+5. เดินวันด้วย calendar-day arithmetic (`plus({ days: 1 })`) ใน Place timezone ไม่ใช่ fixed 24-hour milliseconds
+6. ในแต่ละวันประกอบ intended local wall time จาก `date + Template.startTime`
+7. resolve wall time ตาม DST rules ในข้อ 4.7
+8. `occurrenceEnd = resolved occurrenceStart instant + elapsed durationMinute`
 
-- ID ต่ำกว่าที่ลงไม่ได้ให้ข้ามไป ID ถัดไป
-- ห้าม random, round-robin หรือ balance ตามเวรย้อนหลังใน Version นี้
-- ถ้า Staff ที่ลงได้ไม่พอ ให้ reject ทั้ง request และห้าม insert บางส่วน
+จาก generated occurrences แยกเป็นสองชุด:
 
-### 5.7 Max ต้องยังถูกบังคับ
+**Overlap-check set**
 
-ก่อน insert planned Slots:
+```text
+occ.start < requestEnd && occ.end > requestStart
+```
 
-1. อ่าน MinMax ของ Position ที่ทับ request และ `max != null`
-2. สำหรับแต่ละ Max rule ตรวจ concurrency ของ `existing Position Slots + planned Slots` ตลอด intersection กับ request
-3. ใช้ atomic boundaries จาก rule start/end, existing slot start/end และ planned slot start/end เพื่อไม่ตรวจเฉพาะจุดเริ่ม
-4. หาก segment ใด `concurrent > max` ให้ reject ทั้ง request
-5. ใช้ half-open semantics เหมือนส่วนอื่น
+ใช้ตรวจกฎ “Template ห้ามเวลาทับซ้อนกัน” รวม occurrence ที่เริ่มก่อน request แต่ลากเข้ามา
 
-กรณีที่ Min บังคับให้สร้าง Slot ซึ่ง Slot นั้นยาวไปทับช่วง Max rule อื่นและทำให้เกิน Max ต้องถือว่า plan ทำไม่ได้และ rollback ทั้งหมด
+**Scheduling candidate set**
 
-ห้ามลด/ปิด Max validation ของ manual CreateMany; task นี้เพิ่ม validation ใน Auto Create เท่านั้น
+```text
+occ.start >= requestStart && occ.end <= requestEnd
+```
 
-### 5.8 Atomicity และ concurrency
-
-Auto Create ต้องทำ mutable planning state ทั้งหมดใน Serializable transaction เดียวกัน
-
-ก่อน transaction:
-
-- ทำ authorization ด้วย `verifyWorkSchedulePositionByWorkScheduleAdmin`
-- DTO validation ทำตาม Nest/Zod pipeline ปกติ
-
-ภายใน transaction ทุก retry:
-
-1. lock Position ด้วย `SELECT ... FOR UPDATE` ตาม pattern ของ CreateMany/MinMax
-2. re-read Position + Place timezone
-3. re-read selected Templates + related Slot Type
-4. re-read selected StaffPositions
-5. re-read existing Position Slots และ existing Slots ของ selected Staff
-6. re-read Holidays ของ selected Staff
-7. re-read MinMax rules
-8. generate occurrences และวางแผนใหม่ทั้งหมด
-9. validate Template overlap, Min feasibility, Staff availability และ Max
-10. `createMany` planned Slots เพียงครั้งเดียวเมื่อทุก validation ผ่าน
-11. return `{ createdCount: plannedSlots.length }`
-
-retry behavior:
-
-- ใช้ Serializable transaction
-- เมื่อ Prisma error code เป็น `P2034` ให้ retry transaction ใหม่ตาม pattern เดิม
-- ต้อง re-read/re-plan ใหม่ทุก retry ห้าม cache planned result จาก attempt ก่อนหน้า
-- domain/validation conflict ไม่ retry
+เฉพาะชุดนี้เท่านั้นที่อนุญาตให้สร้าง Slot
 
 ผลที่ต้องได้:
 
-- ไม่มี partial insert
-- ไม่มี success จาก plan ที่ถูกคำนวณนอก transaction แล้วนำมาใช้กับ state ใหม่
-- concurrent Holiday/Slot/MinMax/StaffPosition/Template change ต้องถูกจัดการด้วย transaction snapshot + Serializable retry semantics ไม่ใช่ frontend preflight
+- occurrence ที่เริ่มก่อน request แต่ลากเข้ามาไม่ถูกสร้าง Slot แต่ยังเข้าร่วม overlap validation
+- occurrence ที่จบหลัง request ไม่ถูกสร้าง Slot
+- touching request boundary ตาม half-open semantics ไม่ถูกนับเป็น overlap
 
-## 6. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
+### 4.7 DST / ambiguous / nonexistent local time
 
-สัญลักษณ์: `A` = เพิ่มไฟล์, `M` = แก้ไฟล์, `-` = ไม่แก้
+การเช็กเพียง `DateTime.isValid` ไม่พอสำหรับ local wall time
+
+Backend ต้องใช้กฎนี้ทุกครั้งที่ประกอบ Template occurrence:
+
+1. parse `HH:mm` เป็น intended hour/minute
+2. สร้าง DateTime จาก intended year/month/day/hour/minute ใน Place timezone
+3. timezone ต้อง valid
+4. round-trip local components ของ DateTime ที่ได้ต้องตรง intended year/month/day/hour/minute ทุกตัว
+   - ถ้า library shift เวลาเพราะ wall time ไม่มีจริง ให้ reject
+5. ใช้ Luxon `getPossibleOffsets()` กับ local wall time ที่ resolve แล้ว
+   - ต้องได้ possible offset เพียงหนึ่งค่า
+   - ถ้ามากกว่าหนึ่งค่าให้ถือว่า ambiguous และ reject
+6. เมื่อ start instant ชัดเจนแล้วค่อยบวก elapsed `durationMinute` เพื่อหา end
+
+Frontend ใช้ `datetime-local` จึงต้องใช้หลักเดียวกันกับ `start_time` / `end_time` **ก่อน** แปลงเป็น ISO with offset:
+
+- round-trip local components
+- reject nonexistent wall time
+- reject ambiguous wall time
+- ห้ามให้ผู้ใช้ submit แล้วปล่อยให้ Luxon เลือก/shift offset เงียบ ๆ
+
+เหตุผล: เมื่อ frontend ส่ง instant ที่มี explicit offset ไปแล้ว backend ไม่สามารถย้อนรู้ได้ว่าค่า wall-clock ที่ผู้ใช้พิมพ์เดิม ambiguous/nonexistent หรือไม่
+
+### 4.8 Selected Template occurrences ห้าม overlap
+
+นำ **Overlap-check set** ของ selected Templates ทั้งหมดมา sort ตาม:
+
+1. start instant ascending
+2. end instant ascending
+3. template ID ascending
+
+ตรวจ half-open overlap
+
+- พบ overlap ใด ๆ => reject request ทั้งก้อน
+- รวม occurrence จากคนละ Template
+- รวม occurrence คนละวันของ Template เดียวกัน เช่น duration ยาวจนซ้อนวันถัดไป
+- boundary ที่แตะกันพอดีอนุญาต
+
+ห้ามตรวจจาก `HH:mm` อย่างเดียว เพราะ duration, ข้ามวัน และ DST ทำให้ช่วง instant ต่างจากการเทียบ string
+
+### 4.9 อ่าน planning data ภายใน transaction
+
+อย่างน้อยต้องอ่าน:
+
+- existing Position Slots ที่ overlap request สำหรับ Min/Max coverage
+- existing Slots ของ selected Staff ที่ overlap request **ทุก Position** สำหรับ Staff availability
+- Holidays ของ selected Staff ที่ overlap request
+- MinMax rules ของ target Position ที่ overlap request
+
+Query ต้องใช้ half-open predicate และอ่านใหม่ทุก Serializable retry
+
+### 4.10 คำนวณ Min deficit แบบ atomic segments
+
+พิจารณาเฉพาะ MinMax rule ที่ overlap request และ `min != null`
+
+สำหรับแต่ละ rule:
+
+1. clip rule เป็น target interval ที่ intersection กับ request
+2. boundaries ประกอบด้วย:
+   - target start/end
+   - start/end ของ existing Position Slot ที่ตัดผ่าน target (clip เข้า target)
+   - start/end ของ Scheduling candidate occurrence ที่ตัดผ่าน target (clip เข้า target)
+3. sort + deduplicate boundaries
+4. พิจารณาทุก atomic segment `[boundary[i], boundary[i+1])`
+5. `existingCount` = จำนวน existing Position Slots ที่ overlap segment
+6. `deficit = max(0, min - existingCount)`
+7. ถ้า deficit เป็น 0 ไม่ต้องทำอะไร
+8. ถ้า deficit > 0 ต้องมี Scheduling candidate occurrence ที่ครอบ segment ทั้งก้อน:
+   - `occ.start <= segmentStart`
+   - `occ.end >= segmentEnd`
+9. เพราะ selected occurrences ห้าม overlap จึงต้องมี candidate ครอบ segment ได้ไม่เกินหนึ่ง occurrence
+10. ถ้าไม่มี candidate ครอบ deficient segment => reject request ทั้งก้อน
+11. สำหรับ occurrence หนึ่งรายการ ให้ `requiredAdditional` = maximum deficit ของ deficient segments ที่ occurrence นั้นครอบ
+12. occurrence ที่ `requiredAdditional = 0` ไม่สร้าง Slot
+
+ห้าม sum deficits หลาย segment ของ occurrence เดียวกัน เพราะ Slot ชุดเดียวกันครอบหลาย segment พร้อมกัน
+
+### 4.11 เลือก Staff ตาม ID แบบ deterministic
+
+ประมวลผล occurrences ที่ `requiredAdditional > 0` ตาม:
+
+1. occurrence start ascending
+2. occurrence end ascending
+3. template ID ascending
+
+Staff candidates เรียง `staffId` ascending
+
+Staff ใช้ได้เมื่อ:
+
+- active StaffPosition ผ่าน validation แล้ว
+- ไม่มี existing Slot ของ Staff คนนั้นจาก Position ใด ๆ overlap occurrence
+- ไม่มี Holiday overlap occurrence
+- ไม่มี planned Slot ก่อนหน้าจาก request เดียวกัน overlap occurrence
+
+สำหรับ occurrence แต่ละตัว:
+
+- เดิน Staff ID จากน้อยไปมาก
+- คนที่ใช้ไม่ได้ให้ข้าม
+- เลือกจนได้ `requiredAdditional`
+- ถ้าไม่ครบ => reject request ทั้งก้อน
+- ห้าม fallback ไป Staff ที่ไม่ได้เลือก
+
+planned Slot ใช้:
+
+- target `positionId`
+- selected `staffId`
+- `slotTypeId` จาก Template
+- occurrence start/end ที่ resolve แล้ว
+
+### 4.12 Max validation และ no-op semantics
+
+หลังคำนวณ tentative planned Slots:
+
+#### ถ้า plan ว่าง
+
+- return `{ createdCount: 0 }`
+- ไม่เรียก `createMany`
+- ไม่ fail เพียงเพราะข้อมูลเดิมมี Max violation อยู่แล้ว เนื่องจาก request นี้ไม่ได้เพิ่ม Slot หรือทำให้ violation แย่ลง
+
+#### ถ้ามี planned Slots
+
+สำหรับทุก Max rule ที่เกี่ยวข้อง:
+
+1. สร้าง atomic boundaries จาก clipped Max rule, existing Position Slots และ planned Slots
+2. ต่อ segment คำนวณ `existingCount` และ `plannedCount`
+3. reject เมื่อ:
 
 ```text
-CURRENT_TASK_PLAN.md                                               - (Implementor ไม่ต้องแก้)
-VERIFICATION_TABLE.md                                              - (Implementor ไม่ต้องแก้)
+plannedCount > 0 && existingCount + plannedCount > max
+```
+
+ดังนั้น Auto Create:
+
+- ห้ามสร้าง/เพิ่ม Max violation
+- แต่ไม่เป็น repair validator ที่ block no-op เพราะ violation เก่าที่ request ไม่ได้แตะ
+
+หาก Min ต้องการ Slot แต่ Max ทำให้สร้างไม่ได้ ให้ reject ทั้ง request ไม่ลด Min และไม่ insert บางส่วน
+
+### 4.13 Atomicity / retry
+
+ภายในแต่ละ retry attempt ต้อง re-read + re-plan ทั้งหมด:
+
+1. lock Position
+2. re-read Position/Place
+3. re-read Templates/SlotTypes
+4. re-read StaffPositions
+5. generate/validate occurrences
+6. re-read Slot/Holiday/MinMax data
+7. calculate deficits
+8. assign Staff
+9. validate Max
+10. insert planned Slots เมื่อทุกอย่างผ่าน
+
+ข้อกำหนด:
+
+- `createMany` ไม่เกินหนึ่งครั้งต่อ successful attempt
+- ห้าม insert ทีละ occurrence ก่อนรู้ว่าทั้ง request feasible
+- P2034 => retry ด้วย snapshot ใหม่
+- domain validation error => ไม่ retry
+- retry exhausted => fail โดยไม่มี partial result
+
+## 5. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
+
+สัญลักษณ์: `A` = เพิ่ม, `M` = แก้, `-` = ไม่แก้
+
+```text
+CURRENT_TASK_PLAN.md                                               -
+VERIFICATION_TABLE.md                                              -
 
 ecosystem-backend-nest-js/
 └─ src/modules/work-schedule/slot/
@@ -386,6 +472,7 @@ ecosystem-backend-nest-js/
    ├─ slot.module.ts                                               M
    └─ commands/
       ├─ auto-create.command.ts                                    A
+      ├─ auto-create.command.spec.ts                               A
       ├─ auto-create.handler.ts                                    A
       ├─ auto-create.handler.spec.ts                               A
       ├─ create-many.command.ts                                    -
@@ -401,367 +488,390 @@ ecosystem-frontend-next-js/
    └─ features/work-schedule/slot/
       ├─ api/mutations/auto-create.api.ts                          A
       ├─ hooks/use-auto-create.ts                                  A
-      └─ components/auto-create-form.tsx                           A
+      └─ components/
+         ├─ auto-create-form.tsx                                   A
+         └─ auto-create-form.test.tsx                              A
 ```
 
 ไม่คาดหวังการแก้:
 
-- Prisma schema / migration
-- manual `create-many` DTO/handler
-- Min/Max CRUD
+- Prisma schema / migrations
+- Manual CreateMany
+- MinMax CRUD
 - Holiday CRUD
-- Slot Template CRUD
+- Template CRUD
 - Slot Type CRUD
-- Staff Position CRUD
+- StaffPosition CRUD
 
-หาก Implementor พบว่าต้องแก้ไฟล์นอกโครงสร้างนี้เพียงเพื่อ import/type/build ให้แก้ได้เท่าที่จำเป็นและต้องไม่เปลี่ยน Business Logic อื่น หากต้องเปลี่ยน Business Logic ของ module อื่นให้หยุดและแจ้งผู้ใช้ก่อน
+หากต้องแก้ไฟล์นอก list เพียงเพื่อ import/type/build ให้แก้เท่าที่จำเป็นและห้ามเปลี่ยน Business Logic อื่น หากพบว่าจำเป็นต้องเปลี่ยน Business Logic ของ module อื่น ให้หยุดและแจ้งผู้ใช้ก่อน
 
-## 7. รายละเอียดการเปลี่ยนแปลงระดับไฟล์
+## 6. รายละเอียดการเปลี่ยนแปลงระดับไฟล์
 
-### 7.1 Backend: `slot/commands/auto-create.command.ts` — A
+### 6.1 `slot/commands/auto-create.command.ts` — A
 
-สร้าง DTO/Command โดยใช้ pattern เดียวกับ Slot commands ปัจจุบัน
+ใช้ style เดียวกับ `create-many.command.ts`
 
-Param:
+ต้อง export:
 
-- `position_id`: UUID v7
+- Param schema / DTO
+- Body schema / DTO
+- `AutoCreateCommand`
 
-Body:
+Body fields ตามข้อ 4.1 และ uniqueness/cross-field validation ตามข้อ 4.2
 
-- `start_time`: ISO datetime ที่มี offset
-- `end_time`: ISO datetime ที่มี offset
-- `slot_template_ids`: UUID v7 array, min 1
-- `staff_ids`: UUID v7 array, min 1
+ห้ามใส่ planner logic ใน schema
 
-validation เพิ่มเติม:
+### 6.2 `slot/commands/auto-create.command.spec.ts` — A
 
-- `end_time > start_time`
-- `slot_template_ids` ห้ามซ้ำ
-- `staff_ids` ห้ามซ้ำ
+ต้องทดสอบ DTO อย่างน้อย:
 
-สร้าง `AutoCreateCommand` เก็บ `clerkId`, param, body
+- valid payload
+- empty Template array
+- empty Staff array
+- duplicate Template ID
+- duplicate Staff ID
+- non-v7 IDs
+- datetime ไม่มี offset
+- `end === start`
+- `end < start`
 
-เกณฑ์ผ่าน:
+ใช้ UUID v7 fixture ที่ valid จริง
 
-- invalid UUID, invalid datetime, empty array, duplicate ID, `end <= start` ถูก reject ก่อน handler
+### 6.3 `slot/commands/auto-create.handler.ts` — A
 
-### 7.2 Backend: `slot/commands/auto-create.handler.ts` — A
-
-Dependency:
+Dependency หลัก:
 
 - `PrismaService`
 - `AccessControlService`
 - Luxon `DateTime`
 
-ต้อง implement Business Logic ข้อ 5 ทั้งหมด โดยให้โครง flow ชัดเจน:
+Implement ตามลำดับ Business Logic ในข้อ 4 โดยเฉพาะ:
 
-1. authorize Position
-2. เรียก helper retry ที่เปิด Serializable transaction
-3. lock Position
-4. query Position + Place timezone
-5. query selected Templates พร้อม:
-   - `id`
-   - `workSchedulePositionId`
-   - `slotTypeId`
-   - `startTime`
-   - `durationMinute`
-   - `slotType.positionId`
-   - `slotType.deletedAt`
-6. validate Template count/ownership/SlotType ownership/SlotType active
-7. query selected active StaffPosition links และ validate count
-8. generate + sort occurrences, validate overlap
-9. query data ที่ใช้ planning:
-   - existing Position Slots ที่ทับ request สำหรับ Min/Max
-   - existing Slots ของ selected Staff ที่ทับ request ไม่ว่าจะอยู่ Position ใด สำหรับ Staff availability
-   - Holidays ของ selected Staff ที่ทับ request
-   - MinMax rules ของ Position ที่ทับ request
-10. คำนวณ Min deficits ตาม atomic segments
-11. assign Staff ตาม ID โดยคำนึง existing + planned Slot/Holiday
-12. validate Max ด้วย existing + planned
-13. หาก planned list ว่าง return `{ createdCount: 0 }` โดยไม่เรียก `createMany`
-14. หากมี planned list เรียก `tx.workScheduleSlot.createMany` ครั้งเดียว
-15. return `{ createdCount: plannedSlots.length }`
+- authorization ก่อน tx
+- Serializable retry
+- Position lock
+- in-transaction Position/Place revalidation
+- Template/SlotType/StaffPosition validation
+- duration lookback occurrence generation
+- DST exact/ambiguous validation
+- overlap-check set + scheduling candidate set
+- Min segmentation
+- deterministic Staff assignment
+- Max touched-segment validation
+- no-op early success หลัง planner ได้ planned list ว่าง
+- atomic createMany
 
-ข้อกำหนดด้าน determinism:
+ห้าม:
 
-- sort Template/occurrence ทุกครั้งก่อน planning
-- sort selected Staff IDs ascending
-- อย่าพึ่ง order จาก Prisma เว้นแต่ query ระบุ `orderBy` และยังต้องรักษา tie-breaker ตามแผน
+- เรียก HTTP Manual CreateMany จาก backend
+- วางแผนนอก transaction แล้วนำ plan เข้า transaction
+- เชื่อ Prisma row order
+- silently skip invalid Template/Staff
+- insert ทีละ Slot
+- ใช้ browser timezone
 
-ข้อห้าม:
+### 6.4 `slot/commands/auto-create.handler.spec.ts` — A
 
-- ห้ามเรียก HTTP endpoint CreateMany จาก backend
-- ห้ามวางแผนนอก transaction แล้วค่อย insert
-- ห้าม silently skip invalid Template/SlotType/Staff
-- ห้ามแก้ manual CreateMany behavior
-- ห้ามใช้ browser/client timezone เป็น authority
-- ห้าม insert ทีละ Slot
+ใช้ mocked Prisma เท่านั้นตาม repository testing convention; ห้ามต่อ database จริง
 
-เกณฑ์ผ่าน:
+#### Authorization / transaction / validation
 
-- input + DB snapshot เดียวกันให้ assignment เดิม
-- Template ที่ Slot Type คนละ Positionหรือถูกลบต้อง fail ก่อน insert
-- ไม่มี partial insert เมื่อ Min ทำไม่ได้, Staff ไม่พอ, Holiday/Slot conflict หรือ Max conflict
-- rerun เมื่อ Min เต็มแล้วไม่สร้าง Slot เพิ่ม
-- `createMany` ถูกเรียกสูงสุดหนึ่งครั้งต่อ successful attempt
+1. authorize target Position
+2. Serializable transaction + Position lock ถูกใช้
+3. Position/Place ถูก re-read หลัง lock
+4. Position/Place inactive => fail
+5. invalid Place timezone => fail
+6. Template หาไม่ครบ/ผิด Position => fail
+7. Template SlotType ผิด Positionหรือ deleted => fail
+8. malformed Template `HH:mm` => fail
+9. invalid/non-positive `durationMinute` => fail
+10. selected StaffPosition หาไม่ครบ => fail
 
-### 7.3 Backend: `slot/commands/auto-create.handler.spec.ts` — A
+#### Occurrence / overlap
 
-ใช้ mocked Prisma เท่านั้นตาม `AGENTS.md`; ห้ามต่อ database จริง
+11. normal timezone occurrence resolve ถูกต้อง
+12. occurrence ใช้ calendar-day iteration
+13. occurrence fully contained เป็น candidate
+14. occurrence เริ่มก่อน request แต่ลากเข้ามาไม่ถูกสร้าง
+15. occurrence จบหลัง request ไม่ถูกสร้าง
+16. selected Template occurrences overlap => fail
+17. Template เดียวกัน duration ยาวจน overlap occurrence วันถัดไป => fail
+18. touching boundaries => ผ่าน
+19. **critical:** occurrence เริ่มวันก่อน request และลากเข้ามาทับ selected occurrence ภายใน request => ต้องตรวจเจอ overlap และ fail
 
-อย่างน้อยต้องมี cases ต่อไปนี้:
+#### DST
 
-1. Admin authorization ถูกเรียกด้วย Position ที่ส่งมา
-2. reject เมื่อ Template ID หาไม่ครบหรือไม่ใช่ Position
-3. reject เมื่อ Template อ้าง Slot Type คนละ Position
-4. reject เมื่อ Template อ้าง Slot Type ที่ `deletedAt != null`
-5. reject เมื่อ Staff ID บางตัวไม่มี active StaffPosition ของ Position
-6. generate occurrences ด้วย Place timezone และ reject invalid local DateTime
-7. reject selected Template occurrences ที่ overlap รวมกรณีข้ามวัน/Template เดียวกันซ้อนวันถัดไป
-8. touching half-open boundary ผ่าน
-9. occurrence ที่ไม่ fully contained ใน request ไม่ถูกใช้สร้าง Slot
-10. existing Position Slots ถูกนับก่อนคำนวณ Min และ Slot ของ Staff ที่ไม่ได้เลือกก็ยังนับ coverage
-11. เมื่อมี deficit เลือก Staff ตาม ID จากน้อยไปมาก
-12. Staff ID ต่ำกว่าที่มี existing Slot ทับถูกข้าม แล้วใช้ ID ถัดไป
-13. Staff ID ต่ำกว่าที่มี Holiday ทับถูกข้าม แล้วใช้ ID ถัดไป
-14. existing Slot ของ Staff ใน Position อื่นทำให้ Staff คนนั้นลง occurrence ไม่ได้
-15. planned Slot ก่อนหน้าจาก request เดียวกันทำให้ Staff คนนั้นลง occurrence ที่ overlap ไม่ได้
-16. เมื่อไม่มี candidate occurrence ครอบ under-covered Min segment ให้ reject และไม่ insert
-17. เมื่อ Staff ที่ลงได้ไม่พอให้ถึง Min ให้ reject และไม่ insert
-18. planned + existing Slots ห้ามเกิน Max ตลอด atomic segments
-19. `min = 0`, `min = null`, ไม่มี Min rule หรือ Min เต็มแล้ว ต้องไม่สร้าง Slot เพิ่ม
-20. success ที่มี plan ใช้ `createMany` ครั้งเดียวและคืน `createdCount` ถูกต้อง
-21. success ที่ไม่มี plan คืน `createdCount: 0` และไม่เรียก `createMany`
-22. Serializable transaction และ Position lock ถูกใช้
-23. `P2034` ทำให้ retry และ re-read/re-plan; domain conflict ไม่ retry
+20. nonexistent local Template time ใน spring-forward => fail
+21. ambiguous local Template time ใน fall-back => fail
+22. normal local time => ผ่าน
+23. duration เป็น elapsed minutes หลัง resolve start และทำงานถูกเมื่อข้าม DST transition
 
-Test fixtures ต้องใช้ UUID v7 ที่ valid และ timestamps ชัดเจน ห้ามพึ่ง timezone ของ test runner
+ใช้ timezone fixture ที่มี DST และ timestamps ชัดเจน ห้ามพึ่ง timezone ของ test runner
 
-### 7.4 Backend: `slot.controller.ts` — M
+#### Min
 
-- import AutoCreate DTO/Command/response type ตามที่สร้าง
-- เพิ่ม `@Post('positions/:position_id/auto')`
-- ใช้ `ClerkAuthGuard`
-- ส่ง `clerkUser.sub`, param, body เข้า CommandBus
-- return `{ createdCount }`
-- ห้ามเปลี่ยน path/behavior endpoint เดิม (`@Post(':position_id')` และอื่น ๆ)
+24. existing Position Slot ลด deficit ถูกต้อง
+25. existing Slot ของ Staff ที่ไม่ได้เลือกยังนับ Min coverage
+26. Min เต็มอยู่แล้ว => plan ว่าง
+27. `min = 0` / `min = null` / ไม่มี Min rule => ไม่สร้าง
+28. deficient segment มี candidate ครบ => สร้างเท่าที่ขาด
+29. candidate ครอบหลาย deficient segments => ใช้ maximum deficit ไม่ sum
+30. deficient segment ไม่มี candidate ครอบ => fail atomic
 
-เกณฑ์ผ่าน:
+#### Staff availability
 
-- route ใหม่ compile และไม่ชน route เดิม
-- manual endpoint เดิมยัง compile/test ผ่าน
+31. เลือก Staff ID ต่ำสุดที่ว่าง
+32. Staff ID ต่ำกว่ามี Slot overlap target Position => ข้าม
+33. Staff ID ต่ำกว่ามี Slot overlap Position อื่น => ข้าม
+34. Staff มี Holiday overlap => ข้าม
+35. touching Slot/Holiday boundary => ใช้ Staff ได้
+36. planned overlap จาก request เดียวกัน => ข้าม
+37. Staff ว่างไม่พอ => fail ไม่มี insert
 
-### 7.5 Backend: `slot.module.ts` — M
+#### Max / no-op
 
-- import/register Auto Create handler ใน `CommandHandlers`
-- ไม่สร้าง feature module ใหม่
+38. planned + existing เกิน Max ใน touched segment => fail
+39. planned + existing ไม่เกิน Max => ผ่าน
+40. plan ว่างและมี pre-existing Max violation => return 0 ไม่ failเพียงเพราะ violation เก่า
+41. pre-existing Max violation ใน segment ที่มี `plannedCount > 0` => fail
 
-เกณฑ์ผ่าน:
+#### Atomicity / retry
 
-- Nest dependency resolution ผ่าน build/typecheck
+42. failure หลังคำนวณบาง occurrence => ไม่ insert บางส่วน
+43. success plan => `createMany` ครั้งเดียว + `createdCount` ถูกต้อง
+44. no-op => ไม่เรียก `createMany`
+45. P2034 ครั้งแรกแล้ว retry สำเร็จ => re-read/re-plan ใหม่และไม่ duplicate
+46. P2034 จนหมด retry => fail ไม่มี partial result
+47. domain error => ไม่ retry
 
-### 7.6 Frontend: `features/work-schedule/slot/api/mutations/auto-create.api.ts` — A
+### 6.5 `slot.controller.ts` — M
 
-- import `AutoCreateDtoParamSchema` / `AutoCreateDtoBodySchema` จาก backend แบบเดียวกับ `create-many.api.ts`
-- `safeParse` param/body ก่อนยิง request
+เพิ่ม:
+
+`@Post('positions/:position_id/auto')`
+
+ใช้ auth/validated DTO/CommandBus pattern เดิม และคืน `{ createdCount }`
+
+ห้ามเปลี่ยน route/behavior `@Post(':position_id')` เดิม
+
+### 6.6 `slot.module.ts` — M
+
+register Auto Create handler ใน CommandHandlers ตาม pattern เดิม
+
+ไม่สร้าง module ใหม่ถ้า dependency เดิมเพียงพอ
+
+### 6.7 `features/work-schedule/slot/api/mutations/auto-create.api.ts` — A
+
+ตาม pattern `create-many.api.ts`:
+
+- import Auto Create Zod schemas จาก backend
+- `safeParse` param/body
 - POST `/api/work-schedule/slot/positions/${positionId}/auto`
-- payload ใช้ field backend ตรง ๆ
-- response type `{ createdCount: number }`
-- ใช้ `apiClient` + Authorization Bearer token ตาม pattern เดิม
+- Bearer token ผ่าน `apiClient`
+- return `{ createdCount: number }`
+- ไม่มี scheduling calculation ใน API client
 
-เกณฑ์ผ่าน:
+### 6.8 `features/work-schedule/slot/hooks/use-auto-create.ts` — A
 
-- request/response type ตรง Backend
-- frontend API client ไม่มี scheduling calculation
+ตาม pattern `use-create-many.ts`:
 
-### 7.7 Frontend: `features/work-schedule/slot/hooks/use-auto-create.ts` — A
+- get Clerk token
+- call Auto API
+- on success invalidate Slot list query key ของ Position
+- ไม่ optimistic-update allocation เอง
 
-- ใช้ `useMutation` pattern เดียวกับ `use-create-many.ts`
-- ขอ Clerk token ก่อนเรียก API
-- mutation variables มี `positionId`, `startTime`, `endTime`, `slotTemplateIds`, `staffIds` และ optional error handling parameterเฉพาะถ้าจำเป็นตาม pattern เดิม
-- หลัง success invalidate `workScheduleSlotKeys.listsByPositionId(userId, positionId)`
+### 6.9 `app/.../slot/new/auto/page.tsx` — A
 
-เกณฑ์ผ่าน:
+ใช้ sibling route pattern:
 
-- หลังสร้างอัตโนมัติ Slot list ไม่ค้าง cache เก่า
+- Server Internal Only + CSR/Suspense pattern ตาม route เดิม
+- ส่ง `placeId` / `positionId` ให้ client page
 
-### 7.8 Frontend: `features/work-schedule/slot/components/auto-create-form.tsx` — A
+### 6.10 `app/.../slot/new/auto/client-page.tsx` — A
 
-Form ต้องมี:
-
-- `start_time` แบบ `datetime-local`
-- `end_time` แบบ `datetime-local`
-- checkbox Template ทั้งหมดของ Position
-- checkbox Staff ทั้งหมดของ Position
-- ปุ่ม cancel
-- submit button ที่ disabled ระหว่าง mutation
-
-Validation ขั้นต่ำฝั่ง UI:
-
-- ต้องเลือก Template อย่างน้อย 1
-- ต้องเลือก Staff อย่างน้อย 1
-- start/end ต้องมีค่าและ end > start
-
-ก่อนส่ง:
-
-- แปลง `datetime-local` ด้วย Place timezone ตาม Luxon pattern ของ MinMax form
-- ตรวจ `DateTime.isValid`; ถ้า invalid ให้แสดง validation error และห้ามส่ง
-- ส่งเฉพาะ selected Template IDs + Staff IDs + ISO start/end
-- ห้าม frontend generate Slot หรือคำนวณ Min/Max/availability
-
-หลังส่ง:
-
-- `createdCount > 0`: toast success พร้อมจำนวนที่สร้าง แล้วกลับหน้า Slot ของ Position
-- `createdCount === 0`: แจ้งว่าไม่มี Slot ที่ต้องเพิ่มในช่วงที่เลือก แล้วกลับหน้า Slot
-- error: ไม่ redirect เป็น success และเปิดให้ผู้ใช้แก้ช่วงเวลา/selection แล้ว submit ใหม่
-
-เลือกทำ select-all/clear-all สำหรับ Template/Staff ได้ แต่ไม่ใช่ acceptance requirement
-
-เกณฑ์ผ่าน:
-
-- UI ไม่ submit input ที่ไม่ครบ
-- timezone conversion ใช้ Place timezone ไม่ใช้ browser timezone โดยปริยาย
-
-### 7.9 Frontend: `app/.../slot/new/auto/page.tsx` — A
-
-- ใช้ Server Internal Only + CSR pattern แบบ sibling route
-- resolve `placeId`, `positionId` แล้วส่งให้ `client-page.tsx`
-- task นี้ไม่มี query param เพิ่ม จึงไม่ต้องเพิ่ม validation logic ที่ไม่จำเป็น
-
-### 7.10 Frontend: `app/.../slot/new/auto/client-page.tsx` — A
-
-query พร้อมกัน:
+query อย่างน้อย:
 
 - Slot Templates by Position
-- Staff Positions by Position
-- Place by ID เพื่อ timezone
+- StaffPositions by Position
+- Place detail เพื่อ timezone
 
-ใช้ pattern เดิมของ `useAuth`, `useQuery`, `useEffectCheckError`, Redirect UI, Error และ Loading
+Behavior:
 
-การ reuse error/loading:
+- loading/error/redirect ตาม sibling flow
+- ไม่มี Template => แจ้งให้สร้าง Template ก่อนและไม่ render submit-able form
+- ไม่มี StaffPosition => แจ้งให้เพิ่ม Staff ก่อนและไม่ render submit-able form
+- ข้อมูลครบ => render AutoCreateForm
+- Backend เป็นผู้ validate SlotType ownership/active และ planner state
 
-- สามารถ import sibling `../error-code-redirect-list`, `../error`, `../loading` หาก path/type ใช้ได้ตรง ๆ
-- ถ้า TypeScript/Next route boundary บังคับให้มีไฟล์เฉพาะ route ให้เพิ่มเฉพาะไฟล์ที่จำเป็นต่อ compile และไม่เปลี่ยน Business Logic
+### 6.11 `features/work-schedule/slot/components/auto-create-form.tsx` — A
 
-render behavior:
+Fields:
 
-- ไม่มี Template: แสดงข้อความให้ Admin สร้าง Template ก่อนและไม่ render form ที่ submit ได้
-- ไม่มี StaffPosition: แสดงข้อความให้ Admin เพิ่ม Staff ก่อนและไม่ render form ที่ submit ได้
-- มีข้อมูลครบ: render `AutoCreateForm`
-- back/cancel: `.../slot/new/menu`
-- success: `.../slot`
+- `start_time` datetime-local
+- `end_time` datetime-local
+- multi-select/checkbox Templates
+- multi-select/checkbox Staff
+- submit/cancel
 
-หมายเหตุ: Auto page ใช้ list Template แค่ `id`, `name`; validation Slot Type ownership/active เป็นหน้าที่ Backend ตามข้อ 5.2
+Validation:
 
-### 7.11 Frontend: `slot/new/menu/client-page.tsx` — M
+- start/end required
+- end > start
+- Template อย่างน้อย 1
+- Staff อย่างน้อย 1
+- local datetime start/end ต้องมีจริงและ unambiguous ใน Place timezone ตามข้อ 4.7
 
-เพิ่ม MenuCard ใหม่:
+ก่อน submit:
 
-- href: `.../slot/new/auto`
-- title สื่อว่า “จัดเวรอัตโนมัติ”
-- description สื่อว่าเลือกช่วงเวลา + Template + พนักงานเพื่อเติมจำนวนขั้นต่ำ
-- reuse icon เดิมได้
+1. parse user wall time ด้วย Place timezone
+2. round-trip components
+3. reject nonexistent
+4. reject ambiguous ผ่าน `getPossibleOffsets()`
+5. แปลง valid values เป็น ISO with explicit offset
+6. ส่ง selected IDs
 
-ห้ามแก้ href/behavior ของ 2 เมนูเดิม
+ห้าม frontend generate occurrences, calculate Min/Max, choose Staff หรือทำ availability preflight เป็น business authority
 
-เกณฑ์ผ่าน:
+Success:
 
-- Admin เข้า Auto Create ได้จาก flow เดิม
-- manual/prefill navigation เดิมไม่เปลี่ยน
+- `createdCount > 0` => toast จำนวนที่สร้าง + กลับหน้า Slot
+- `createdCount === 0` => แจ้งว่าไม่มี Slot ที่ต้องเพิ่ม + กลับหน้า Slot
+- error => อยู่หน้าเดิมให้แก้ input
 
-## 8. ลำดับ Implementation ที่ Implementor ต้องทำ
+### 6.12 `auto-create-form.test.tsx` — A
 
-### ขั้นที่ 1 — Backend contract
+อย่างน้อย:
 
-- เพิ่ม `auto-create.command.ts`
-- ต่อ route/controller/module
-- ให้ typecheck ผ่านก่อนเริ่ม logic ยาวถ้าทำได้
+- required selections
+- end <= start block submit
+- valid wall time -> mutation payload เป็น ISO with offset + selected IDs
+- nonexistent DST wall time block ก่อน mutation
+- ambiguous DST wall time block ก่อน mutation
+- success path แสดง/ใช้ `createdCount` และ navigation ตาม contract
 
-ผ่านเมื่อ:
+หาก query invalidation assertion เหมาะกับ hook test มากกว่า ให้เพิ่ม hook test ได้ แต่ acceptance behavior ต้องยังถูกตรวจจริง
 
-- DTO tests หรือ compile ยืนยัน schema ถูกต้อง
-- route/module compile
+### 6.13 `slot/new/menu/client-page.tsx` — M
 
-### ขั้นที่ 2 — Backend planner + tests
+เพิ่ม MenuCard “จัดเวรอัตโนมัติ” ไป route `.../slot/new/auto`
 
-- implement transaction/retry
-- Template/SlotType/Staff validation
-- occurrence generation/overlap
-- Min deficit
-- Staff assignment
-- Max validation
-- insert/return
-- เพิ่ม `auto-create.handler.spec.ts`
+Description สื่อว่าเลือกช่วงเวลา + Template + Staff เพื่อเติมจำนวนขั้นต่ำ
 
-ผ่านเมื่อ:
+ห้ามเปลี่ยน href/behavior ของเมนูเดิม
 
-- auto handler tests ผ่าน
-- `create-many.handler.spec.ts` regression ผ่าน
-- backend typecheck/lint ผ่าน
+## 7. Acceptance Criteria แยกตามขั้น
 
-### ขั้นที่ 3 — Frontend
-
-- API mutation
-- hook
-- form
-- auto page/client page
-- menu entry
+### ขั้น 1 — Contract
 
 ผ่านเมื่อ:
 
-- frontend typecheck/lint/build ผ่าน
-- payload ตรง backend contract
-- ไม่มี scheduling logic รั่วมาอยู่ frontend
+- route ใหม่ compile
+- DTO reject invalid UUID/datetime/duplicates/empty arrays/end<=start
+- DTO tests ผ่าน
 
-### ขั้นที่ 4 — Full verification
+### ขั้น 2 — Transaction / entity invariants
 
 ผ่านเมื่อ:
 
-- `pnpm run verify` ผ่าน
-- ไม่มี Prisma schema/migration change
-- diff ไม่แก้ manual CreateMany/MinMax/Holiday/Template/SlotType/StaffPosition Business Logic โดยไม่ได้วางแผน
+- authorization เดิมยังใช้
+- Position lock + in-transaction Position/Place read มีจริง
+- invalid Place timezone/Template/SlotType/StaffPosition fail ก่อน mutation
+- Serializable + P2034 retry pattern สอดคล้อง flow เดิม
 
-## 9. สิ่งที่ Implementor ต้องระวัง
+### ขั้น 3 — Occurrence / timezone
 
-- ห้ามแก้ข้อความไอเดียต้นฉบับในไฟล์นี้
-- ห้ามเปลี่ยน semantic ของ Holiday `min`; task นี้เพิ่ม semantic สำหรับ Auto planner เท่านั้น
-- ห้ามตีความ “เรียงตาม ID” เป็น round-robin/random/fairness
-- ห้ามนับเฉพาะ selected Staff เป็น Min coverage; existing Slot ของ Position ทุก Staff ต้องนับ
-- ห้ามถือว่า Staff ไม่มี Slot ใน Position นี้แล้วว่าง ต้องตรวจ Slot ทุก Position
-- ห้ามถือว่า Staff ว่างเมื่อมี Holiday ทับ
-- ห้ามเชื่อ `slotTypeId` ใน Template โดยไม่ตรวจว่า Slot Type เป็น Position เดียวกันและยัง active
-- ห้ามแก้ Template CRUD/Slot Type CRUD เพื่อแก้ validation gap นี้ใน task ปัจจุบัน
-- ห้ามใช้ browser timezone เป็น authority ใน planner
-- ห้ามเทียบ Template overlap แค่ `HH:mm`; duration อาจข้ามวันและ DST อาจเปลี่ยน offset
-- ห้ามสร้าง Slot จาก occurrence ที่เลย request boundary
-- ห้ามถือ `end === start` ว่า overlap
-- ห้ามลด/ปิด Max เพื่อให้ Min ผ่าน
-- ห้าม sum deficit ของหลาย segment ใน occurrence เดียว; ใช้ deficit สูงสุดของ occurrence
-- ห้าม insert ทีละ Slot หรือปล่อย partial result
-- ห้าม reuse plan จาก Serializable attempt ที่เจอ `P2034`
-- ห้ามพึ่ง Prisma/database row order สำหรับ logic deterministic
-- ห้ามแก้ business behavior ของ `create-many.handler.ts`; ใช้เป็น reference/regression guard
-- Unit test ต้อง mock Prisma และห้ามต่อ DB จริง
+ผ่านเมื่อ:
 
-## 10. Tests และคำสั่งตรวจสอบ
+- generate ทุก local calendar day ที่เกี่ยวข้อง
+- duration lookback จับ occurrence จากวันก่อน request ได้
+- scheduling candidate ต้อง fully contained
+- ambiguous/nonexistent local Template time ถูก reject
+- selected occurrences overlap ถูก reject รวมข้ามวัน/Template เดียวกัน
 
-จาก repository root
+### ขั้น 4 — Min planner
 
-### Narrow backend tests
+ผ่านเมื่อ:
+
+- existing Position Slots ทุก Staff นับ coverage
+- deficit คำนวณทุก atomic segment
+- สร้างเฉพาะจำนวนที่ขาด
+- under-covered segment ที่ Template cover ไม่ได้ => fail atomic
+- Min เต็มแล้วไม่สร้างเพิ่ม
+
+### ขั้น 5 — Staff allocation
+
+ผ่านเมื่อ:
+
+- assignment deterministic ตาม Staff ID ascending
+- existing Slot ทุก Position / Holiday / planned overlap ถูกเคารพ
+- Staff ไม่พอ => fail ทั้ง request
+
+### ขั้น 6 — Max / atomicity
+
+ผ่านเมื่อ:
+
+- request ไม่เพิ่ม Max violation
+- no-op ไม่ fail เพราะ pre-existing Max violation ที่ไม่ถูก request เพิ่ม
+- ไม่มี partial insert
+- retry ไม่ reuse stale plan
+
+### ขั้น 7 — Frontend
+
+ผ่านเมื่อ:
+
+- เข้า Auto Create จาก menu ได้
+- เลือก range/Templates/Staff ได้หลายรายการ
+- `datetime-local` ใช้ Place timezone
+- ambiguous/nonexistent user wall time ถูก block ก่อน API
+- payload ใช้ ISO with offset
+- success invalidate Slot list และกลับ flow Slot
+- Manual/Pre-fill ไม่เปลี่ยน behavior
+
+## 8. สิ่งที่ Implementor ต้องระวัง
+
+1. ห้ามแก้ข้อความไอเดียต้นฉบับในไฟล์นี้
+2. ห้ามเริ่ม occurrence generation จาก request-start local date อย่างเดียว; ต้องทำ duration lookback ต่อ Template
+3. ห้ามใช้ `DateTime.isValid` อย่างเดียวสำหรับ DST
+4. ห้ามบวกวันด้วย fixed 24 ชั่วโมง; ใช้ local calendar day
+5. ห้ามคำนวณ occurrence end ด้วยการประกอบ wall-clock end ใหม่; resolve start แล้วบวก elapsed duration
+6. ห้ามใช้ inclusive end ใน overlap
+7. ห้ามเทียบ Template overlap จาก `HH:mm` อย่างเดียว
+8. ห้ามสร้าง occurrence ที่เลย request boundary แม้จะใช้ occurrence นั้นตรวจ overlap
+9. ห้ามเชื่อ SlotType ใน Template โดยไม่ validate ownership/active
+10. ห้ามนับเฉพาะ selected Staff เป็น Min coverage
+11. ห้ามจำกัด Staff Slot availability แค่ target Position
+12. ห้ามใช้ browser timezone เป็น authority
+13. ห้าม insert ก่อน planner ทั้ง request feasible
+14. ห้าม retry domain validation error
+15. ห้าม reuse planned result จาก retry attempt ก่อนหน้า
+16. ห้าม block zero-plan เพราะ Max violation เก่าที่ request ไม่ได้เพิ่ม
+17. ห้ามเพิ่ม arbitrary range cap โดยไม่มี requirement เพิ่ม
+18. ห้ามแก้ Manual CreateMany / Holiday / MinMax / Template / SlotType / StaffPosition Business Logic โดยพลการ
+19. ห้ามแก้ Prisma schema/migration สำหรับงานนี้
+
+## 9. Tests และคำสั่งตรวจสอบ
+
+Repository ใช้ `pnpm@11.10.0`
+
+### 9.1 Narrow backend tests
 
 ```bash
-pnpm --dir ecosystem-backend-nest-js run test -- auto-create.handler.spec.ts --runInBand
-pnpm --dir ecosystem-backend-nest-js run test -- create-many.handler.spec.ts --runInBand
-```
-
-ถ้า argument forwarding ของ script ใช้ไม่ได้ ให้ใช้:
-
-```bash
+pnpm --dir ecosystem-backend-nest-js exec jest src/modules/work-schedule/slot/commands/auto-create.command.spec.ts --runInBand
 pnpm --dir ecosystem-backend-nest-js exec jest src/modules/work-schedule/slot/commands/auto-create.handler.spec.ts --runInBand
 pnpm --dir ecosystem-backend-nest-js exec jest src/modules/work-schedule/slot/commands/create-many.handler.spec.ts --runInBand
 ```
 
-### Static/build checks
+### 9.2 Frontend test
+
+รัน test file ใหม่ด้วย test runner/script ที่มีอยู่ใน frontend package เช่นผ่าน root frontend test script พร้อม filter ที่รองรับโดย Vitest; หาก filter syntax ต่างจาก local version ให้ใช้ script ที่ประกาศจริงใน `ecosystem-frontend-next-js/package.json` และอย่าเดาคำสั่งที่ runner ไม่รองรับ
+
+จากนั้นต้องรัน frontend test suite ผ่าน root script:
+
+```bash
+pnpm run test:frontend
+```
+
+### 9.3 Static/build checks
 
 ```bash
 pnpm run typecheck:backend
@@ -772,31 +882,35 @@ pnpm run build:backend
 pnpm run build:frontend
 ```
 
-### Standard repository verification
+### 9.4 Standard repository verification
 
 ```bash
 pnpm run verify
 ```
 
-`pnpm run verify` เป็น standard pre-commit verification ของ repository และครอบคลุม frontend tests, Prisma validate/generate, backend/frontend typecheck, lint, builds, backend tests และ migration tests
+Root `verify` ครอบคลุม frontend tests, Prisma validate/generate, backend/frontend typecheck, lint, builds, backend tests และ migration tests ตาม `package.json`
 
-ไม่บังคับ `pnpm run test:e2e` ใน task นี้ เพราะ `AGENTS.md` ระบุว่า e2e อาจต้องใช้ deployment-specific environment/database; รันเฉพาะเมื่อ environment พร้อม และห้ามเชื่อม/แก้ shared database โดยไม่ได้รับอนุญาต
+`test:e2e` ไม่เป็น acceptance requirement ของ task นี้หาก environment ต้องพึ่ง deployment/database ภายนอก; ห้ามต่อหรือแก้ shared database โดยไม่ได้รับอนุญาต
 
-## 11. Definition of Done
+## 10. Definition of Done
 
 งาน Implement ผ่านเมื่อครบทั้งหมด:
 
-- Admin มีเมนูและหน้า Auto Create ใหม่
-- Admin เลือกช่วงเวลา, Template หลายรายการ และ Staff หลายคนได้
-- Backend reject Template ที่ไม่ใช่ Position, Slot Type คนละ Position หรือ Slot Type ถูกลบ
-- Template occurrences ที่ทับกันใน scheduling window ถูกปฏิเสธ รวมข้ามวัน
-- ระบบเติม Slot เท่าที่จำเป็นให้ถึง Min ในทุก under-covered atomic segment ของช่วง request
-- existing Slot ของ Position ทุก Staff ถูกนับก่อนเติม Min
-- การเลือก Staff deterministic ตาม ID และข้ามคนที่ติด Slot/Holiday/planned overlap
-- ไม่สร้างเกิน Max
-- ถ้า Min ทำไม่ได้ด้วย Template/Staff ที่เลือก request ต้องล้มทั้งชุด
-- ไม่มี partial insert
+- Admin มีเมนู/หน้า Auto Create
+- Admin เลือกช่วงเวลา, Templates หลายรายการ และ Staff หลายคนได้
+- Backend validate selection ภายใน transaction
+- Position/Place/timezone ถูก revalidate หลัง lock
+- Template legacy malformed และ invalid SlotType relation ถูก reject
+- occurrence generation รองรับ duration lookback
+- nonexistent/ambiguous DST wall time ไม่ถูก silently shift/เลือก offset
+- selected Template occurrences ห้าม overlap รวมกรณีข้ามวัน
+- Slot ที่สร้างต้อง fully contained ใน request
+- Min deficit ถูกเติมตาม atomic segments โดยนับ existing Position Slots ทุก Staff
+- Staff ถูกเลือกตาม ID และข้าม Slot/Holiday conflicts ทุก Position
+- request ไม่ทำให้ touched Max segment เกิน Max
+- no-op return 0 โดยไม่ถูก block จาก unrelated pre-existing Max violation
+- infeasible plan ล้มทั้ง request ไม่มี partial insert
 - Serializable retry re-read/re-plan ทุก attempt
-- manual Slot creation, Holiday, MinMax, Template, SlotType และ StaffPosition Business Logic เดิมไม่เปลี่ยน
+- Manual/Pre-fill/MinMax/Holiday/Template/SlotType/StaffPosition Business Logic เดิมไม่เปลี่ยน
 - ไม่มี Prisma schema/migration change
-- narrow tests และ `pnpm run verify` ผ่านใน environment ของ Implementor
+- test ที่เพิ่ม, regression tests และ `pnpm run verify` ผ่านใน environment ของ Implementor
