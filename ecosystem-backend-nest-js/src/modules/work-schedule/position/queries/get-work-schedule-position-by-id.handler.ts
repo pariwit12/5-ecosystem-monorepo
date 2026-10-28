@@ -38,6 +38,7 @@ export class GetWorkSchedulePositionByIdHandler implements IQueryHandler<
         },
         select: {
           name: true,
+          organizationWorkSchedulePlaceId: true,
         },
       });
 
@@ -52,6 +53,7 @@ export class GetWorkSchedulePositionByIdHandler implements IQueryHandler<
 
     return {
       name: workSchedulePosition.name,
+      placeId: workSchedulePosition.organizationWorkSchedulePlaceId,
     };
   }
 }

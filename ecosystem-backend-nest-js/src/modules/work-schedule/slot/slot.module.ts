@@ -8,6 +8,7 @@ import { SlotController } from './slot.controller';
 // ============================
 
 import { CreateWorkScheduleSlotHandler } from './commands/create-many.handler';
+import { AutoCreateHandler } from './commands/auto-create.handler';
 import { UpdateSlotHandler } from './commands/update-slot.handler';
 import { DeleteSlotHandler } from './commands/delete-slot.handler';
 
@@ -28,6 +29,7 @@ import { GetSlotByIdHandler } from './queries/get-slot-by-id.handler';
 // ===========================
 
 const CommandHandlers = [
+  AutoCreateHandler,
   CreateWorkScheduleSlotHandler,
   UpdateSlotHandler,
   DeleteSlotHandler,

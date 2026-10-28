@@ -45,6 +45,7 @@ export class GetWorkSchedulePositionByIdQuery {
 
 export interface GetWorkSchedulePositionByIdResponse {
   name: string;
+  placeId: string;
 }
 
 // ===========================

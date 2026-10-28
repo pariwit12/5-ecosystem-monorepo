@@ -55,6 +55,13 @@ export default function WorkScheduleAdminPositionSlotNewMenuClient({
         //
       >
         <MenuCard
+          href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/auto`}
+          icon={<PlusIcon />}
+          title={`จัดเวรอัตโนมัติ`}
+          description={`เลือกช่วงเวลา แบบร่าง และพนักงาน เพื่อเติมจำนวนเวรขั้นต่ำ`}
+        />
+
+        <MenuCard
           //
           href={`/work-schedule/admin/${placeId}/position/${positionId}/slot/new/pre-fill`}
           icon={<PlusIcon />}

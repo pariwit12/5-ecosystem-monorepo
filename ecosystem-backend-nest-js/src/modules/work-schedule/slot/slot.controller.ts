@@ -29,6 +29,12 @@ import {
   CreateManyDtoBody,
 } from './commands/create-many.command';
 import {
+  AutoCreateCommand,
+  AutoCreateDtoParam,
+  AutoCreateDtoBody,
+  AutoCreateResponse,
+} from './commands/auto-create.command';
+import {
   UpdateSlotCommand,
   UpdateSlotResponse,
   UpdateSlotDtoParam,
@@ -81,6 +87,18 @@ export class SlotController {
   // ===============================
 
   // 1
+  @Post('positions/:position_id/auto')
+  @UseGuards(ClerkAuthGuard)
+  async autoCreate(
+    @Param() param: AutoCreateDtoParam,
+    @Body() body: AutoCreateDtoBody,
+    @ClerkUser() clerkUser: ClerkUserData,
+  ): Promise<AutoCreateResponse> {
+    return this.commandBus.execute<AutoCreateCommand, AutoCreateResponse>(
+      new AutoCreateCommand(clerkUser.sub, param, body),
+    );
+  }
+
   @Post(':position_id')
   @UseGuards(ClerkAuthGuard)
   async createMany(

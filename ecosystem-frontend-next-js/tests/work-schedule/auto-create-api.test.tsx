@@ -1,0 +1,155 @@
+import type { PropsWithChildren } from "react";
+import { act, renderHook } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import apiClient from "@/lib/axios";
+import { useErrorStore } from "@/store/use-error-store";
+import {
+  autoCreate,
+  type AutoCreateDtoBody,
+} from "@/features/work-schedule/slot/api/mutations/auto-create.api";
+import { useAutoCreate } from "@/features/work-schedule/slot/hooks/use-auto-create";
+import { workScheduleSlotKeys } from "@/features/work-schedule/slot/work-schedule-slot-keys";
+
+const mockGetToken = jest.fn();
+jest.mock("@clerk/nextjs", () => ({
+  useAuth: () => ({ userId: "admin", getToken: mockGetToken }),
+}));
+jest.mock("@/lib/axios", () => ({
+  __esModule: true,
+  default: { post: jest.fn() },
+}));
+const mockedPost = jest.mocked(apiClient.post);
+const positionId = "019a01b0-0000-7000-8000-000000000001";
+const templateId = "019a01b0-0000-7000-8000-000000000002";
+const staffId = "019a01b0-0000-7000-8000-000000000003";
+const body: AutoCreateDtoBody = {
+  start_time: "2026-10-28T08:00:00+07:00",
+  end_time: "2026-10-28T18:00:00+07:00",
+  slot_template_ids: [templateId],
+  staff_ids: [staffId],
+};
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockGetToken.mockResolvedValue("test-token");
+  mockedPost.mockResolvedValue({ data: { createdCount: 2 } });
+  useErrorStore.getState().clearError();
+});
+
+it("posts the validated auto contract with token and returns createdCount", async () => {
+  await expect(
+    autoCreate(positionId, body, "test-token", ["skip-code"]),
+  ).resolves.toEqual({ createdCount: 2 });
+  expect(mockedPost).toHaveBeenCalledWith(
+    `/api/work-schedule/slot/positions/${positionId}/auto`,
+    body,
+    {
+      headers: { Authorization: "Bearer test-token" },
+      skipErrorCodes: ["skip-code"],
+    },
+  );
+});
+
+it.each([
+  { slot_template_ids: [] },
+  { staff_ids: [] },
+  { staff_ids: [staffId, staffId] },
+  { start_time: "2026-10-28T08:00:00" },
+  { end_time: body.start_time },
+])("blocks invalid local payload before HTTP (%j)", async (invalid) => {
+  await expect(
+    autoCreate(positionId, { ...body, ...invalid }, "test-token"),
+  ).rejects.toThrow();
+  expect(mockedPost).not.toHaveBeenCalled();
+  expect(useErrorStore.getState()).toMatchObject({
+    isOpen: true,
+    statusCode: 400,
+  });
+});
+
+it("blocks an invalid position ID before HTTP", async () => {
+  await expect(autoCreate("invalid", body, "test-token")).rejects.toThrow();
+  expect(mockedPost).not.toHaveBeenCalled();
+});
+
+function setupHook() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { gcTime: Infinity },
+      mutations: { retry: false },
+    },
+  });
+  const affected = [
+    workScheduleSlotKeys.listsByPositionIdStartTimeEndTime(
+      "admin",
+      positionId,
+      "start1",
+      "end1",
+    ),
+    workScheduleSlotKeys.listsByPositionIdStartTimeEndTime(
+      "admin",
+      positionId,
+      "start2",
+      "end2",
+    ),
+  ];
+  const untouched = [
+    workScheduleSlotKeys.listsByPositionId("another-user", positionId),
+    workScheduleSlotKeys.listsByPositionId("admin", "another-position"),
+  ];
+  [...affected, ...untouched].forEach((key) => client.setQueryData(key, []));
+  const wrapper = ({ children }: PropsWithChildren) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+  const { result } = renderHook(() => useAutoCreate(), { wrapper });
+  const mutate = () =>
+    result.current.mutateAsync({
+      positionId,
+      startTime: body.start_time,
+      endTime: body.end_time,
+      slotTemplateIds: body.slot_template_ids,
+      staffIds: body.staff_ids,
+    });
+  return { client, affected, untouched, mutate };
+}
+
+it.each([0, 2])(
+  "invalidates every range for this user/position after createdCount=%s",
+  async (createdCount) => {
+    mockedPost.mockResolvedValue({ data: { createdCount } });
+    const { client, affected, untouched, mutate } = setupHook();
+    await act(async () => {
+      expect(await mutate()).toEqual({ createdCount });
+    });
+    affected.forEach((key) =>
+      expect(client.getQueryState(key)?.isInvalidated).toBe(true),
+    );
+    untouched.forEach((key) =>
+      expect(client.getQueryState(key)?.isInvalidated).toBe(false),
+    );
+    expect(mockGetToken).toHaveBeenCalledTimes(1);
+  },
+);
+
+it("rejects missing authentication without requesting or invalidating", async () => {
+  mockGetToken.mockResolvedValue(null);
+  const { client, affected, mutate } = setupHook();
+  await act(async () => {
+    await expect(mutate()).rejects.toThrow("Authentication token is missing");
+  });
+  expect(mockedPost).not.toHaveBeenCalled();
+  affected.forEach((key) =>
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false),
+  );
+});
+
+it("preserves cached slots when the backend rejects the plan", async () => {
+  mockedPost.mockRejectedValueOnce(new Error("Infeasible plan"));
+  const { client, affected, mutate } = setupHook();
+  await act(async () => {
+    await expect(mutate()).rejects.toThrow("Infeasible plan");
+  });
+  affected.forEach((key) =>
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false),
+  );
+});
