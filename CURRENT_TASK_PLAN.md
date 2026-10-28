@@ -252,18 +252,21 @@ form แสดง success จาก `createdCount` อยู่แล้ว: ถ
 
 เพิ่ม regression case สำหรับ “ทุก selected staff ไม่ว่างใน occurrence ที่ต้องเติม” หากยังไม่มี test ที่ยืนยัน behavior นี้โดยตรง:
 
-- ตั้ง min ให้เกิด requirement
-- ทำให้ selected staff ทุกคน unavailable ด้วย existing slot/holiday ที่ overlap
+- ตั้ง `min` ให้เกิด requirement ของ occurrence จริง
+- ทำให้ selected staff ทุกคน unavailable โดยแนะนำให้ใช้ `workScheduleHoliday.findMany` คืน holiday ที่ overlap occurrence สำหรับ staff ที่เลือกทุกคน เพราะ holiday block availability โดยไม่เพิ่ม existing coverage ของ target position
+- หากเลือกใช้ existing slot เป็น fixture แทน holiday ต้องเป็น slot ของ selected staff ใน `otherPositionId`; ห้ามใช้ existing slot ใน target `positionId` สำหรับ regression นี้ เพราะ `calculateRequirements()` จะนับ slot นั้นเป็น coverage และอาจลด/ลบ deficit จนไม่ได้ทดสอบ staff shortage จริง
 - คาดหวัง `{ createdCount: 0 }`
 - `createMany()` ต้องไม่ถูกเรียก
 - ต้องไม่ throw เพียงเพราะ minimum ยังไม่ครบ
+
+`expectAtomicFailure()` helper ใน spec ยังต้องเก็บไว้สำหรับ hard-constraint tests อื่นที่ยังควร reject; เปลี่ยนเฉพาะ tests ที่ behavior ใหม่ไม่ใช่ atomic failure และอย่าลด assertion ของ tests เดิมเพื่อทำให้ suite ผ่าน
 
 Tests อื่นเกี่ยวกับ max, invalid templates, overlapping templates, DST, authorization, staff registration, transaction/retry ต้องคงอยู่และผ่านโดยไม่ลด assertion เพื่อให้การแก้ครั้งนี้ไม่ผ่อน constraint อื่นโดยไม่ได้ตั้งใจ
 
 **เกณฑ์ผ่านขั้นตอน 3**
 
 - tests ใหม่/ที่แก้แสดง partial success ทั้งจาก template coverage ไม่พอและ staff ไม่พอ
-- มี test ยืนยัน zero-result success เมื่อจัดไม่ได้เลยเพราะ availability
+- มี test ยืนยัน zero-result success เมื่อ requirement มีอยู่จริงแต่จัดไม่ได้เลยเพราะ availability
 - tests ของ hard constraints เดิมยังผ่าน
 
 ### ขั้นตอน 4 — ยืนยันว่า contract/frontend ไม่ถูกเปลี่ยน
@@ -282,7 +285,7 @@ Tests อื่นเกี่ยวกับ max, invalid templates, overlappin
 1. แก้ `calculateRequirements()` ให้ deficient segment ที่ไม่มี selected occurrence ถูก skip แทนการ throw
 2. แก้ allocation loop ให้ staff shortage ไม่ throw และเก็บ assignment ที่สำเร็จ
 3. ปรับ 3 tests ที่ยืนยัน atomic behavior เดิมให้ยืนยัน best-effort behavior ใหม่
-4. เพิ่ม regression test กรณี requirement มีอยู่แต่ selected staff ทุกคน unavailable และผลลัพธ์เป็น zero success หากกรณีนี้ยังไม่ถูกทดสอบโดยตรง
+4. เพิ่ม regression test กรณี requirement มีอยู่จริงแต่ selected staff ทุกคน unavailable และผลลัพธ์เป็น zero success หากกรณีนี้ยังไม่ถูกทดสอบโดยตรง โดยใช้ holiday เป็น fixture หลัก หรือ existing slot ใน `otherPositionId` เท่านั้น
 5. รัน focused unit test ของ auto-create handler
 6. รัน verification ทั้ง repository ตามคำสั่งเดียวกับ GitHub Actions
 7. ห้ามแก้ frontend/DTO/controller/schema เว้นแต่พบข้อเท็จจริงใหม่ที่ทำให้แผนนี้ไม่เพียงพอ; หากเกิดกรณีนั้นให้หยุดและส่งกลับ Planner
@@ -317,6 +320,7 @@ Implementation ถือว่าผ่านเมื่อครบทุก�
 - อย่าเปลี่ยน ordering โดยไม่จำเป็น; occurrence ถูก sort และ staff candidates ถูก sort เพื่อให้ผลลัพธ์ deterministic
 - อย่าเปลี่ยน transaction boundary หรือสร้างหลาย `createMany()` batches เพื่อรองรับ partial result; partial result ในงานนี้หมายถึง partial ต่อ business target ไม่ใช่ partial database commit
 - `validateMaximum()` ต้องทำกับ planned batch ทั้งหมดก่อน insert เช่นเดิม เพื่อรักษา atomicity ของ hard constraints
+- ใน regression test ของ “staff ไม่ว่างทั้งหมด” อย่าใช้ existing slot ใน target position แบบไม่ตั้งใจ เพราะมันถูกนับเป็น minimum coverage และอาจทำให้ test ผ่านด้วยเหตุผลผิด
 - อย่าปรับข้อความ UI หรือเพิ่ม partial-success field ใหม่ เพราะ `createdCount` ปัจจุบันเพียงพอสำหรับผลลัพธ์ที่ต้องการ
 
 ## 11. Test ที่ต้องเพิ่ม/แก้ และคำสั่งตรวจสอบ
