@@ -48,6 +48,93 @@ interface WorkScheduleBoardProps {
   timezone: string; // Timezone ของ place
 }
 
+interface ClippedInterval {
+  start: number;
+  end: number;
+}
+
+function clipInterval(
+  startTime: string,
+  endTime: string,
+  startMs: number,
+  endMs: number,
+  timezone: string,
+): ClippedInterval | null {
+  const start = Math.max(
+    startMs,
+    DateTime.fromISO(startTime, { zone: timezone }).toMillis(),
+  );
+  const end = Math.min(
+    endMs,
+    DateTime.fromISO(endTime, { zone: timezone }).toMillis(),
+  );
+
+  return end > start ? { start, end } : null;
+}
+
+function summarizeWork(
+  slots: Slot[],
+  startMs: number,
+  endMs: number,
+  timezone: string,
+) {
+  let shiftCount = 0;
+  let durationMs = 0;
+
+  for (const slot of slots) {
+    const interval = clipInterval(
+      slot.actualStartTime,
+      slot.actualEndTime,
+      startMs,
+      endMs,
+      timezone,
+    );
+    if (!interval) continue;
+
+    shiftCount++;
+    durationMs += interval.end - interval.start;
+  }
+
+  return { shiftCount, durationMs };
+}
+
+function getHolidayDuration(
+  holidays: WorkScheduleHoliday[],
+  startMs: number,
+  endMs: number,
+  timezone: string,
+) {
+  const intervals = holidays
+    .map((holiday) =>
+      clipInterval(holiday.startTime, holiday.endTime, startMs, endMs, timezone),
+    )
+    .filter((interval): interval is ClippedInterval => interval !== null)
+    .sort((a, b) => a.start - b.start);
+
+  let merged: ClippedInterval | null = null;
+  let durationMs = 0;
+
+  for (const interval of intervals) {
+    if (merged && interval.start <= merged.end) {
+      merged.end = Math.max(merged.end, interval.end);
+    } else {
+      if (merged) durationMs += merged.end - merged.start;
+      merged = interval;
+    }
+  }
+  if (merged) durationMs += merged.end - merged.start;
+
+  return durationMs;
+}
+
+function formatDuration(durationMs: number) {
+  const totalMinutes = Math.floor(durationMs / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours} ชม. ${minutes} นาที`;
+}
+
 export function WorkScheduleBoard({
   slots,
   minMaxs,
@@ -154,6 +241,26 @@ export function WorkScheduleBoard({
   }).toMillis();
   const endMs = DateTime.fromISO(endDateTime, { zone: timezone }).toMillis();
   const totalDurationMs = endMs - startMs;
+
+  const rowsWithSummaries = useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        summary:
+          row.id === "unassigned"
+            ? null
+            : {
+                work: summarizeWork(row.slots, startMs, endMs, timezone),
+                holidayDurationMs: getHolidayDuration(
+                  row.holidays,
+                  startMs,
+                  endMs,
+                  timezone,
+                ),
+              },
+      })),
+    [rows, startMs, endMs, timezone],
+  );
 
   const getCoordinates = (startTimeISO: string, endTimeISO: string) => {
     const sMs = DateTime.fromISO(startTimeISO, { zone: timezone }).toMillis();
@@ -409,7 +516,7 @@ export function WorkScheduleBoard({
 
         {/* Body Section (Rows) */}
         <div className="divide-y divide-border overflow-y-auto max-h-150">
-          {rows.map((row) => (
+          {rowsWithSummaries.map((row) => (
             <div
               key={row.id}
               className="flex min-h-16 hover:bg-muted/50 transition-colors group relative"
@@ -422,6 +529,15 @@ export function WorkScheduleBoard({
                   <span className="text-[10px] text-amber-600 font-medium bg-amber-50 rounded px-1.5 py-0.5 mt-1 w-fit">
                     พนักงานนอกลิสต์
                   </span>
+                )}
+                {row.summary && (
+                  <div className="mt-1 space-y-0.5 text-[10px] leading-relaxed text-muted-foreground">
+                    <p>
+                      เวร: {row.summary.work.shiftCount} เวร · ทำงาน:{" "}
+                      {formatDuration(row.summary.work.durationMs)}
+                    </p>
+                    <p>หยุด: {formatDuration(row.summary.holidayDurationMs)}</p>
+                  </div>
                 )}
               </div>
 
