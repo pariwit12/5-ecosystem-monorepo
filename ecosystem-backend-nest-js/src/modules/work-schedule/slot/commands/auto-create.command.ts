@@ -24,6 +24,7 @@ const selectedIds = (label: string) =>
 
 export const AutoCreateDtoBodySchema = z
   .object({
+    target_mode: z.enum(['MINIMUM', 'MAXIMUM']).default('MINIMUM'),
     start_time: z.string().datetime({ offset: true }),
     end_time: z.string().datetime({ offset: true }),
     slot_template_ids: selectedIds('Slot Template'),

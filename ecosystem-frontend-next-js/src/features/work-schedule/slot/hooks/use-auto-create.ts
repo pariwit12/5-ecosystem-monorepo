@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { autoCreate } from "../api/mutations/auto-create.api";
+import {
+  autoCreate,
+  type AutoCreateDtoBody,
+} from "../api/mutations/auto-create.api";
 import { workScheduleSlotKeys } from "../work-schedule-slot-keys";
 
 export const useAutoCreate = () => {
@@ -10,6 +13,7 @@ export const useAutoCreate = () => {
   return useMutation({
     mutationFn: async ({
       positionId,
+      targetMode,
       startTime,
       endTime,
       slotTemplateIds,
@@ -17,6 +21,7 @@ export const useAutoCreate = () => {
       skipErrorCodes,
     }: {
       positionId: string;
+      targetMode: AutoCreateDtoBody["target_mode"];
       startTime: string;
       endTime: string;
       slotTemplateIds: string[];
@@ -28,6 +33,7 @@ export const useAutoCreate = () => {
       return autoCreate(
         positionId,
         {
+          target_mode: targetMode,
           start_time: startTime,
           end_time: endTime,
           slot_template_ids: slotTemplateIds,

@@ -50,6 +50,7 @@ export function resolveAutoCreateWallTime(value: string, timezone: string) {
 const createFormSchema = (timezone: string) =>
   z
     .object({
+      target_mode: z.enum(["MINIMUM", "MAXIMUM"]),
       start_time: z.string().min(1, "กรุณาระบุเวลาเริ่มต้น"),
       end_time: z.string().min(1, "กรุณาระบุเวลาสิ้นสุด"),
       slot_template_ids: z
@@ -116,6 +117,7 @@ export const AutoCreateForm = ({
   } = useForm<FormValues>({
     resolver: zodResolver(createFormSchema(placeTimezone)),
     defaultValues: {
+      target_mode: "MINIMUM",
       start_time: "",
       end_time: "",
       slot_template_ids: [],
@@ -130,6 +132,7 @@ export const AutoCreateForm = ({
     mutate(
       {
         positionId,
+        targetMode: values.target_mode,
         startTime: start.toISO()!,
         endTime: end.toISO()!,
         slotTemplateIds: values.slot_template_ids,
@@ -163,6 +166,50 @@ export const AutoCreateForm = ({
       <p className="text-sm text-muted-foreground">
         วันที่และเวลาอ้างอิงเขตเวลา {placeTimezone}
       </p>
+      <fieldset disabled={isPending} className="flex flex-col gap-3">
+        <legend className="text-sm font-bold mb-3">เป้าหมายการจัดเวร</legend>
+        <label
+          htmlFor="auto_target_minimum"
+          className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"
+        >
+          <input
+            id="auto_target_minimum"
+            type="radio"
+            value="MINIMUM"
+            {...register("target_mode")}
+            aria-describedby="auto_target_minimum_help"
+            className="h-5 w-5"
+          />
+          ให้ถึงจำนวนขั้นต่ำ (Min)
+        </label>
+        <p id="auto_target_minimum_help" className="text-sm text-muted-foreground">
+          สร้างเฉพาะจำนวนที่ขาดเพื่อให้ถึง Min
+        </p>
+        <label
+          htmlFor="auto_target_maximum"
+          className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"
+        >
+          <input
+            id="auto_target_maximum"
+            type="radio"
+            value="MAXIMUM"
+            {...register("target_mode")}
+            aria-describedby="auto_target_maximum_help"
+            className="h-5 w-5"
+          />
+          จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)
+        </label>
+        <p id="auto_target_maximum_help" className="text-sm text-muted-foreground">
+          จัดพนักงานที่เลือกและยังว่างให้มากที่สุด โดยช่วงที่มี Max จะไม่เกิน Max
+          หากช่วงใดไม่มี Max ที่เป็นค่าจำกัด ระบบไม่มีเพดานจาก Min/Max ในช่วงนั้น
+          และจะถูกจำกัดด้วยพนักงานที่เลือกและเวลาว่าง
+        </p>
+        {errors.target_mode && (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.target_mode.message}
+          </p>
+        )}
+      </fieldset>
       <div className="flex flex-col gap-2">
         <label htmlFor="auto_start_time" className="text-sm font-bold">
           เวลาเริ่มต้น

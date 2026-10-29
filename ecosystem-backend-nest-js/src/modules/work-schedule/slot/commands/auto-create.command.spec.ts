@@ -13,6 +13,25 @@ describe('AutoCreate DTO schemas', () => {
     staff_ids: [id],
   };
 
+  it('defaults an omitted target mode to MINIMUM', () => {
+    expect(AutoCreateDtoBodySchema.parse(body).target_mode).toBe('MINIMUM');
+  });
+
+  it.each(['MINIMUM', 'MAXIMUM'] as const)(
+    'accepts explicit target mode %s',
+    (target_mode) => {
+      expect(
+        AutoCreateDtoBodySchema.parse({ ...body, target_mode }).target_mode,
+      ).toBe(target_mode);
+    },
+  );
+
+  it.each(['invalid', ''])('rejects invalid target mode %s', (target_mode) => {
+    expect(
+      AutoCreateDtoBodySchema.safeParse({ ...body, target_mode }).success,
+    ).toBe(false);
+  });
+
   it('accepts a valid offset payload and UUID v7 position', () => {
     expect(AutoCreateDtoBodySchema.safeParse(body).success).toBe(true);
     expect(

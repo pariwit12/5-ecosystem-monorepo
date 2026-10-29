@@ -23,6 +23,7 @@ const positionId = "019a01b0-0000-7000-8000-000000000001";
 const templateId = "019a01b0-0000-7000-8000-000000000002";
 const staffId = "019a01b0-0000-7000-8000-000000000003";
 const body: AutoCreateDtoBody = {
+  target_mode: "MINIMUM",
   start_time: "2026-10-28T08:00:00+07:00",
   end_time: "2026-10-28T18:00:00+07:00",
   slot_template_ids: [templateId],
@@ -36,19 +37,23 @@ beforeEach(() => {
   useErrorStore.getState().clearError();
 });
 
-it("posts the validated auto contract with token and returns createdCount", async () => {
-  await expect(
-    autoCreate(positionId, body, "test-token", ["skip-code"]),
-  ).resolves.toEqual({ createdCount: 2 });
-  expect(mockedPost).toHaveBeenCalledWith(
-    `/api/work-schedule/slot/positions/${positionId}/auto`,
-    body,
-    {
-      headers: { Authorization: "Bearer test-token" },
-      skipErrorCodes: ["skip-code"],
-    },
-  );
-});
+it.each(["MINIMUM", "MAXIMUM"] as const)(
+  "posts the validated %s contract with token and returns createdCount",
+  async (targetMode) => {
+    const requestBody = { ...body, target_mode: targetMode };
+    await expect(
+      autoCreate(positionId, requestBody, "test-token", ["skip-code"]),
+    ).resolves.toEqual({ createdCount: 2 });
+    expect(mockedPost).toHaveBeenCalledWith(
+      `/api/work-schedule/slot/positions/${positionId}/auto`,
+      requestBody,
+      {
+        headers: { Authorization: "Bearer test-token" },
+        skipErrorCodes: ["skip-code"],
+      },
+    );
+  },
+);
 
 it.each([
   { slot_template_ids: [] },
@@ -72,7 +77,22 @@ it("blocks an invalid position ID before HTTP", async () => {
   expect(mockedPost).not.toHaveBeenCalled();
 });
 
-function setupHook() {
+it.each(["INVALID", ""])(
+  "blocks invalid target mode %j before HTTP",
+  async (targetMode) => {
+    await expect(
+      // @ts-expect-error Deliberately validate an invalid external payload.
+      autoCreate(positionId, { ...body, target_mode: targetMode }, "test-token"),
+    ).rejects.toThrow();
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(useErrorStore.getState()).toMatchObject({
+      isOpen: true,
+      statusCode: 400,
+    });
+  },
+);
+
+function setupHook(targetMode: AutoCreateDtoBody["target_mode"] = "MINIMUM") {
   const client = new QueryClient({
     defaultOptions: {
       queries: { gcTime: Infinity },
@@ -105,13 +125,33 @@ function setupHook() {
   const mutate = () =>
     result.current.mutateAsync({
       positionId,
+      targetMode,
       startTime: body.start_time,
       endTime: body.end_time,
       slotTemplateIds: body.slot_template_ids,
       staffIds: body.staff_ids,
+      skipErrorCodes: ["skip-code"],
     });
   return { client, affected, untouched, mutate };
 }
+
+it.each(["MINIMUM", "MAXIMUM"] as const)(
+  "sends the hook's %s mode in the network payload",
+  async (targetMode) => {
+    const { mutate } = setupHook(targetMode);
+    await act(async () => {
+      await mutate();
+    });
+    expect(mockedPost).toHaveBeenCalledWith(
+      `/api/work-schedule/slot/positions/${positionId}/auto`,
+      { ...body, target_mode: targetMode },
+      {
+        headers: { Authorization: "Bearer test-token" },
+        skipErrorCodes: ["skip-code"],
+      },
+    );
+  },
+);
 
 it.each([0, 2])(
   "invalidates every range for this user/position after createdCount=%s",

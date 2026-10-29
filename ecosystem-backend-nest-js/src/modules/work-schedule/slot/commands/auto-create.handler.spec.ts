@@ -1,6 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { AutoCreateCommand, AutoCreateDtoBody } from './auto-create.command';
+import {
+  AutoCreateCommand,
+  AutoCreateDtoBody,
+  AutoCreateDtoBodySchema,
+} from './auto-create.command';
 import { AutoCreateHandler } from './auto-create.handler';
 
 describe('AutoCreateHandler', () => {
@@ -8,6 +12,7 @@ describe('AutoCreateHandler', () => {
   const otherPositionId = '018f6c5e-8557-7888-8123-456789abcdee';
   const staffId = '018f6c5e-8557-7888-8123-456789000001';
   const secondStaffId = '018f6c5e-8557-7888-8123-456789000002';
+  const thirdStaffId = '018f6c5e-8557-7888-8123-456789000008';
   const unselectedStaffId = '018f6c5e-8557-7888-8123-456789000003';
   const templateId = '018f6c5e-8557-7888-8123-456789000004';
   const secondTemplateId = '018f6c5e-8557-7888-8123-456789000005';
@@ -51,6 +56,7 @@ describe('AutoCreateHandler', () => {
       'clerk-1',
       { position_id: positionId },
       {
+        target_mode: 'MINIMUM',
         start_time: start,
         end_time: end,
         slot_template_ids: [templateId],
@@ -559,6 +565,34 @@ describe('AutoCreateHandler', () => {
     expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId]);
   });
 
+  it('uses the same minimum plan for parsed omitted mode and explicit MINIMUM', async () => {
+    const legacyBody = {
+      start_time: start,
+      end_time: end,
+      slot_template_ids: [templateId],
+      staff_ids: [secondStaffId, staffId],
+    };
+    tx.workScheduleMinMax.findMany.mockResolvedValue([rule(1, 2)]);
+
+    await expect(
+      handler.execute(
+        new AutoCreateCommand(
+          'clerk-1',
+          { position_id: positionId },
+          AutoCreateDtoBodySchema.parse(legacyBody),
+        ),
+      ),
+    ).resolves.toEqual({ createdCount: 1 });
+    const omittedModeSlots = insertedSlots();
+    jest.clearAllMocks();
+
+    await expect(
+      handler.execute(command({ target_mode: 'MINIMUM' })),
+    ).resolves.toEqual({ createdCount: 1 });
+    expect(insertedSlots()).toEqual(omittedModeSlots);
+    expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['minimum already covered', [rule(1)], [slot()]],
     ['zero minimum', [rule(0)], []],
@@ -841,6 +875,345 @@ describe('AutoCreateHandler', () => {
     });
     expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
     expect(insertedSlots()).toHaveLength(2);
+  });
+
+  describe('MAXIMUM', () => {
+    const selectedStaffIds = [thirdStaffId, secondStaffId, staffId];
+    const midpoint = '2026-10-24T03:00:00.000Z';
+
+    function maximumCommand(body: Partial<AutoCreateDtoBody> = {}) {
+      return command({
+        target_mode: 'MAXIMUM',
+        staff_ids: selectedStaffIds,
+        ...body,
+      });
+    }
+
+    beforeEach(() => {
+      tx.workScheduleStaffPosition.findMany.mockResolvedValue(
+        selectedStaffIds.map((id) => ({ workScheduleStaffId: id })),
+      );
+    });
+
+    it.each<
+      [string, ReturnType<typeof rule>[], ReturnType<typeof slot>[], number]
+    >([
+      ['no existing coverage and max two', [rule(null, 2)], [], 2],
+      ['one existing slot and max two', [rule(null, 2)], [slot()], 1],
+      [
+        'existing coverage equals max',
+        [rule(null, 2)],
+        [slot(), slot('018f6c5e-8557-7888-8123-456789000007')],
+        0,
+      ],
+      [
+        'a pre-existing maximum violation',
+        [rule(null, 1)],
+        [slot(), slot('018f6c5e-8557-7888-8123-456789000007')],
+        0,
+      ],
+      ['zero maximum', [rule(null, 0)], [], 0],
+      ['null maximum', [rule(1, null)], [], 3],
+      ['no min/max rule', [], [], 3],
+      ['minimum below available capacity', [rule(1, 3)], [], 3],
+    ])(
+      'fills available capacity with %s',
+      async (_, rules, slots, expected) => {
+        tx.workScheduleMinMax.findMany.mockResolvedValue(rules);
+        tx.workScheduleSlot.findMany.mockResolvedValue(slots);
+
+        await expect(handler.execute(maximumCommand())).resolves.toEqual({
+          createdCount: expected,
+        });
+        if (expected === 0) {
+          expect(tx.workScheduleSlot.createMany).not.toHaveBeenCalled();
+        } else {
+          expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+          expect(insertedSlots().map((s) => s.staffId)).toEqual(
+            [staffId, secondStaffId, thirdStaffId].slice(0, expected),
+          );
+          for (const inserted of insertedSlots()) {
+            expect(inserted).toMatchObject({
+              positionId,
+              actualStartTime: new Date(start),
+              actualEndTime: new Date(end),
+            });
+          }
+        }
+      },
+    );
+
+    it('uses the narrowest residual capacity across rule and existing-slot segments', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 3, start, midpoint),
+        rule(null, 2, midpoint, end),
+      ]);
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(unselectedStaffId, midpoint, end),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+      expect(insertedSlots()).toHaveLength(1);
+      expect(insertedSlots()[0]).toMatchObject({
+        actualStartTime: new Date(start),
+        actualEndTime: new Date(end),
+      });
+    });
+
+    it('counts partial existing coverage only in segments that it overlaps', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 1, start, midpoint),
+      ]);
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(unselectedStaffId, midpoint, end),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+      expect(insertedSlots()).toHaveLength(1);
+    });
+
+    it('retains a finite cap inside an occurrence whose other segments have no rule', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 1, '2026-10-24T02:00:00.000Z', midpoint),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+      expect(insertedSlots()[0]).toMatchObject({
+        actualStartTime: new Date(start),
+        actualEndTime: new Date(end),
+      });
+    });
+
+    it('retains the finite cap when another segment has a null maximum', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(1, null, start, midpoint),
+        rule(null, 2, midpoint, end),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 2,
+      });
+      expect(insertedSlots()).toHaveLength(2);
+    });
+
+    it('honors every finite rule when pre-existing rules overlap', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 3),
+        rule(null, 1, midpoint, end),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+      expect(insertedSlots()).toHaveLength(1);
+    });
+
+    it.each<[string, ReturnType<typeof slot>[], ReturnType<typeof holiday>[]]>([
+      ['holiday', [], [holiday()]],
+      [
+        'another-position slot',
+        [slot(staffId, start, end, otherPositionId)],
+        [],
+      ],
+    ])(
+      'skips the lowest staff ID with a %s without consuming residual capacity',
+      async (_, slots, holidays) => {
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(null, 2)]);
+        tx.workScheduleSlot.findMany.mockResolvedValue(slots);
+        tx.workScheduleHoliday.findMany.mockResolvedValue(holidays);
+
+        await expect(handler.execute(maximumCommand())).resolves.toEqual({
+          createdCount: 2,
+        });
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([
+          secondStaffId,
+          thirdStaffId,
+        ]);
+      },
+    );
+
+    it('creates only available selected staff when finite capacity exceeds the pool', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([rule(null, 5)]);
+      tx.workScheduleHoliday.findMany.mockResolvedValue([holiday()]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 2,
+      });
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        secondStaffId,
+        thirdStaffId,
+      ]);
+    });
+
+    it('allows touching slots, holidays, and zero-Max rules without reducing capacity', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 0, '2026-10-24T00:00:00.000Z', start),
+        rule(null, 2),
+        rule(null, 0, end, '2026-10-24T06:00:00.000Z'),
+      ]);
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(staffId, '2026-10-24T00:00:00.000Z', start),
+        slot(secondStaffId, end, '2026-10-24T06:00:00.000Z'),
+      ]);
+      tx.workScheduleHoliday.findMany.mockResolvedValue([
+        holiday(staffId, end, '2026-10-24T06:00:00.000Z'),
+        holiday(secondStaffId, '2026-10-24T00:00:00.000Z', start),
+      ]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 2,
+      });
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+      ]);
+    });
+
+    it('caps the partial-coverage fixture that MINIMUM rejects at the final Max guard', async () => {
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(unselectedStaffId, start, midpoint),
+      ]);
+      tx.workScheduleMinMax.findMany.mockResolvedValue([rule(2, 2)]);
+      tx.workScheduleStaffPosition.findMany.mockResolvedValue([
+        { workScheduleStaffId: secondStaffId },
+        { workScheduleStaffId: staffId },
+      ]);
+
+      await expect(
+        handler.execute(
+          maximumCommand({ staff_ids: [secondStaffId, staffId] }),
+        ),
+      ).resolves.toEqual({ createdCount: 1 });
+      expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+      expect(insertedSlots()).toHaveLength(1);
+    });
+
+    it('continues after a zero-capacity occurrence and ignores its untouched existing violation', async () => {
+      tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+        template({ durationMinute: 120 }),
+        template({
+          id: secondTemplateId,
+          startTime: '10:00',
+          durationMinute: 120,
+        }),
+      ]);
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(null, 0, start, midpoint),
+        rule(null, 1, midpoint, end),
+      ]);
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(unselectedStaffId, start, midpoint),
+      ]);
+
+      await expect(
+        handler.execute(
+          maximumCommand({ slot_template_ids: [secondTemplateId, templateId] }),
+        ),
+      ).resolves.toEqual({ createdCount: 1 });
+      expect(insertedSlots()).toEqual([
+        {
+          positionId,
+          staffId,
+          slotTypeId,
+          actualStartTime: new Date(midpoint),
+          actualEndTime: new Date(end),
+        },
+      ]);
+      expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('reuses two staff in deterministic order across touching occurrences', async () => {
+      tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+        template({ durationMinute: 120 }),
+        template({
+          id: secondTemplateId,
+          startTime: '10:00',
+          durationMinute: 120,
+        }),
+      ]);
+      tx.workScheduleMinMax.findMany.mockResolvedValue([rule(null, 2)]);
+      tx.workScheduleStaffPosition.findMany.mockResolvedValue([
+        { workScheduleStaffId: secondStaffId },
+        { workScheduleStaffId: staffId },
+      ]);
+
+      await expect(
+        handler.execute(
+          maximumCommand({
+            staff_ids: [secondStaffId, staffId],
+            slot_template_ids: [secondTemplateId, templateId],
+          }),
+        ),
+      ).resolves.toEqual({ createdCount: 4 });
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+        staffId,
+        secondStaffId,
+      ]);
+      expect(
+        insertedSlots().map((s) => [s.actualStartTime, s.actualEndTime]),
+      ).toEqual([
+        [new Date(start), new Date(midpoint)],
+        [new Date(start), new Date(midpoint)],
+        [new Date(midpoint), new Date(end)],
+        [new Date(midpoint), new Date(end)],
+      ]);
+      expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries P2034 and rereads all inputs to rebuild maximum capacity', async () => {
+      const serializationError = Object.assign(
+        new Error('Serialization failure'),
+        { code: 'P2034' },
+      );
+      let attempt = 0;
+      prisma.$transaction.mockImplementation(
+        async (operation: (client: unknown) => Promise<unknown>) => {
+          attempt++;
+          const result = await operation(tx);
+          if (attempt === 1) throw serializationError;
+          return result;
+        },
+      );
+      tx.workScheduleMinMax.findMany.mockResolvedValue([rule(null, 2)]);
+      tx.workScheduleSlot.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([slot()]);
+
+      await expect(handler.execute(maximumCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      for (const read of [
+        tx.$queryRaw,
+        tx.workSchedulePosition.findUnique,
+        tx.workScheduleSlotTemplate.findMany,
+        tx.workScheduleStaffPosition.findMany,
+        tx.workScheduleSlot.findMany,
+        tx.workScheduleHoliday.findMany,
+        tx.workScheduleMinMax.findMany,
+      ]) {
+        expect(read).toHaveBeenCalledTimes(2);
+      }
+      expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(2);
+      expect(insertedSlots(0).map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+      ]);
+      expect(insertedSlots(1).map((s) => s.staffId)).toEqual([staffId]);
+      for (const [, options] of prisma.$transaction.mock.calls) {
+        expect(options).toEqual({
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      }
+    });
   });
 
   it('retries P2034 and rereads every planning input before rebuilding the plan', async () => {

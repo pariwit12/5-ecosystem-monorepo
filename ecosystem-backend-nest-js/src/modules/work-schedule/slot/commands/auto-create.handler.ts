@@ -182,12 +182,20 @@ export class AutoCreateHandler implements ICommandHandler<
         end: rule.endTime.getTime(),
       }));
 
-      const requirements = this.calculateRequirements(
-        request,
-        rules,
-        positionSlots,
-        occurrences,
-      );
+      const requirements =
+        body.target_mode === 'MINIMUM'
+          ? this.calculateRequirements(
+              request,
+              rules,
+              positionSlots,
+              occurrences,
+            )
+          : new Map(
+              occurrences.map((occurrence) => [
+                occurrence,
+                this.calculateMaximumCapacity(occurrence, rules, positionSlots),
+              ]),
+            );
       const planned: PlannedSlot[] = [];
       for (const occurrence of occurrences) {
         const requiredAdditional = requirements.get(occurrence) ?? 0;
@@ -384,6 +392,27 @@ export class AutoCreateHandler implements ICommandHandler<
       }
     }
     return requirements;
+  }
+
+  private calculateMaximumCapacity(
+    occurrence: Interval,
+    rules: MinMaxRule[],
+    existing: Interval[],
+  ): number {
+    const boundaries = this.boundaries(occurrence, [...rules, ...existing]);
+    let capacity = Number.POSITIVE_INFINITY;
+    for (let i = 1; i < boundaries.length; i++) {
+      const segment = { start: boundaries[i - 1], end: boundaries[i] };
+      const existingCount = existing.filter((slot) =>
+        this.overlaps(slot, segment),
+      ).length;
+      for (const rule of rules) {
+        if (rule.max === null || !this.overlaps(rule, segment)) continue;
+        const residual = Math.max(0, rule.max - existingCount);
+        capacity = Math.min(capacity, residual);
+      }
+    }
+    return capacity;
   }
 
   private isStaffAvailable(

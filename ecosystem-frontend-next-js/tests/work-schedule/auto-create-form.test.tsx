@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 import { AutoCreateForm } from "@/features/work-schedule/slot/components/auto-create-form";
 
 const mockMutate = jest.fn();
 const mockRouterPush = jest.fn();
+let mockIsPending = false;
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
@@ -11,7 +12,7 @@ jest.mock("sonner", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
 jest.mock("@/features/work-schedule/slot/hooks/use-auto-create", () => ({
-  useAutoCreate: () => ({ mutate: mockMutate, isPending: false }),
+  useAutoCreate: () => ({ mutate: mockMutate, isPending: mockIsPending }),
 }));
 
 const POSITION = "019a01b0-0000-7000-8000-000000000001";
@@ -69,9 +70,27 @@ function submit() {
   fireEvent.click(screen.getByRole("button", { name: "จัดเวรอัตโนมัติ" }));
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockIsPending = false;
+});
 
 describe("AutoCreateForm", () => {
+  it("defaults to MINIMUM and allows selecting MAXIMUM", () => {
+    renderForm();
+    const minimum = screen.getByRole<HTMLInputElement>("radio", {
+      name: "ให้ถึงจำนวนขั้นต่ำ (Min)",
+    });
+    const maximum = screen.getByRole<HTMLInputElement>("radio", {
+      name: "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
+    });
+    expect(minimum.checked).toBe(true);
+    expect(maximum.checked).toBe(false);
+    fireEvent.click(maximum);
+    expect(minimum.checked).toBe(false);
+    expect(maximum.checked).toBe(true);
+  });
+
   it("requires selections when there is one template and one staff member", async () => {
     renderSingleOptionForm();
     fillDates();
@@ -94,6 +113,7 @@ describe("AutoCreateForm", () => {
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(mockMutate.mock.calls[0][0]).toEqual({
       positionId: POSITION,
+      targetMode: "MINIMUM",
       startTime: "2026-10-28T08:00:00.000+07:00",
       endTime: "2026-10-28T18:00:00.000+07:00",
       slotTemplateIds: [TEMPLATE_ONE],
@@ -155,12 +175,73 @@ describe("AutoCreateForm", () => {
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(mockMutate.mock.calls[0][0]).toEqual({
       positionId: POSITION,
+      targetMode: "MINIMUM",
       startTime: "2026-10-28T08:00:00.000+07:00",
       endTime: "2026-10-28T18:00:00.000+07:00",
       slotTemplateIds: [TEMPLATE_ONE, TEMPLATE_TWO],
       staffIds: [STAFF_ONE, STAFF_TWO],
       skipErrorCodes: undefined,
     });
+  });
+
+  it("submits the selected MAXIMUM mode with Place timezone times", async () => {
+    renderForm();
+    fillDates();
+    selectAll();
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
+      }),
+    );
+    submit();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+    expect(mockMutate.mock.calls[0][0]).toEqual({
+      positionId: POSITION,
+      targetMode: "MAXIMUM",
+      startTime: "2026-10-28T08:00:00.000+07:00",
+      endTime: "2026-10-28T18:00:00.000+07:00",
+      slotTemplateIds: [TEMPLATE_ONE, TEMPLATE_TWO],
+      staffIds: [STAFF_ONE, STAFF_TWO],
+      skipErrorCodes: undefined,
+    });
+  });
+
+  it("disables the mode fieldset and prevents mutation while pending", async () => {
+    const { container, rerender } = renderForm();
+    fillDates();
+    selectAll();
+    mockIsPending = true;
+    rerender(
+      <AutoCreateForm
+        positionId={POSITION}
+        slotTemplates={[
+          { id: TEMPLATE_ONE, name: "Morning" },
+          { id: TEMPLATE_TWO, name: "Evening" },
+        ]}
+        staffPositions={[
+          { staffId: STAFF_ONE, name: "Staff One" },
+          { staffId: STAFF_TWO, name: "Staff Two" },
+        ]}
+        placeTimezone="Asia/Bangkok"
+        urlOnSuccess="/slots"
+        urlOnCancel="/menu"
+      />,
+    );
+    const fieldset = screen.getByRole<HTMLFieldSetElement>("group", {
+      name: "เป้าหมายการจัดเวร",
+    });
+    expect(fieldset.disabled).toBe(true);
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: "กำลังจัดเวร...",
+      }).disabled,
+    ).toBe(true);
+    const form = container.querySelector("form");
+    expect(form).not.toBeNull();
+    await act(async () => {
+      fireEvent.submit(form!);
+    });
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 
   it.each(["start", "end"])(
