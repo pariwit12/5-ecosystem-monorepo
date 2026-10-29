@@ -50,9 +50,15 @@ Endpoint ปัจจุบันใน `ecosystem-backend-nest-js/src/modules/w
 11. ก่อน insert เรียก `validateMaximum(...)` และเขียนเฉพาะ slot ใหม่ด้วย `workScheduleSlot.createMany(...)`
 12. `P2034` ถูก retry โดยสร้าง transaction ใหม่และอ่าน planning input ใหม่ทุกครั้ง
 
-### 3.3 วิธีเลือกพนักงานปัจจุบัน
+### 3.3 วิธีเลือกพนักงานปัจจุบันและ canonical Staff ID
 
-หลัง validate Staff แล้ว handler สร้าง `staffCandidates` จาก Staff ID ที่ active แล้ว `.sort()` จากนั้นสำหรับแต่ละ occurrence จะวน Staff ID ตาม lexical ascending และเลือก “คนแรกที่ว่าง” จนครบ `requiredAdditional` หรือหมดพนักงานที่ว่าง โดย `isStaffAvailable(...)` ปฏิเสธ staff ที่ overlap กับ slot เดิม, Holiday หรือ slot ที่วางแผนไว้ในคำขอเดียวกัน
+หลัง validate Staff แล้ว handler สร้าง `staffCandidates` จาก `workScheduleStaffPosition.findMany(...)`, de-duplicate และ `.sort()` จากนั้นสำหรับแต่ละ occurrence จะวน Staff ID ตาม lexical ascending และเลือก “คนแรกที่ว่าง” จนครบ `requiredAdditional` หรือหมดพนักงานที่ว่าง โดย `isStaffAvailable(...)` ปฏิเสธ staff ที่ overlap กับ slot เดิม, Holiday หรือ slot ที่วางแผนไว้ในคำขอเดียวกัน
+
+โค้ดปัจจุบันระบุไว้ชัดเจนว่า PostgreSQL คืน UUID เป็น lowercase แม้ input จะใช้ uppercase และ DTO ยอมรับ UUID ตัวพิมพ์ใหญ่ได้ ดังนั้น:
+
+- `staffCandidates` ที่อ่านกลับจากฐานข้อมูลเป็น canonical Staff ID สำหรับ logic ภายใน handler
+- state/map ของ strategy ใหม่ต้อง key และ lookup ด้วย canonical ID ชุดเดียวกัน หรือ normalize ให้เหมือนกันก่อนใช้
+- ห้ามสร้าง count/boundary map จาก raw `body.staff_ids` แล้ว lookup ด้วย `staffCandidates` โดยไม่ normalize เพราะ request ตัวพิมพ์ใหญ่จะทำให้ key ไม่ตรงกันได้
 
 ดังนั้นก่อนงานนี้ระบบมี deterministic order แต่ยังไม่มี optimization ตามเวลาพักหรือจำนวนเวร
 
@@ -66,14 +72,16 @@ Endpoint ปัจจุบันใน `ecosystem-backend-nest-js/src/modules/w
 
 `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma` มี `WorkScheduleSlot` พร้อม `positionId`, `staffId`, `slotTypeId`, `actualStartTime`, `actualEndTime` และ index `positionId + actualStartTime` กับ `staffId + actualStartTime` ข้อมูลที่ต้องใช้สำหรับสอง strategy มีครบ และ strategy ไม่ต้องถูก persist จึงไม่ต้องแก้ Prisma schema หรือสร้าง migration ในงานนี้
 
-Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรับ `MAXIMIZE_REST` ให้ใช้ aggregate/grouping ที่คืนเพียง endpoint ที่จำเป็น แทนการโหลด slot history ทั้งหมดหรือทำ query ต่อ staff ทีละคน
+`ecosystem-backend-nest-js/package.json` ประกาศ `prisma` และ `@prisma/client` เป็น `^7.8.0`; การอ่าน boundary สำหรับ `MAXIMIZE_REST` ให้ใช้ `groupBy(...)`/aggregate ที่คืนเพียง endpoint ที่จำเป็น แทนการโหลด slot history ทั้งหมดหรือทำ query ต่อ staff ทีละคน
 
 ### 3.6 Test fixtures ปัจจุบันที่ได้รับผลโดยตรงจาก contract ใหม่
 
 - `auto-create.command.spec.ts` มี base body ที่ปัจจุบันไม่ระบุ `target_mode` เพื่อทดสอบ default `MINIMUM`; หลังเพิ่ม `assignment_mode` แบบ required fixture นี้ต้องระบุ `assignment_mode` เสมอ เว้นแต่ test ที่ตั้งใจทดสอบ missing strategy
 - `auto-create.handler.spec.ts` มี helper `command(...)` ที่สร้าง `AutoCreateDtoBody` โดยตรง และมี test ที่ parse body ซึ่งละ `target_mode` เพื่อยืนยัน default `MINIMUM`; helper/fixture เหล่านี้ต้องเพิ่ม `assignment_mode` ที่ชัดเจน โดยคง test ของ `target_mode` default ไว้
+- `auto-create.handler.spec.ts` มี regression ที่รับ UUID selection/position ตัวพิมพ์ใหญ่แล้วทำงานกับ UUID canonical จากฐานข้อมูลได้อยู่แล้ว; strategy tests ใหม่ต้องไม่ทำให้ invariant นี้หาย
 - `auto-create-form.test.tsx` มีหลาย test ที่ submit form โดยยังไม่มี strategy; test ที่ไม่ได้ทดสอบ validation ของ strategy ต้องเลือก strategy แบบ explicit ก่อน submit
-- `auto-create-client-page.test.tsx` มี regression test ที่ submit form จริงเพื่อยืนยัน Place timezone/navigation; เมื่อ strategy เป็น required test นี้ต้องเลือก strategy ก่อน submit มิฉะนั้น mutation จะไม่ถูกเรียก
+- `auto-create-api.test.tsx` มี `body: AutoCreateDtoBody` และ hook fixture ที่ปัจจุบันมีเฉพาะ `target_mode`; หลัง contract เปลี่ยนต้องเพิ่ม strategy ทั้งใน direct API และ hook mutation fixture
+- `auto-create-client-page.test.tsx` มี regression test ที่ submit formจริงเพื่อยืนยัน Place timezone/navigation; เมื่อ strategy เป็น required test นี้ต้องเลือก strategy ก่อน submit มิฉะนั้น mutation จะไม่ถูกเรียก
 
 ## 4. Business Logic ที่คาดหวังหลัง Implement
 
@@ -88,8 +96,9 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 5. หลังเลือกแต่ละคน ให้เพิ่ม slot เข้า `planned` ทันที แล้ว update state ของ strategy ที่เกี่ยวข้องก่อนคำนวณ candidate/score ครั้งถัดไป
 6. ทุก iteration ต้อง break ทันทีเมื่อไม่มี available candidate แม้ `requiredAdditional` จะเป็น `Infinity`; ห้ามมี loop ที่พึ่งพา `Infinity` เป็นตัวหยุด
 7. ถ้าจำนวน staff ที่ว่างน้อยกว่า `requiredAdditional` ให้รักษาพฤติกรรมเดิมคือสร้างได้เท่าที่ feasible โดยไม่ทำให้เกิด overlap/ผิด Holiday/เกิน Max; ห้ามสร้าง slot ผิด constraint เพื่อให้ครบตัวเลข
+8. ทุก in-memory strategy state ที่ผูกกับ Staff ID ต้องใช้ canonical ID ชุดเดียวกับ `staffCandidates`; raw `body.staff_ids` ใช้เป็น input query ได้ แต่ห้ามเป็น key อีกชุดหนึ่งโดยไม่ normalize
 
-เหตุผล: strategy ใหม่ต้องเปลี่ยนเฉพาะ “ใครถูกเลือก” ไม่ใช่เปลี่ยน Min/Max, availability, occurrence generation หรือจำนวนที่ระบบอนุญาตให้พยายามสร้าง
+เหตุผล: strategy ใหม่ต้องเปลี่ยนเฉพาะ “ใครถูกเลือก” ไม่ใช่เปลี่ยน Min/Max, availability, occurrence generation หรือจำนวนที่ระบบอนุญาตให้พยายามสร้าง และต้องรักษาพฤติกรรมเดิมเมื่อ request UUID ใช้ uppercase
 
 ### 4.2 `BALANCE_TOTAL`: กระจายจำนวนเวรรวมให้ใกล้เคียงกัน
 
@@ -101,12 +110,13 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 
 วิธี implement ที่คาดหวัง:
 
-1. สร้าง map เริ่มต้นของ selected staff ทุกคนเป็น 0
+1. สร้าง count map จาก canonical `staffCandidates` ทุกคน เริ่มต้นเป็น 0
 2. ใช้ผล `existingSlots` จาก range query เดิมเท่านั้นในการเพิ่ม existing count; ห้าม query ประวัตินอก request สำหรับโหมดนี้
-3. ก่อน assignment แต่ละครั้ง กรอง available candidates ด้วย `isStaffAvailable(...)`
-4. เลือก candidate ที่ `totalCount` ต่ำที่สุด
-5. ถ้า count เท่ากัน ให้เลือก `staffId` lexical ascending
-6. หลัง `planned.push(...)` ให้เพิ่ม count ของ staff ที่เลือกทันที เพื่อให้ occurrence ถัดไปเห็นยอดใหม่
+3. ตอนนับ existing row ให้ lookup ด้วย `slot.staffId` ซึ่งเป็น canonical DB value และเพิ่มเฉพาะเมื่อ key อยู่ใน count map
+4. ก่อน assignment แต่ละครั้ง กรอง available candidates ด้วย `isStaffAvailable(...)`
+5. เลือก candidate ที่ `totalCount` ต่ำที่สุด
+6. ถ้า count เท่ากัน ให้เลือก `staffId` lexical ascending
+7. หลัง `planned.push(...)` ให้เพิ่ม count ของ canonical staff ID ที่เลือกทันที เพื่อให้ occurrence ถัดไปเห็นยอดใหม่
 
 ข้อจำกัดที่ยอมรับ:
 
@@ -142,7 +152,8 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 - รันเฉพาะเมื่อ `body.assignment_mode === 'MAXIMIZE_REST'`
 - previous boundary ใช้ `tx.workScheduleSlot.groupBy(...)` ตาม `staffId` ของ selected staff, filter `actualEndTime <= request.start`, ไม่ filter `positionId`, และ aggregate `_max.actualEndTime`
 - next boundary ใช้ `tx.workScheduleSlot.groupBy(...)` ตาม `staffId` ของ selected staff, filter `actualStartTime >= request.end`, ไม่ filter `positionId`, และ aggregate `_min.actualStartTime`
-- แปลง aggregate สองชุดเป็น map `previousEndByStaff` และ `nextStartByStaff`; ไม่ต้อง fetch record เต็มเพราะ score ใช้เฉพาะ endpoint เวลา
+- query filter ใช้ selected staff IDs ได้ แต่ผล aggregate ที่คืนจาก DB ต้องแปลงเป็น map โดยใช้ `row.staffId` canonical และ scoring ต้อง lookup ด้วย canonical candidate ID จาก `staffCandidates`
+- boundary map ต้องไม่ key ด้วย raw request casing โดยไม่ normalize
 - boundary query แต่ละด้านต้องคืนอย่างมากหนึ่ง aggregate row ต่อ selected staff และต้องไม่อ่าน slot history มาเก็บใน memory
 - range query เดิมยังเป็น source ของ slot ภายใน/คร่อม request; aggregate boundary ใช้เฉพาะบริเวณนอก request
 - เมื่อ transaction retry จาก `P2034` ต้องรัน boundary aggregates ใหม่ภายใน transaction รอบใหม่ด้วย
@@ -215,24 +226,27 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 
 แก้ `auto-create.handler.ts`:
 
-- คง `staffCandidates` ที่ sort lexical เพื่อใช้เป็น deterministic candidate set/tie-break
+- คง `staffCandidates` ที่ sort lexical เพื่อใช้เป็น deterministic candidate set/tie-break และเป็น canonical Staff ID set ของ in-memory strategy state
 - แยกขั้น “กรอง available candidates” ออกจาก “เลือก candidate ตาม strategy”
 - สำหรับแต่ละ occurrence ให้เลือกทีละ assignment, `planned.push(...)` ทันที และคำนวณ candidate ใหม่
 - เมื่อไม่มี available candidate ให้ break แม้ `requiredAdditional` เป็น `Infinity`
+- state/map ที่ key ด้วย Staff ID ต้องใช้ `staffCandidates`/DB-returned canonical IDs อย่างสอดคล้องกัน ห้ามสลับกับ raw request casing โดยไม่ normalize
 - คง `isStaffAvailable(...)`, `calculateRequirements(...)`, `calculateMaximumCapacity(...)`, `validateMaximum(...)`, timezone/DST/template validation, Serializable transaction, row lock, retry และ `createMany` semantics เดิม
 
 แก้ `auto-create.handler.spec.ts` fixture หลัก:
 
 - `command(...)` ต้องใส่ `assignment_mode: 'BALANCE_TOTAL'` เป็น explicit baseline เพื่อให้ regression tests เดิมยัง deterministic และไม่พึ่ง default ที่ไม่มีจริง
 - test ที่ parse body โดยละ `target_mode` ต้องเพิ่ม `assignment_mode` และยังยืนยันได้ว่าเฉพาะ `target_mode` default เป็น `MINIMUM`
+- regression UUID ตัวพิมพ์ใหญ่เดิมต้องยังผ่านหลัง refactor
 
-**เกณฑ์ผ่าน:** จำนวน slot ที่ต้องพยายามสร้างยังมาจาก `target_mode`; strategy มีผลเฉพาะ staff selection; loop จบได้เมื่อ candidate หมดทั้งใน finite และ infinite capacity case
+**เกณฑ์ผ่าน:** จำนวน slot ที่ต้องพยายามสร้างยังมาจาก `target_mode`; strategy มีผลเฉพาะ staff selection; loop จบได้เมื่อ candidate หมดทั้งใน finite และ infinite capacity case; request UUID casing ไม่เปลี่ยนผล logic
 
 ### ขั้นที่ 3 — Implement `BALANCE_TOTAL`
 
 ใน `auto-create.handler.ts`:
 
-- สร้าง count map ของ selected staff จาก range-limited `existingSlots` เดิม
+- สร้าง count map ของ canonical selected staff จาก `staffCandidates`
+- นับจาก range-limited `existingSlots` เดิม เฉพาะ row ที่ `staffId` อยู่ใน count map
 - นับ slot ของ selected staff ข้ามทุก Position
 - ไม่ query slot นอก request
 - เรียง/เลือก candidate ตาม `(totalCount asc, staffId asc)`
@@ -248,8 +262,9 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 6. count เท่ากันเลือก Staff ID lexical ascending
 7. staff ที่ count ต่ำแต่ไม่ว่าง/ติด Holiday ต้องไม่ถูกเลือก
 8. behavior ของ `MINIMUM`/`MAXIMUM` เดิมยังคงจำนวน slot ตาม capacity เดิมเมื่อ strategy เป็น `BALANCE_TOTAL`
+9. เมื่อ `staff_ids` ใน request ใช้ uppercase แต่ DB/existing slots คืน lowercase, count map ยัง match canonical staff และเลือกคนตาม count ที่ถูกต้อง
 
-**เกณฑ์ผ่าน:** ทุก slot ใหม่เลือก selected staff ที่มี `existing + planned` count ต่ำที่สุดในกลุ่ม available ณ จุดนั้น โดยไม่แก้ slot เดิม
+**เกณฑ์ผ่าน:** ทุก slot ใหม่เลือก selected staff ที่มี `existing + planned` count ต่ำที่สุดในกลุ่ม available ณ จุดนั้น โดยไม่แก้ slot เดิม และไม่ขึ้นกับ casing ของ UUID input
 
 ### ขั้นที่ 4 — Implement `MAXIMIZE_REST` ด้วย boundary aggregates
 
@@ -259,8 +274,9 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
   - previous: group by `staffId`, `_max.actualEndTime`, filter `actualEndTime <= request.start`
   - next: group by `staffId`, `_min.actualStartTime`, filter `actualStartTime >= request.end`
 - ทั้งสอง query ใช้ selected staff IDs และห้าม filter `positionId`
-- สร้าง maps ของ boundary endpoints
+- สร้าง maps ของ boundary endpoints จาก canonical `row.staffId` ที่ DB คืน
 - score โดยรวม boundary maps + existing slots ใน request + `planned`
+- lookup boundary maps ด้วย canonical candidate ID จาก `staffCandidates`
 - กรอง availability ก่อน scoring
 - tie-break ด้วย Staff ID และ compare `Infinity` แบบ explicit
 - ห้าม query ต่อ staff ทีละคน และห้ามโหลด full history
@@ -283,8 +299,9 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 12. boundary `groupBy` ไม่มี `positionId` filter และใช้ selected staff IDs เท่านั้น
 13. boundary aggregates ไม่เปลี่ยน target-position Min/Max coverage
 14. เมื่อเกิด `P2034` ใน `MAXIMIZE_REST`, boundary aggregates ถูกอ่านใหม่ใน transaction รอบ retry
+15. เมื่อ request `staff_ids` ใช้ uppercase แต่ aggregate rows คืน lowercase, boundary map ยัง lookup ด้วย canonical candidate ได้และ rest score มีผลต่อการเลือกจริง
 
-**เกณฑ์ผ่าน:** candidate ที่ถูกเลือกมี `restScore` สูงสุดในกลุ่ม available ตามนิยาม, ใช้ข้อมูลนอก request เท่าที่จำเป็น และไม่มี N+1/full-history read
+**เกณฑ์ผ่าน:** candidate ที่ถูกเลือกมี `restScore` สูงสุดในกลุ่ม available ตามนิยาม, ใช้ข้อมูลนอก request เท่าที่จำเป็น, ไม่มี N+1/full-history read และไม่ขึ้นกับ casing ของ UUID input
 
 ### ขั้นที่ 5 — เพิ่มตัวเลือก UI และส่ง contract ใหม่
 
@@ -354,6 +371,7 @@ Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรั
 - ระวัง `Infinity` ทั้งใน `requiredAdditional` และ `restScore`: loop ต้อง break เมื่อ candidate หมด และ comparator ห้ามใช้ `Infinity - Infinity`
 - `MAXIMIZE_REST` ห้าม N+1 query ต่อ staff และห้ามโหลด slot history ทั้งหมด; ใช้ 2 boundary aggregates + range query เดิม
 - boundary aggregates ต้องอยู่ใน transaction เดียวกับ planning reads และต้องถูกอ่านใหม่เมื่อ transaction retry
+- UUID request อาจเป็น uppercase แต่ UUID ที่อ่านจาก PostgreSQL เป็น lowercase; in-memory strategy maps/counters/boundary lookups ต้องใช้ canonical ID ชุดเดียวกับ `staffCandidates` หรือ normalize อย่างสม่ำเสมอ
 - ถ้าพบข้อจำกัดจริงที่ทำให้ต้อง migration, เปลี่ยน endpoint semantics หรือขยาย architecture ให้หยุดและส่งกลับ Planner
 
 ## 8. Tests และคำสั่งตรวจสอบ
@@ -380,7 +398,7 @@ pnpm --dir ecosystem-frontend-next-js run test -- tests/work-schedule/auto-creat
 pnpm run verify
 ```
 
-`pnpm run verify` เป็นคำสั่งเดียวกับ GitHub Actions CI และครอบคลุม frontend tests, Prisma validation/generation, backend/frontend typecheck, lint, build, backend tests และ migration tests
+`pnpm run verify` เป็นคำสั่งที่ GitHub Actions CI เรียกใช้ และครอบคลุม frontend tests, Prisma validation/generation, backend/frontend typecheck, lint, build, backend tests และ migration tests
 
 ## 9. Acceptance Criteria รวม
 
@@ -392,11 +410,12 @@ pnpm run verify
 4. `BALANCE_TOTAL` นับ existing slots เฉพาะที่ overlap request ข้ามทุก Position รวม planned slots และเลือก lowest-count available staff แบบ deterministic
 5. `MAXIMIZE_REST` เลือก available staff ที่มี minimum gap ถึง nearest previous/next slot มากที่สุด โดยใช้ range query เดิม + previous/next aggregate endpoints ข้ามทุก Position
 6. `MAXIMIZE_REST` ไม่เกิด N+1/full-history read และ `BALANCE_TOTAL` ไม่เรียก boundary aggregates
-7. availability, Holiday, template validation, timezone/DST, Min/Max, Serializable transaction, row lock, retry และ maximum validation เดิมยังทำงาน
-8. infinite capacity/score cases จบแบบ deterministic และไม่เกิด infinite loop/`NaN` comparator behavior
-9. ไม่มี update/delete existing `WorkScheduleSlot`; persist เฉพาะ slot ใหม่ผ่าน `createMany`
-10. UI แสดง strategy 2 ตัวเลือกแยกจาก Min/Max, บังคับให้เลือก strategy และส่งค่าถึง backend
-11. frontend API layer ยังคงใช้ backend schema เป็น contract source เดียว
-12. client-page regression test submit form ได้หลังเลือก strategy และยังยืนยัน Place timezone/navigation เดิม
-13. ไม่มี Prisma migration/schema change และไม่มี endpoint ใหม่
-14. targeted tests ที่ระบุผ่าน และ `pnpm run verify` ผ่านทั้งหมด
+7. strategy state ทุกแบบใช้ canonical Staff ID อย่างสอดคล้องกัน จึงให้ผลถูกต้องแม้ request UUID ใช้ uppercase แต่ DB/aggregate คืน lowercase
+8. availability, Holiday, template validation, timezone/DST, Min/Max, Serializable transaction, row lock, retry และ maximum validation เดิมยังทำงาน
+9. infinite capacity/score cases จบแบบ deterministic และไม่เกิด infinite loop/`NaN` comparator behavior
+10. ไม่มี update/delete existing `WorkScheduleSlot`; persist เฉพาะ slot ใหม่ผ่าน `createMany`
+11. UI แสดง strategy 2 ตัวเลือกแยกจาก Min/Max, บังคับให้เลือก strategy และส่งค่าถึง backend
+12. frontend API layer ยังคงใช้ backend schema เป็น contract source เดียว
+13. client-page regression test submit form ได้หลังเลือก strategy และยังยืนยัน Place timezone/navigation เดิม
+14. ไม่มี Prisma migration/schema change และไม่มี endpoint ใหม่
+15. targeted tests ที่ระบุผ่าน และ `pnpm run verify` ผ่านทั้งหมด
