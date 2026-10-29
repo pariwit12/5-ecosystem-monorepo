@@ -179,7 +179,10 @@ target_mode: z.enum(["MINIMUM", "MAXIMUM"]).default("MINIMUM")
 
 - Zod schema ที่มี default มี input/output type ต่างกันได้
 - `auto-create.api.ts` ปัจจุบัน export `AutoCreateDtoBody = z.infer<typeof AutoCreateDtoBodySchema>` ซึ่งเป็น type ของ parsed output ที่ใช้ใน code ปัจจุบัน
-- Implementor ต้องให้ TypeScript ผ่านโดยไม่ลด validation ถ้าการเพิ่ม default ทำให้ caller/test fixture ที่จงใจ omit field type ไม่ตรง ให้เลือกทดสอบ omission ผ่าน `AutoCreateDtoBodySchema.safeParse/parse` โดยตรง หรือใช้ input type เฉพาะจุดที่มีเหตุผลชัดเจน ห้ามแก้ด้วย `any`/unsafe cast เพื่อกลบ contract
+- คง `AutoCreateDtoBody` ใน API function เป็น parsed output type เดิม (`z.infer`) ไม่ต้องเปลี่ยนเป็น input type ในงานนี้; hook และ valid API fixtures ต้องส่ง `target_mode` อย่าง explicit
+- body ของ `AutoCreateCommand` ต้องเป็น parsed contract; ให้เติม `target_mode: "MINIMUM"` ใน helper `command(...)` ของ handler tests ก่อน spread overrides เพื่อให้ test เดิมยังทดสอบโหมดเดิม และให้แต่ละ MAXIMUM test override mode เอง
+- ทดสอบ omission โดยส่ง fixture ที่ไม่มี mode เข้า `AutoCreateDtoBodySchema.parse(...)` ก่อนสร้าง command; ห้ามเติม mode ใน fixture นั้นเองจนไม่ได้ทดสอบ default จริง
+- ห้ามแก้ด้วย `any`/unsafe cast หรือเพิ่ม fallback ใน handler เพื่อกลบ contract
 
 ### 4.2 โหมด `MINIMUM`: รักษาพฤติกรรมเดิมทั้งหมด
 
@@ -195,6 +198,10 @@ target_mode: z.enum(["MINIMUM", "MAXIMUM"]).default("MINIMUM")
 
 Acceptance สำคัญ: payload เดิมที่ omit `target_mode` หลัง schema parse ต้องให้ Business Logic เท่ากับ explicit `target_mode: "MINIMUM"`
 
+ข้อจำกัดเดิมที่ต้องรักษา: `calculateRequirements(...)` ใช้ deficit สูงสุดของช่วงย่อยที่ occurrence ครอบคลุม ไม่ใช่ผลรวมของ deficit และไม่ได้ลด target ด้วย Max ก่อนจัด ถ้า Slot เต็ม occurrence ที่เติม Min ของช่วงหนึ่งทำให้อีกช่วงเกิน Max ต้อง reject ทั้ง plan ด้วย final validation เหมือนเดิม ห้ามนำ capacity ของ MAXIMUM มา clamp MINIMUM โดยไม่ได้รับงานเพิ่ม
+
+ตัวอย่างที่มีอยู่ใน handler tests: occurrence 08:00–12:00, rule `min = 2, max = 2` ตลอดช่วง, existing Slot ของ unselected staff เฉพาะ 08:00–10:00 และ selected staff ว่าง 2 คน => MINIMUM วางแผนเพิ่ม 2 แล้ว reject เพราะ 08:00–10:00 จะมี 3 Slots; ส่วน MAXIMUM ต้องเพิ่มได้ 1 อย่างสำเร็จ
+
 ### 4.3 โหมด `MAXIMUM`: จัดให้มากที่สุดโดยไม่เกิน Max
 
 เมื่อ `target_mode === "MAXIMUM"`:
@@ -207,28 +214,27 @@ Acceptance สำคัญ: payload เดิมที่ omit `target_mode` ห
 
 Algorithm ที่ Implementor ต้องใช้:
 
-1. สำหรับ occurrence ปัจจุบัน หา Min/Max rules ที่ overlap occurrence และ existing target-position Slots ที่ overlap occurrence
-2. สร้าง boundary ภายใน occurrence จาก:
-   - `occurrence.start`
-   - `occurrence.end`
-   - start/end ของ rule ที่ overlap โดย clip ให้อยู่ใน occurrence
-   - start/end ของ existing target-position Slot ที่ overlap โดย clip ให้อยู่ใน occurrence
-   - ถ้า helper ถูกออกแบบให้รองรับ planned Slot ที่ overlap occurrence ให้รวม planned boundaries ด้วย
-3. เรียง boundary และพิจารณาแต่ละ non-empty atomic segment ระหว่าง boundary ติดกัน
-4. ในแต่ละ segment ให้นับ `existingCount` จาก existing Slot ของ target position ที่ overlap segment
-5. ถ้า segment อยู่ภายใต้ rule ที่ `max !== null` ให้คำนวณ residual capacity ของ rule นั้นเป็น:
+เพิ่ม private helper `calculateMaximumCapacity(occurrence: Interval, rules: MinMaxRule[], existing: Interval[]): number` ภายใน `auto-create.handler.ts` โดยใช้ `Interval`, `MinMaxRule`, `boundaries(...)` และ `overlaps(...)` ที่มีอยู่แล้ว ไม่ต้องสร้าง production file ใหม่
+
+1. รับ `existing` เป็น `positionSlots` เท่านั้น ห้ามส่ง `slots` ทุก position เข้า helper นี้
+2. ใช้ `boundaries(occurrence, [...rules, ...existing])` เพื่อได้ occurrence start/end และขอบ rule/Slot ที่ overlap โดย clip ให้อยู่ภายใน occurrence, deduplicate และ sort ด้วย helper เดิม
+3. ตั้ง capacity เริ่มต้นเป็น `Number.POSITIVE_INFINITY` แล้วไล่แต่ละ non-empty atomic segment ระหว่าง boundary ติดกัน
+4. นับ `existingCount` เฉพาะ existing target-position Slots ที่ overlap segment นั้น
+5. สำหรับทุก rule ที่ overlap segment และ `rule.max !== null` ให้คำนวณ residual แล้วสะสมค่าต่ำสุด:
 
 ```ts
-Math.max(0, rule.max - existingCount - plannedCount)
+const residual = Math.max(0, rule.max - existingCount);
+capacity = Math.min(capacity, residual);
 ```
 
-`plannedCount` ต้องหมายถึง planned target-position Slot ที่ overlap segment หาก helper คำนวณจาก plan ที่มีอยู่แล้ว; ห้ามนับ planned Slot ซ้ำสองครั้ง
+แม้ CRUD ปกติจะไม่ให้ rules ทับกัน ให้ใช้ทุก finite rule ที่ overlap segment ไม่ใช่เลือก rule แรก; วิธีนี้สอดคล้องกับ final validator เดิมที่ตรวจทุก rule โดยไม่เพิ่มนโยบายแก้ข้อมูลเดิม
 
-6. ถ้า segment ไม่มี rule หรือ rule มี `max === null` ให้ถือว่า segment นั้นไม่มี finite cap จาก Min/Max
-7. capacity ของ occurrence ทั้งก้อนคือค่าต่ำสุดของ residual capacity จากทุก finite-Max segment ที่ occurrence ครอบคลุม
-8. ถ้า occurrence ไม่มี finite Max ในทุก segment ให้ถือว่า Min/Max ไม่จำกัดจำนวนเพิ่ม (`unbounded` ในเชิง planner) และจำนวนจริงถูกจำกัดด้วย selected staff + availability
-9. ไล่ Staff candidate ตาม deterministic ordering เดิม และ assign ได้ไม่เกิน occurrence capacity และไม่เกินจำนวน Staff ที่ว่างจริง
-10. ยังต้องรัน final `validateMaximum(...)` หรือ defensive validation ที่มี semantics เทียบเท่า ก่อน `createMany`
+6. segment ที่ไม่มี rule หรือมีแต่ `max === null` ไม่ลด capacity; ถ้าไม่มี finite Max เลยให้คืน `Number.POSITIVE_INFINITY` ห้ามแทนด้วย 0 หรือเอา `min` มาคำนวณ
+7. คำนวณ capacity เพียงครั้งเดียวต่อ occurrence ก่อนเริ่มไล่ staff ของ occurrence นั้น แล้วใช้เป็น `requiredAdditional` ของ assignment loop เดิม
+8. ให้ `assigned` ของ loop เดิมเป็นตัวใช้ capacity; ห้ามลด capacity ซ้ำหลัง push Slot และห้ามคำนวณใหม่โดยหัก Slots ที่เพิ่ง push แล้วนำไปเปรียบเทียบกับ `assigned` อีกครั้ง
+9. ไม่ต้องหัก `plannedCount` ใน helper นี้: `generateOccurrences(...)` reject occurrences ที่ overlap กันอยู่แล้ว ดังนั้น Slots ที่วางแผนไว้จาก occurrence ก่อนหน้าไม่ overlap occurrence ปัจจุบัน ส่วน Slots ของ occurrence ปัจจุบันยังไม่มีในตอนเรียก helper และถูกจำกัดด้วย `assigned` เมื่อจัดจริง
+10. ไล่ Staff candidate ตาม ordering เดิม ข้ามคนที่ไม่ว่างโดยไม่เพิ่ม `assigned`; เมื่อ capacity เป็น Infinity loop ยังจบที่จำนวน selected staff ที่มีจริง ไม่ได้สร้าง Slot ไม่จำกัด
+11. ยังต้องเรียก final `validateMaximum(request, rules, positionSlots, planned)` ร่วมกันทั้งสอง mode ก่อน `createMany` และคง zero-plan early return เดิม
 
 เหตุผลที่ต้องใช้ capacity ต่ำสุด: Slot ใหม่ครอบคลุม occurrence ทั้งก้อน ดังนั้นถ้าช่วงย่อยใดเหลือ capacity เพียง 1 แม้ช่วงอื่นเหลือ 3 ก็สร้าง Slot เต็ม occurrence ได้สูงสุด 1 รายการ
 
@@ -257,6 +263,7 @@ Math.max(0, rule.max - existingCount - plannedCount)
 - ไม่ต้องลบ แก้ หรือย้าย existing Slot
 - ถ้า planner ได้ `planned.length === 0` ให้คง early return เดิมเพื่อไม่เรียก final validation บน zero plan
 - ถ้ามี planned Slot ใน segment อื่น final validation ต้อง reject เฉพาะกรณี request นี้เพิ่มจนละเมิด finite Max ตาม semantics เดิม
+- capacity 0 ของ occurrence หนึ่งต้องข้ามเฉพาะ occurrence นั้น แล้วจัด occurrence ถัดไปตามปกติ ห้าม return `{ createdCount: 0 }` จากภายใน occurrence loop จนทำให้ plan ที่ทำได้ในช่วงอื่นหายไป
 
 ### 4.5 Coverage กับ availability ต้องแยกกันเหมือนเดิม
 
@@ -324,7 +331,7 @@ Frontend:
 
 - ไม่คาดว่าต้องสร้าง production file ใหม่
 - ไม่คาดว่าต้องลบไฟล์ใด
-- ถ้าจำเป็นต้องแยก pure helper ออกจาก `auto-create.handler.ts` เพื่อให้ algorithm/test อ่านง่าย สามารถสร้าง helper ภายใต้โมดูล `work-schedule/slot` ได้ แต่ helper ต้องใช้ semantics ในแผนนี้และต้องมี unit test
+- helper ใหม่ของ MAXIMUM อยู่ภายใน `auto-create.handler.ts` ตามหัวข้อ 4.3 และทดสอบผ่าน handler เป็นหลัก ไม่ต้องแยก file/module หรือเปลี่ยน visibility ของ production methods เพื่อให้ test เข้าถึง
 
 ## 6. รายละเอียดการเปลี่ยนแปลงระดับไฟล์และเกณฑ์ผ่านแต่ละขั้น
 
@@ -368,8 +375,9 @@ target_mode: z.enum(["MINIMUM", "MAXIMUM"]).default("MINIMUM")
 
 - reuse transaction/read/validation/occurrence/availability/createMany flow เดิม
 - branch ตาม `body.target_mode` ที่จุดกำหนดจำนวนที่จะ assign ต่อ occurrence
-- `MINIMUM` ใช้ `calculateRequirements(...)` เดิม หรือ helper ที่ rename โดยผลต้องเท่าเดิม
-- `MAXIMUM` ใช้ residual finite-Max capacity ตามหัวข้อ 4.3
+- `MINIMUM` เรียก `calculateRequirements(request, rules, positionSlots, occurrences)` เดิมและเก็บผลใน `Map<Occurrence, number>` เหมือนเดิม ไม่ rename หรือเปลี่ยน algorithm
+- `MAXIMUM` เติม map ของ occurrences เดียวกันด้วย `calculateMaximumCapacity(occurrence, rules, positionSlots)` ตามหัวข้อ 4.3 โดยไม่เรียก `calculateRequirements(...)`
+- ใช้ assignment loop เดิมร่วมกันทั้งสอง mode ให้ `requiredAdditional` มาจาก map และนับ `assigned` เพียงจุดเดียว; map และ planned array ต้องสร้างภายใน callback ของ transaction แต่ละ attempt และเรียก helper คำนวณ capacity ใหม่ใน attempt นั้น
 - ห้าม duplicate handler เป็นสอง transaction flows
 - ห้ามให้ `MAXIMUM` เรียก minimum deficit เพื่อกำหนด target
 - ห้ามให้ `MINIMUM` เติมต่อจนถึง Max
@@ -392,7 +400,9 @@ target_mode: z.enum(["MINIMUM", "MAXIMUM"]).default("MINIMUM")
 
 ไฟล์ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/auto-create-form.tsx`
 
-ให้เพิ่ม `target_mode` ใน form schema/default values และแสดง control แบบ radio group หรือ control ที่สื่อ 2 ค่าได้ชัดเจน
+ให้เพิ่ม `target_mode: z.enum(["MINIMUM", "MAXIMUM"])` ใน `createFormSchema(...)` และ `target_mode: "MINIMUM"` ใน `useForm` default values (ไม่ต้องใส่ Zod default ใน form schema เพื่อให้ input/output ของ form ตรงกัน)
+
+เพิ่ม native radio inputs สองตัวภายใน `<fieldset disabled={isPending}>` หลังข้อความ Place timezone และก่อน fields เวลา ใช้ `<legend>เป้าหมายการจัดเวร</legend>` และ `register("target_mode")` สำหรับ radio ทั้งคู่ โดยมี label ที่สัมพันธ์กับแต่ละ input; ไม่ต้องเพิ่ม UI dependency
 
 ค่าที่ใช้จริง:
 
@@ -411,7 +421,8 @@ UI requirements:
 - default `MINIMUM`
 - disabled ระหว่าง `isPending` เช่น field อื่น
 - มี label/legend ที่ screen reader ระบุความหมายได้
-- validation error ถ้ามีแสดงตาม pattern เดิมของ form
+- validation error ของ `errors.target_mode` ถ้ามีแสดงด้วย `<p role="alert">` ตาม pattern เดิมของ form
+- เพิ่ม `targetMode: values.target_mode` ใน object ที่ส่งให้ `mutate(...)` ภายใน `onSubmit`; คง fields และ callbacks เดิม
 - ห้ามเปลี่ยน `resolveAutoCreateWallTime(...)` หรือ timezone/DST validation
 - ห้ามเปลี่ยน behavior ของ template/staff selection
 
@@ -426,7 +437,7 @@ UI requirements:
 
 ไฟล์ `ecosystem-frontend-next-js/src/features/work-schedule/slot/hooks/use-auto-create.ts`
 
-เพิ่ม `targetMode` ใน mutation variables และสร้าง body:
+เพิ่ม required `targetMode` ใน destructuring และ type ของ mutation variables ให้ใช้ type `AutoCreateDtoBody["target_mode"]` โดย import type จาก `../api/mutations/auto-create.api` (ชนิดเดียวกับ shared parsed schema) แล้วสร้าง body:
 
 ```ts
 {
@@ -501,7 +512,12 @@ if (planned.length === 0) return { createdCount: 0 };
 - touching boundaries ยังไม่ overlap
 - existing maximum safety tests เดิมยังผ่าน
 
-วิธีทดสอบ omitted mode: ให้ใช้ `AutoCreateDtoBodySchema.parse(...)` หรือ `safeParse(...)` กับ fixture ที่ไม่มี `target_mode` ก่อนส่ง parsed body เข้า command เพื่อให้ test ครอบคลุม default จริง ห้ามพึ่ง direct command construction ให้เติม default
+การเตรียม fixture:
+
+- เพิ่ม `target_mode: "MINIMUM"` ใน helper `command(...)` ก่อน `...body` เพื่อให้ regression tests เดิมใช้ MINIMUM อย่าง explicit และ MAXIMUM tests override ได้
+- วิธีทดสอบ omitted mode: parse fixture ที่ไม่มี `target_mode` ด้วย `AutoCreateDtoBodySchema.parse(...)` แล้วสร้าง `AutoCreateCommand` จาก parsed body โดยตรง ห้ามส่งผ่าน helper ที่เติม mode เองก่อน parse
+- เทียบ omitted กับ explicit MINIMUM โดยใช้ rule `min = 1, max = 2` และ selected staff ว่าง 2 คน ต้องสร้าง 1 รายการทั้งสอง request พร้อม insert data ที่เท่ากัน ให้ล้าง call history ของ mock ระหว่างการรันสอง request
+- คง test เดิม `rejects planned plus existing coverage above maximum in a touched segment` เป็น MINIMUM regression ตามตัวอย่างหัวข้อ 4.2 ห้ามแก้ expected จาก reject เป็น capped success สำหรับ MINIMUM
 
 ### 7.3 Backend handler tests ของ `MAXIMUM`
 
@@ -521,11 +537,21 @@ if (planned.length === 0) return { createdCount: 0 };
 12. Staff ที่มี Slot ใน position อื่นไม่ถูกเลือกแม้ยังมี capacity
 13. selected staff ไม่พอ capacity => สร้างเท่าที่ว่าง
 14. touching boundaries ไม่ block availability/capacity เกินจริง
-15. final validation reject เมื่อ planned + existing จะเกิน finite Max
+15. fixture เดียวกับ MINIMUM final-Max rejection ในหัวข้อ 4.2 => MAXIMUM สร้าง 1 และสำเร็จ ห้ามคาดให้ MAXIMUM reject เพราะ planner ต้องลดจำนวนก่อนจัด
 16. zero plan ไม่ fail เพียงเพราะ pre-existing Max violation
 17. `P2034` retry reread inputs และคำนวณ MAXIMUM plan ใหม่
 
-ถ้าสร้าง pure capacity helper เพิ่ม ให้มี unit test ของ helper สำหรับ finite cap, unbounded, partial-overlap และ existing > max ด้วย
+เพิ่มเติมกรณีรวมที่ต้องยืนยันผ่าน handler:
+
+- request/occurrence 08:00–12:00, finite Max 1 เฉพาะ 09:00–10:00, ช่วงอื่นไม่มี rule, selected staff ว่าง 3 คน => สร้าง 1 เต็ม occurrence; ช่วงไม่มี rule ไม่ยกเลิก finite cap ของช่วงย่อย
+- occurrence เดียวครอบคลุม rule ที่ `max = null` และ rule ที่ finite Max => ใช้ finite cap ของช่วงที่มีเพดาน
+- templates สองแบบที่แตะ boundary กัน: 08:00–10:00 และ 10:00–12:00; ช่วงแรก Max 0, ช่วงหลัง Max 1, selected staff ว่าง => สร้างเฉพาะช่วงหลัง 1 รายการ ไม่ throw และไม่หยุดก่อนจัดช่วงหลัง
+- templates ที่แตะ boundary เดียวกันทั้งสองช่วง, Max 2 และ selected staff ว่าง 2 คน => สร้าง 4 รายการ ใช้ staff คนเดิมซ้ำในช่วงที่ไม่ overlap ได้ และเรียง staff IDs เหมือนเดิมในแต่ละ occurrence
+- lowest-ID staff ติด Holiday, แต่มี selected staff ที่ว่างอีก 2 คนและ residual capacity 2 => สร้าง 2 โดยใช้สองคนที่ว่าง ห้ามเสีย capacity ไปกับคนที่ถูกข้าม
+
+กติกา fixture: `command(...)` และ `workScheduleStaffPosition.findMany` mock ต้องมี selected staff ชุดเดียวกัน; เคส available 3 คนต้องเพิ่ม ID คนที่สามและ active position mock จริง ห้ามถือว่าเพิ่ม `staff_ids` อย่างเดียวพอ และให้แยกจาก `unselectedStaffId` ที่ใช้ existing coverage เดิม สำหรับ Max 0 ให้ใช้ `min = null` หรือ 0 เพื่อให้ rule สอดคล้องกับ validation เดิม
+
+การทดสอบ final maximum guard ให้คง existing MINIMUM tests ที่สร้าง plan เกิน Max แล้ว assert `BadRequestException` และ `createMany` ไม่ถูกเรียก เนื่องจากทั้งสอง mode ใช้ guard เดียวกัน MAXIMUM จาก inputs ที่ถูกต้องต้องได้ capped success/zero ไม่ใช่ failure; ห้ามทำให้ planner จัดเกินเพดาน, เปลี่ยน production visibility หรือ bypass occurrence validation เพียงเพื่อสร้าง MAXIMUM failure case
 
 ### 7.4 Frontend API/hook tests
 
@@ -536,13 +562,15 @@ if (planned.length === 0) return { createdCount: 0 };
 - body fixture/type ที่ใช้กับ API สอดคล้องกับ parsed schema ใหม่
 - MINIMUM ถูก POST ไป endpoint เดิม
 - MAXIMUM ถูก POST ไป endpoint เดิม
-- invalid target mode ถูก reject ก่อน HTTP
+- invalid target mode ถูก reject ก่อน HTTP และ error store ยังแสดง status 400; สำหรับ negative API test ที่ต้องส่ง literal ผิด type ให้ใช้ `@ts-expect-error` เฉพาะบรรทัดเรียก API พร้อมเหตุผลว่าเป็น invalid external payload ห้ามเปลี่ยน production signature เป็น arbitrary string หรือใช้ `any`/unsafe cast
 - hook ส่ง `target_mode` จาก `targetMode` variable จริง
 - Authorization header เดิมไม่เปลี่ยน
 - `skipErrorCodes` เดิมไม่เปลี่ยน
 - missing auth ยังไม่ request/invalidate
 - backend failure ยังไม่ invalidate
 - success ยัง invalidate เฉพาะ list keys ของ user/position เดิม
+
+ให้เพิ่ม `target_mode: "MINIMUM"` ใน valid `body: AutoCreateDtoBody` fixture และให้ `setupHook(...)` รับ `targetMode: AutoCreateDtoBody["target_mode"]` (test helper default MINIMUM ได้) แล้วส่งเข้า `mutateAsync(...)` จริง ทดสอบทั้งสอง mode โดย assert body ที่ `mockedPost` ได้รับด้วย ไม่ใช่ตรวจเฉพาะค่าจาก test fixture
 
 ### 7.5 Frontend form tests
 
@@ -560,13 +588,24 @@ if (planned.length === 0) return { createdCount: 0 };
 - template/staff required validation เดิมไม่ regress
 - success/error feedback/navigation เดิมไม่ regress
 
+ปรับ exact payload expectations เดิมของทั้ง single/multiple selection ให้มี `targetMode: "MINIMUM"` ด้วย ส่วน mock ของ `useAutoCreate` ที่ hard-code `isPending: false` ให้เปลี่ยนเป็นตัวแปร `mockIsPending` และ reset เป็น false ใน `beforeEach` เพื่อให้ pending test ตั้งเป็น true ได้โดยไม่รั่วข้าม test ตรวจ `disabled` ของ fieldset และ assert ว่าไม่เรียก mutation ระหว่าง pending โดยใช้ Testing Library/DOM assertions ที่มีอยู่ ไม่ต้องเพิ่ม test dependency
+
 ## 8. คำสั่งตรวจสอบ
 
-ให้ Implementor รันจาก repository root โดยเริ่มจาก test ที่แคบที่สุด:
+ใช้ Node.js 22 ตาม `.github/workflows/ci.yml` และ pnpm ตาม `packageManager` ใน root `package.json`
+
+สำหรับ fresh checkout ให้เตรียม dependencies และ generated Prisma Client ก่อน เนื่องจาก backend handler/tests import `@prisma/client` และคำสั่ง Jest โดยตรงไม่ได้เรียก Prisma generation ให้อัตโนมัติ:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run prisma:generate
+```
+
+จากนั้นรันจาก repository root โดยเริ่มจาก test ที่แคบที่สุด:
 
 ```bash
 pnpm --dir ecosystem-backend-nest-js exec jest src/modules/work-schedule/slot/commands/auto-create.command.spec.ts src/modules/work-schedule/slot/commands/auto-create.handler.spec.ts --runInBand
-pnpm --dir ecosystem-frontend-next-js exec jest tests/work-schedule/auto-create-api.test.tsx tests/work-schedule/auto-create-form.test.tsx --runInBand
+pnpm --dir ecosystem-frontend-next-js exec jest tests/work-schedule/auto-create-api.test.tsx tests/work-schedule/auto-create-form.test.tsx tests/work-schedule/auto-create-client-page.test.tsx --runInBand
 pnpm run typecheck:backend
 pnpm run typecheck:frontend
 pnpm run lint:backend
@@ -580,7 +619,9 @@ pnpm run verify
 pnpm run test:e2e
 ```
 
-แต่ `AGENTS.md` ระบุว่า `pnpm run verify` ไม่รวม e2e เพราะ e2e อาจต้องใช้ deployment/database-specific environment และ unit test ต้อง mock Prisma ไม่เชื่อม database จริง
+แต่ `AGENTS.md` ระบุว่า `pnpm run verify` ไม่รวม e2e เพราะ e2e อาจต้องใช้ deployment/database-specific environment และ unit test ต้อง mock Prisma ไม่เชื่อม database จริง E2E ที่ต้องใช้ environment เพิ่มจึงไม่ใช่เกณฑ์บังคับของงานนี้
+
+หากทำงานผ่าน GitHub ให้ตรวจ Actions workflow `CI` / job `Verify monorepo` ซึ่งรัน `pnpm install --frozen-lockfile` และ `pnpm run verify` ตามไฟล์ workflow จริง พร้อมอ่านผล job/steps/logs ที่ทำได้ ห้ามรายงานว่าได้รัน narrow command แยกเองถ้าเพียงตรวจผลจาก Actions; หาก environment ไม่รองรับการตรวจเพิ่มเติม ให้แจ้งข้อจำกัดและคำสั่งที่ต้องให้ผู้ใช้รันพร้อมส่งผลกลับทางแชต ห้ามใช้สถานะตรวจที่ยังไม่ได้ผลเป็นผ่าน
 
 ## 9. Acceptance Criteria รวม
 
