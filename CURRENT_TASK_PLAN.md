@@ -29,38 +29,51 @@
 
 ยังไม่มี field ที่บอกวิธีเลือกพนักงาน
 
-Frontend ที่ `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/auto-create.api.ts` import `AutoCreateDtoBodySchema` จาก backend โดยตรงเพื่อ infer type และ validate payload ก่อน POST จึงไม่ควรสร้าง schema ซ้ำอีกชุดสำหรับ contract นี้
+Frontend ที่ `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/auto-create.api.ts` import `AutoCreateDtoBodySchema` จาก backend โดยตรงเพื่อ infer type และ validate payload ก่อน POST ดังนั้น contract ใหม่ต้องเพิ่มที่ backend schema เพียงแหล่งเดียว และ frontend API layer จะ validate schema เดียวกัน
 
-Endpoint ปัจจุบันใน `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts` คือ `POST /api/work-schedule/slot/positions/:position_id/auto` และส่ง `AutoCreateDtoBody` เข้า `AutoCreateCommand`; endpoint นี้ไม่ต้องเปลี่ยน path
+Endpoint ปัจจุบันใน `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts` คือ `POST /api/work-schedule/slot/positions/:position_id/auto` และส่ง `AutoCreateDtoBody` เข้า `AutoCreateCommand`; endpoint path และ controller wiring ไม่ต้องเปลี่ยน
 
 ### 3.2 การคำนวณจำนวน slot ที่ต้องเพิ่มปัจจุบัน
 
 ไฟล์ `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/auto-create.handler.ts` ทำงานภายใต้ Serializable transaction และ lock `work_schedule_position` ก่อนอ่านข้อมูลสำคัญซ้ำ ภายใน flow เดิมมี invariant ที่ต้องรักษา:
 
 1. ตรวจสิทธิ์ Work Schedule Admin ก่อนเริ่ม transaction
-2. ตรวจว่า Position/Place ยังใช้งานได้และ timezone เป็น IANA timezone ที่ถูกต้อง
-3. ตรวจ selected Slot Template/Slot Type ว่าอยู่ใน Position เดียวกันและข้อมูลเวลา/duration ถูกต้อง
-4. ตรวจ selected Staff ทุกคนว่ามี active `WorkScheduleStaffPosition` ใน Position เป้าหมาย
-5. สร้าง occurrence จาก template ตาม local calendar ของ Place, รองรับ DST และปฏิเสธ selected templates ที่ overlap กัน
-6. query slot เดิมที่ overlap request ด้วยเงื่อนไข `actualStartTime < end` และ `actualEndTime > start`; query เดียวนี้ปัจจุบันครอบคลุมทั้ง target-position coverage และ conflict ของ selected staff ข้าม Position
-7. query Holiday และ Min/Max ที่ overlap request
-8. `target_mode === 'MINIMUM'` ใช้ `calculateRequirements(...)` เพื่อเติมเฉพาะ deficit ให้ถึง Min
-9. `target_mode === 'MAXIMUM'` ใช้ `calculateMaximumCapacity(...)` เพื่อเติมได้มากที่สุดภายใต้ Max และจำนวนพนักงานที่ว่าง
-10. ก่อน insert เรียก `validateMaximum(...)` และเขียนเฉพาะ slot ใหม่ด้วย `workScheduleSlot.createMany(...)`
+2. lock Position ด้วย `SELECT ... FOR UPDATE` แล้วอ่าน Position/Place ซ้ำใน transaction
+3. ตรวจ Position/Place ว่ายังใช้งานได้และ timezone เป็น IANA timezone ที่ถูกต้อง
+4. ตรวจ selected Slot Template/Slot Type ว่าอยู่ใน Position เดียวกันและข้อมูลเวลา/duration ถูกต้อง
+5. ตรวจ selected Staff ทุกคนว่ามี active `WorkScheduleStaffPosition` ใน Position เป้าหมาย
+6. สร้าง occurrence จาก template ตาม local calendar ของ Place, รองรับ DST และปฏิเสธ selected templates ที่ overlap กัน
+7. query slot เดิมที่ overlap request ด้วย `actualStartTime < request.end` และ `actualEndTime > request.start` โดย query เดียวครอบคลุมทั้ง target-position coverage และ conflict ของ selected staff ข้าม Position
+8. query Holiday และ Min/Max ที่ overlap request
+9. `target_mode === 'MINIMUM'` ใช้ `calculateRequirements(...)` เพื่อเติมเฉพาะ deficit ให้ถึง Min
+10. `target_mode === 'MAXIMUM'` ใช้ `calculateMaximumCapacity(...)` เพื่อเติมได้มากที่สุดภายใต้ Max; ถ้าไม่มี finite Max ความจุอาจเป็น `Infinity` และ flow เดิมจะหยุดจากจำนวน selected staff ที่มีจริง
+11. ก่อน insert เรียก `validateMaximum(...)` และเขียนเฉพาะ slot ใหม่ด้วย `workScheduleSlot.createMany(...)`
+12. `P2034` ถูก retry โดยสร้าง transaction ใหม่และอ่าน planning input ใหม่ทุกครั้ง
 
 ### 3.3 วิธีเลือกพนักงานปัจจุบัน
 
-หลัง validate Staff แล้ว handler สร้าง `staffCandidates` จาก Staff ID ที่ active แล้ว `.sort()` จากนั้นสำหรับแต่ละ occurrence จะวนตามลำดับ Staff ID และเลือก “คนแรกที่ว่าง” จนครบ `requiredAdditional` โดย `isStaffAvailable(...)` ปฏิเสธ staff ที่ overlap กับ slot เดิม, Holiday หรือ slot ที่วางแผนไว้ในคำขอเดียวกัน
+หลัง validate Staff แล้ว handler สร้าง `staffCandidates` จาก Staff ID ที่ active แล้ว `.sort()` จากนั้นสำหรับแต่ละ occurrence จะวน Staff ID ตาม lexical ascending และเลือก “คนแรกที่ว่าง” จนครบ `requiredAdditional` หรือหมดพนักงานที่ว่าง โดย `isStaffAvailable(...)` ปฏิเสธ staff ที่ overlap กับ slot เดิม, Holiday หรือ slot ที่วางแผนไว้ในคำขอเดียวกัน
 
 ดังนั้นก่อนงานนี้ระบบมี deterministic order แต่ยังไม่มี optimization ตามเวลาพักหรือจำนวนเวร
 
 ### 3.4 UI ปัจจุบัน
 
-ไฟล์ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/auto-create-form.tsx` มี fieldset “เป้าหมายการจัดเวร” สำหรับ `MINIMUM`/`MAXIMUM`, ช่องเวลา, template และ staff เท่านั้น และ `use-auto-create.ts` สร้าง payload โดยส่ง `target_mode`, เวลา, template IDs และ staff IDs ยังไม่มี assignment strategy
+ไฟล์ `ecosystem-frontend-next-js/src/features/work-schedule/slot/components/auto-create-form.tsx` มี fieldset “เป้าหมายการจัดเวร” สำหรับ `MINIMUM`/`MAXIMUM`, ช่องเวลา, template และ staff เท่านั้น และมี default ของ `target_mode` เป็น `MINIMUM`
+
+ไฟล์ `ecosystem-frontend-next-js/src/features/work-schedule/slot/hooks/use-auto-create.ts` สร้าง payload โดยส่ง `target_mode`, เวลา, template IDs และ staff IDs ยังไม่มี assignment strategy
 
 ### 3.5 Schema ฐานข้อมูลที่เกี่ยวข้อง
 
-`ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma` มี `WorkScheduleSlot` พร้อม `positionId`, `staffId`, `slotTypeId`, `actualStartTime`, `actualEndTime` และมี index ที่ `positionId + actualStartTime` กับ `staffId + actualStartTime` อยู่แล้ว ข้อมูลที่ต้องใช้สำหรับสอง strategy มีครบและ strategy ไม่ต้องถูก persist จึงไม่ต้องแก้ Prisma schema หรือสร้าง migration ในงานนี้
+`ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma` มี `WorkScheduleSlot` พร้อม `positionId`, `staffId`, `slotTypeId`, `actualStartTime`, `actualEndTime` และ index `positionId + actualStartTime` กับ `staffId + actualStartTime` ข้อมูลที่ต้องใช้สำหรับสอง strategy มีครบ และ strategy ไม่ต้องถูก persist จึงไม่ต้องแก้ Prisma schema หรือสร้าง migration ในงานนี้
+
+Backend ใช้ Prisma `7.8.x`; การอ่าน boundary สำหรับ `MAXIMIZE_REST` ให้ใช้ aggregate/grouping ที่คืนเพียง endpoint ที่จำเป็น แทนการโหลด slot history ทั้งหมดหรือทำ query ต่อ staff ทีละคน
+
+### 3.6 Test fixtures ปัจจุบันที่ได้รับผลโดยตรงจาก contract ใหม่
+
+- `auto-create.command.spec.ts` มี base body ที่ปัจจุบันไม่ระบุ `target_mode` เพื่อทดสอบ default `MINIMUM`; หลังเพิ่ม `assignment_mode` แบบ required fixture นี้ต้องระบุ `assignment_mode` เสมอ เว้นแต่ test ที่ตั้งใจทดสอบ missing strategy
+- `auto-create.handler.spec.ts` มี helper `command(...)` ที่สร้าง `AutoCreateDtoBody` โดยตรง และมี test ที่ parse body ซึ่งละ `target_mode` เพื่อยืนยัน default `MINIMUM`; helper/fixture เหล่านี้ต้องเพิ่ม `assignment_mode` ที่ชัดเจน โดยคง test ของ `target_mode` default ไว้
+- `auto-create-form.test.tsx` มีหลาย test ที่ submit form โดยยังไม่มี strategy; test ที่ไม่ได้ทดสอบ validation ของ strategy ต้องเลือก strategy แบบ explicit ก่อน submit
+- `auto-create-client-page.test.tsx` มี regression test ที่ submit form จริงเพื่อยืนยัน Place timezone/navigation; เมื่อ strategy เป็น required test นี้ต้องเลือก strategy ก่อน submit มิฉะนั้น mutation จะไม่ถูกเรียก
 
 ## 4. Business Logic ที่คาดหวังหลัง Implement
 
@@ -72,64 +85,80 @@ Endpoint ปัจจุบันใน `ecosystem-backend-nest-js/src/modules/w
 2. ถ้า `requiredAdditional <= 0` ไม่ต้องเลือก staff สำหรับ occurrence นั้น
 3. ถ้าต้องเพิ่ม ให้กรองเฉพาะ staff ที่ `isStaffAvailable(...)` ตาม hard constraints เดิม
 4. ใช้ `assignment_mode` จัดอันดับเฉพาะ staff ที่ว่าง แล้วเลือกทีละ 1 คน
-5. หลังเลือกแต่ละคน ให้เพิ่ม slot เข้า `planned` ทันที แล้วคำนวณ candidate/score ใหม่สำหรับ assignment ถัดไป เพื่อให้ slot ที่เพิ่งวางแผนมีผลต่อการตัดสินใจครั้งถัดไป
-6. ถ้าจำนวน staff ที่ว่างน้อยกว่า `requiredAdditional` ให้รักษาพฤติกรรมเดิมคือสร้างได้เท่าที่ feasible โดยไม่ทำให้เกิด overlap/ผิด Holiday/เกิน Max; ห้ามสร้าง slot ผิด constraint เพื่อให้ครบตัวเลข
+5. หลังเลือกแต่ละคน ให้เพิ่ม slot เข้า `planned` ทันที แล้ว update state ของ strategy ที่เกี่ยวข้องก่อนคำนวณ candidate/score ครั้งถัดไป
+6. ทุก iteration ต้อง break ทันทีเมื่อไม่มี available candidate แม้ `requiredAdditional` จะเป็น `Infinity`; ห้ามมี loop ที่พึ่งพา `Infinity` เป็นตัวหยุด
+7. ถ้าจำนวน staff ที่ว่างน้อยกว่า `requiredAdditional` ให้รักษาพฤติกรรมเดิมคือสร้างได้เท่าที่ feasible โดยไม่ทำให้เกิด overlap/ผิด Holiday/เกิน Max; ห้ามสร้าง slot ผิด constraint เพื่อให้ครบตัวเลข
 
-เหตุผล: strategy ใหม่ควรเปลี่ยนเฉพาะ “ใครถูกเลือก” ไม่ใช่เปลี่ยน Min/Max, availability หรือจำนวน occurrence ที่ระบบเดิมคำนวณ
+เหตุผล: strategy ใหม่ต้องเปลี่ยนเฉพาะ “ใครถูกเลือก” ไม่ใช่เปลี่ยน Min/Max, availability, occurrence generation หรือจำนวนที่ระบบอนุญาตให้พยายามสร้าง
 
 ### 4.2 `BALANCE_TOTAL`: กระจายจำนวนเวรรวมให้ใกล้เคียงกัน
 
-สำหรับแต่ละ selected staff ให้สร้าง/อัปเดตจำนวนเวรดังนี้:
+สำหรับ selected staff ทุกคน ให้สร้าง `totalCount` ที่เริ่มจาก existing slots และเพิ่มตาม planned slots:
 
-- `existingCount`: จำนวน record ของ `WorkScheduleSlot` ของ staff คนนั้นที่ overlap ช่วง request ตาม half-open predicate เดิม (`slot.start < request.end && slot.end > request.start`) โดยนับ slot ข้าม Position ด้วย เพราะเป็นภาระเวรของพนักงานคนนั้น
-- `plannedCount`: จำนวน slot ใน `planned` ของ staff คนนั้นที่ถูกเพิ่มในคำขอปัจจุบัน
+- `existingCount`: จำนวน `WorkScheduleSlot` ของ staff คนนั้นที่ overlap ช่วง request ตาม half-open predicate เดิม โดยนับข้ามทุก Position
+- `plannedCount`: จำนวน slot ใน `planned` ของ staff คนนั้นที่เพิ่มจาก request ปัจจุบัน
 - `totalCount = existingCount + plannedCount`
 
-ตอนต้องเลือก staff 1 คน:
+วิธี implement ที่คาดหวัง:
 
-1. ตัด staff ที่ไม่ว่างด้วย `isStaffAvailable(...)` ออกก่อน
-2. เลือกคนที่ `totalCount` ต่ำที่สุด
-3. ถ้าเท่ากัน ให้เลือก `staffId` ตาม lexical ascending เพื่อให้ผล deterministic
-4. หลังเพิ่มเข้า `planned` ต้องเพิ่ม count ของคนดังกล่าวก่อนเลือก assignment ถัดไป
+1. สร้าง map เริ่มต้นของ selected staff ทุกคนเป็น 0
+2. ใช้ผล `existingSlots` จาก range query เดิมเท่านั้นในการเพิ่ม existing count; ห้าม query ประวัตินอก request สำหรับโหมดนี้
+3. ก่อน assignment แต่ละครั้ง กรอง available candidates ด้วย `isStaffAvailable(...)`
+4. เลือก candidate ที่ `totalCount` ต่ำที่สุด
+5. ถ้า count เท่ากัน ให้เลือก `staffId` lexical ascending
+6. หลัง `planned.push(...)` ให้เพิ่ม count ของ staff ที่เลือกทันที เพื่อให้ occurrence ถัดไปเห็นยอดใหม่
 
-ข้อจำกัดที่ต้องยอมรับ: ถ้าเวรเดิมไม่สมดุลอยู่แล้ว หรือ availability/Holiday/Min-Max ทำให้บางคนรับเวรไม่ได้ ระบบไม่ต้องและห้ามแก้เวรเดิมเพื่อบังคับให้ยอดเท่ากัน สิ่งที่ต้องรับประกันคือทุก assignment ใหม่เลือกจาก “คนที่มี totalCount ต่ำที่สุดในกลุ่มที่ว่าง ณ ขณะนั้น” ตาม tie-break ข้างต้น
+ข้อจำกัดที่ยอมรับ:
 
-slot ที่อยู่นอก request และไม่ overlap request ต้องไม่ถูกนำมานับในโหมดนี้ ส่วน slot ที่คร่อมขอบ request และ overlap จริงให้นับ 1 เวร; slot ที่เพียงแตะขอบ (`actualEndTime === request.start` หรือ `actualStartTime === request.end`) ไม่นับ
+- slot ที่อยู่นอก request และไม่ overlap request ไม่นับ
+- slot ที่คร่อมขอบ request และ overlap จริงนับ 1
+- slot ที่เพียงแตะขอบ (`actualEndTime === request.start` หรือ `actualStartTime === request.end`) ไม่นับ
+- ถ้าเวรเดิมไม่สมดุล หรือ availability/Holiday/Min-Max บังคับให้เลือกบางคน ระบบไม่ต้องและห้ามแก้เวรเดิมเพื่อทำยอดให้เท่ากันย้อนหลัง
 
 ### 4.3 `MAXIMIZE_REST`: เพิ่มเวลาพักระหว่างเวรให้มากที่สุด
 
-สำหรับ candidate ที่ว่างแต่ละคนและ occurrence ที่กำลังจะลง ให้หา slot ของ staff คนนั้นข้ามทุก Position โดยรวมทั้ง existing slots และ `planned`:
+สำหรับ available candidate แต่ละคนและ occurrence ที่กำลังจะลง ให้พิจารณา slot ของ staff คนนั้นข้ามทุก Position จาก 3 แหล่ง:
 
-- `previous`: slot ที่จบไม่เกิน `occurrence.start` และมี `end` ใกล้ `occurrence.start` ที่สุด
-- `next`: slot ที่เริ่มไม่น้อยกว่า `occurrence.end` และมี `start` ใกล้ `occurrence.end` ที่สุด
-- slot ที่ overlap occurrence ต้องถูกตัดออกจาก candidate ตั้งแต่ `isStaffAvailable(...)` จึงไม่เข้าสู่การให้ score
+1. existing slots ที่ overlap request จาก range query เดิม
+2. nearest boundary ก่อน/หลัง request ที่อ่านเพิ่มเฉพาะโหมดนี้
+3. `planned` slots จาก request ปัจจุบัน
+
+นิยาม neighbor:
+
+- `previous`: slot ที่จบไม่เกิน `occurrence.start` และมี `end` มากที่สุด
+- `next`: slot ที่เริ่มไม่น้อยกว่า `occurrence.end` และมี `start` น้อยที่สุด
+- candidate ที่มี slot overlap occurrence ถูกตัดออกด้วย `isStaffAvailable(...)` ก่อน scoring
 
 คำนวณ:
 
-- `previousGap = occurrence.start - previous.end` ถ้ามี previous มิฉะนั้นเป็น `Infinity`
-- `nextGap = next.start - occurrence.end` ถ้ามี next มิฉะนั้นเป็น `Infinity`
+- `previousGap = occurrence.start - previous.end` ถ้ามี previous มิฉะนั้น `Infinity`
+- `nextGap = next.start - occurrence.end` ถ้ามี next มิฉะนั้น `Infinity`
 - `restScore = min(previousGap, nextGap)`
 
-การเลือก:
+เลือก candidate ที่ `restScore` มากที่สุด และ tie ด้วย `staffId` lexical ascending
 
-1. เลือก staff ที่ `restScore` มากที่สุด เพื่อ maximize “ช่วงพักด้านที่สั้นกว่า” รอบเวรใหม่ ไม่ให้ช่องว่างด้านหนึ่งที่ยาวมากกลบอีกด้านที่ชิดมาก
-2. ถ้า score เท่ากัน ให้เลือก `staffId` lexical ascending เพื่อให้ deterministic
-3. slot ที่แตะกันพอดีถือว่าไม่ overlap ตาม logic เดิม แต่ให้ gap = 0
-4. ถ้าไม่มี previous และ next ทั้งคู่ score เป็น `Infinity`; เมื่อหลายคนเป็น `Infinity` ให้ใช้ Staff ID tie-break
-5. หลังเพิ่ม slot ใหม่เข้า `planned` ต้องนำ slot นั้นมาใช้เป็น neighbor ในการให้ score occurrence ถัดไปทันที
+ข้อกำหนดสำคัญของ boundary query เพื่อไม่ให้เกิด N+1 หรือโหลด history ทั้งหมด:
 
-เพื่อให้ขอบช่วง request ถูกต้อง โดยไม่โหลดประวัติทั้งหมด:
+- รันเฉพาะเมื่อ `body.assignment_mode === 'MAXIMIZE_REST'`
+- previous boundary ใช้ `tx.workScheduleSlot.groupBy(...)` ตาม `staffId` ของ selected staff, filter `actualEndTime <= request.start`, ไม่ filter `positionId`, และ aggregate `_max.actualEndTime`
+- next boundary ใช้ `tx.workScheduleSlot.groupBy(...)` ตาม `staffId` ของ selected staff, filter `actualStartTime >= request.end`, ไม่ filter `positionId`, และ aggregate `_min.actualStartTime`
+- แปลง aggregate สองชุดเป็น map `previousEndByStaff` และ `nextStartByStaff`; ไม่ต้อง fetch record เต็มเพราะ score ใช้เฉพาะ endpoint เวลา
+- boundary query แต่ละด้านต้องคืนอย่างมากหนึ่ง aggregate row ต่อ selected staff และต้องไม่อ่าน slot history มาเก็บใน memory
+- range query เดิมยังเป็น source ของ slot ภายใน/คร่อม request; aggregate boundary ใช้เฉพาะบริเวณนอก request
+- เมื่อ transaction retry จาก `P2034` ต้องรัน boundary aggregates ใหม่ภายใน transaction รอบใหม่ด้วย
 
-- ใช้ slot ที่ overlap request จาก query เดิมเป็น context ภายในช่วง
-- เฉพาะ `MAXIMIZE_REST` ให้โหลดเพิ่มต่อ selected staff อย่างมาก context ก่อนและหลังอย่างละ 1 record: เวรที่จบล่าสุดที่ `actualEndTime <= request.start` และเวรที่เริ่มเร็วที่สุดที่ `actualStartTime >= request.end`, ข้ามทุก Position
-- ห้าม query/load “slot ทั้งหมดตลอดประวัติ” ของ staff เพื่อคำนวณ score เพราะไม่จำเป็นต่อ correctness ของ nearest-neighbor รอบ occurrence ที่อยู่ภายใน request
-- สามารถทำ helper ภายใน `auto-create.handler.ts`; ไม่ต้องสร้าง service/module ใหม่สำหรับ feature นี้
+เหตุผลที่ aggregate endpoint เพียงพอ: occurrence ใหม่ทั้งหมดอยู่เต็มภายใน request; slot ที่อยู่ในหรือคร่อม request มีใน range query เดิมแล้ว ดังนั้น slot นอก request ที่มีผลต่อ nearest neighbor มีเพียงเวลาจบที่มากที่สุดก่อนขอบซ้าย และเวลาเริ่มที่น้อยที่สุดหลังขอบขวาของแต่ละ staff
 
-เหตุผลของขอบเขตนี้: occurrence ใหม่ทั้งหมดถูกสร้างภายใน request; slot ที่อยู่ภายในหรือคร่อม request มีอยู่ใน range query เดิมแล้ว ดังนั้น slot นอกช่วงที่มีผลต่อ nearest neighbor ได้มีเพียงตัวที่ใกล้ขอบซ้ายและขอบขวาที่สุดของ staff แต่ละคน
+ข้อกำหนด scoring เพิ่มเติม:
+
+- slot ที่แตะ occurrence พอดีไม่ overlap แต่ให้ gap = 0
+- ถ้าไม่มี previous และ next ทั้งคู่ `restScore = Infinity`
+- ห้าม sort ด้วยการลบ score แบบ `bScore - aScore` เพราะ `Infinity - Infinity` ให้ `NaN`; ให้ compare แบบ explicit แล้วใช้ Staff ID เป็น tie-break
+- หลังเพิ่ม slot เข้า `planned` ต้องให้ slot นั้นมีผลต่อ neighbor ของ assignment/occurrence ถัดไปทันที
 
 ### 4.4 Existing slots ต้อง immutable
 
-ทั้งสอง strategy มีสิทธิ์อ่าน slot เดิมเพื่อ availability/count/score เท่านั้น ห้ามเรียก update/delete หรือแก้เวลา/staff/slot type ของ record เดิม การ persist หลังคำนวณสำเร็จต้องยังเป็น `createMany` สำหรับ `planned` เท่านั้น
+ทั้งสอง strategy มีสิทธิ์อ่าน slot เดิมเพื่อ availability/count/score เท่านั้น ห้ามเรียก update/delete หรือแก้เวลา/staff/slot type ของ record เดิม การ persist หลังคำนวณสำเร็จต้องยังเป็น `workScheduleSlot.createMany(...)` สำหรับ `planned` เท่านั้น
 
 ## 5. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
 
@@ -143,25 +172,26 @@ slot ที่อยู่นอก request และไม่ overlap request �
 6. `ecosystem-frontend-next-js/src/features/work-schedule/slot/hooks/use-auto-create.ts`
 7. `ecosystem-frontend-next-js/tests/work-schedule/auto-create-form.test.tsx`
 8. `ecosystem-frontend-next-js/tests/work-schedule/auto-create-api.test.tsx`
+9. `ecosystem-frontend-next-js/tests/work-schedule/auto-create-client-page.test.tsx`
 
 ### ไฟล์ที่ยืนยันว่าเกี่ยวข้องแต่ไม่คาดว่าต้องแก้
 
-- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts`: endpoint/command wiring รองรับ body DTO เดิมอยู่แล้ว
-- `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`: schema ปัจจุบันมีข้อมูลเพียงพอ ไม่มี field ใหม่ที่ต้อง persist
-- `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/auto-create.api.ts`: import schema/type จาก backend และส่ง body ทั้งก้อนอยู่แล้ว จึงควรรับ contract ใหม่อัตโนมัติ; ต้องใช้ test ยืนยัน
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/slot.controller.ts`: endpoint/command wiring รับ body DTO อยู่แล้ว
+- `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`: schema มีข้อมูลที่ต้องใช้ครบและ strategy ไม่ต้อง persist
+- `ecosystem-frontend-next-js/src/features/work-schedule/slot/api/mutations/auto-create.api.ts`: import schema/type จาก backend และ POST `parsedBody.data` ทั้งก้อน จึงควรรับ field ใหม่โดยไม่แก้ source; ต้องใช้ test ยืนยัน
 - `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/slot/new/auto/client-page.tsx`: strategy เป็น state ภายใน form ไม่ต้องเพิ่ม prop จาก page
-- `ecosystem-frontend-next-js/tests/work-schedule/auto-create-client-page.test.tsx`: ไม่คาดว่าต้องแก้ assertion ปัจจุบัน แต่ต้องรันเป็น regression test เพื่อยืนยัน page ยังใช้ Place timezone/navigation ถูกต้อง
 
 ### ไฟล์ที่ไม่ต้องสร้างหรือลบ
 
 - ไม่สร้าง migration
 - ไม่สร้าง Prisma model/enum สำหรับ strategy
 - ไม่สร้าง endpoint ใหม่
-- ไม่สร้าง service/module ใหม่ เว้นแต่ระหว่าง Implement พบข้อจำกัดของไฟล์จริงที่ทำให้ helper ภายใน handler ไม่สามารถใช้งานได้; หากเกิดกรณีนั้นต้องหยุดและส่งกลับ Planner แทนการขยาย architecture เอง
+- ไม่สร้าง service/module ใหม่
+- ถ้าระหว่าง Implement พบว่าจำเป็นต้องเปลี่ยน schema, endpoint semantics หรือ architecture นอกไฟล์ข้างต้น ให้หยุดและส่งกลับ Planner แทนการขยาย scope เอง
 
 ## 6. รายละเอียดการเปลี่ยนแปลงระดับไฟล์และเกณฑ์ผ่าน
 
-### ขั้นที่ 1 — เพิ่ม API contract ของ assignment strategy
+### ขั้นที่ 1 — เพิ่ม API contract และปรับ fixture ของ DTO tests
 
 แก้ `auto-create.command.ts`:
 
@@ -169,92 +199,106 @@ slot ที่อยู่นอก request และไม่ overlap request �
 - ห้ามเปลี่ยน enum/default ของ `target_mode`
 - ห้ามเพิ่ม default ให้ `assignment_mode`
 
-แก้ `auto-create.command.spec.ts` ให้ทดสอบ:
+แก้ `auto-create.command.spec.ts`:
 
+- base body ต้องมี `assignment_mode` ที่ valid เพื่อให้ test เดิมโฟกัส validation เดิมได้
+- test `target_mode` omitted ต้องยัง parse เป็น `MINIMUM` เมื่อ `assignment_mode` ถูกระบุ
 - รับ `MAXIMIZE_REST`
 - รับ `BALANCE_TOTAL`
-- ปฏิเสธค่าที่ไม่อยู่ใน enum และ string ว่าง
-- ปฏิเสธ body ที่ไม่มี `assignment_mode`
-- regression ของ `target_mode`, UUID, datetime offset และ `end > start` เดิมต้องผ่าน
+- reject assignment mode ที่ invalid และ string ว่าง
+- reject body ที่ไม่มี `assignment_mode`
+- regression ของ UUID, datetime offset และ `end > start` ต้องยังผ่าน
 
-**เกณฑ์ผ่าน:** contract มี strategy 2 ค่าเท่านั้น, request ต้องระบุ strategy ชัดเจน และ behavior validation เดิมไม่เปลี่ยน
+**เกณฑ์ผ่าน:** API มี assignment strategy 2 ค่าเท่านั้น, request ต้องระบุ strategy ชัดเจน และ `target_mode` default เดิมยังทำงานโดยไม่กลายเป็น default ของ strategy
 
-### ขั้นที่ 2 — Refactor assignment loop ให้เลือก candidate ตาม strategy โดยรักษา hard constraints เดิม
+### ขั้นที่ 2 — Refactor assignment loop โดยรักษา hard constraints เดิม
 
 แก้ `auto-create.handler.ts`:
 
-- คงการสร้าง/sort `staffCandidates` เพื่อใช้เป็น deterministic baseline/tie-break แต่ห้ามใช้ “first available by ID” เป็น decision หลักอีกต่อไป
-- แยก logic “กรอง available candidates” ออกจาก “เลือก candidate ตาม strategy” ให้ทดสอบได้ผ่าน public behavior ของ handler
-- เปลี่ยน loop ให้เลือกทีละ assignment และเพิ่มเข้า `planned` ทันที
-- คง `isStaffAvailable(...)`, `calculateRequirements(...)`, `calculateMaximumCapacity(...)`, `validateMaximum(...)`, timezone/DST/template validation, transaction/lock/retry และ createMany semantics เดิม
+- คง `staffCandidates` ที่ sort lexical เพื่อใช้เป็น deterministic candidate set/tie-break
+- แยกขั้น “กรอง available candidates” ออกจาก “เลือก candidate ตาม strategy”
+- สำหรับแต่ละ occurrence ให้เลือกทีละ assignment, `planned.push(...)` ทันที และคำนวณ candidate ใหม่
+- เมื่อไม่มี available candidate ให้ break แม้ `requiredAdditional` เป็น `Infinity`
+- คง `isStaffAvailable(...)`, `calculateRequirements(...)`, `calculateMaximumCapacity(...)`, `validateMaximum(...)`, timezone/DST/template validation, Serializable transaction, row lock, retry และ `createMany` semantics เดิม
 
-**เกณฑ์ผ่าน:** จำนวน slot ที่ต้องพยายามสร้างยังมาจาก `target_mode` เดิม; strategy มีผลเฉพาะ staff selection; ไม่มี assignment ที่ overlap slot/Holiday/planned slot และไม่มีการข้าม Max
+แก้ `auto-create.handler.spec.ts` fixture หลัก:
+
+- `command(...)` ต้องใส่ `assignment_mode: 'BALANCE_TOTAL'` เป็น explicit baseline เพื่อให้ regression tests เดิมยัง deterministic และไม่พึ่ง default ที่ไม่มีจริง
+- test ที่ parse body โดยละ `target_mode` ต้องเพิ่ม `assignment_mode` และยังยืนยันได้ว่าเฉพาะ `target_mode` default เป็น `MINIMUM`
+
+**เกณฑ์ผ่าน:** จำนวน slot ที่ต้องพยายามสร้างยังมาจาก `target_mode`; strategy มีผลเฉพาะ staff selection; loop จบได้เมื่อ candidate หมดทั้งใน finite และ infinite capacity case
 
 ### ขั้นที่ 3 — Implement `BALANCE_TOTAL`
 
 ใน `auto-create.handler.ts`:
 
-- ใช้ range-limited existing slot query เดิมเป็นแหล่ง count เพื่อไม่ต้อง query ประวัตินอกช่วง
-- สร้าง count ต่อ selected staff จาก slot records ที่ overlap request ข้ามทุก Position
-- รวม `planned` ที่เกิดระหว่าง request ปัจจุบันเข้ากับ count ก่อนเลือกครั้งถัดไป
-- เรียง candidate ตาม `(totalCount asc, staffId asc)`
-- ห้ามนำ slot ที่อยู่นอก request และไม่ overlap มานับ
+- สร้าง count map ของ selected staff จาก range-limited `existingSlots` เดิม
+- นับ slot ของ selected staff ข้ามทุก Position
+- ไม่ query slot นอก request
+- เรียง/เลือก candidate ตาม `(totalCount asc, staffId asc)`
+- เพิ่ม count ทันทีหลัง staff ถูก push เข้า `planned`
 
 เพิ่ม/แก้ test ใน `auto-create.handler.spec.ts` อย่างน้อย:
 
-1. คนที่มี existing count ต่ำกว่าถูกเลือกก่อน แม้ Staff ID จะไม่ได้มาก่อน
-2. count รวม slot ข้าม Position ของ staff
+1. คนที่ existing count ต่ำกว่าถูกเลือกก่อน แม้ Staff ID จะไม่ได้มาก่อน
+2. count รวม slot ข้าม Position
 3. slot ก่อน/หลัง request ที่ไม่ overlap ไม่ถูกนับ
 4. slot ที่คร่อมขอบและ overlap ถูกนับ ส่วน slot ที่แตะขอบพอดีไม่ถูกนับ
-5. `planned` จาก occurrence ก่อนหน้าทำให้ occurrence ถัดไปเลือกคนที่ count ต่ำกว่า
-6. เมื่อ count เท่ากันเลือก Staff ID lexical ascending
+5. planned จาก occurrence ก่อนหน้าทำให้ occurrence ถัดไปเห็น count ใหม่
+6. count เท่ากันเลือก Staff ID lexical ascending
 7. staff ที่ count ต่ำแต่ไม่ว่าง/ติด Holiday ต้องไม่ถูกเลือก
+8. behavior ของ `MINIMUM`/`MAXIMUM` เดิมยังคงจำนวน slot ตาม capacity เดิมเมื่อ strategy เป็น `BALANCE_TOTAL`
 
-**เกณฑ์ผ่าน:** ทุก slot ใหม่เลือก staff ที่มี `existing + planned` count ต่ำที่สุดในกลุ่ม available ณ จุดนั้นตาม tie-break ที่กำหนด โดยไม่แก้ slot เดิม
+**เกณฑ์ผ่าน:** ทุก slot ใหม่เลือก selected staff ที่มี `existing + planned` count ต่ำที่สุดในกลุ่ม available ณ จุดนั้น โดยไม่แก้ slot เดิม
 
-### ขั้นที่ 4 — Implement `MAXIMIZE_REST`
+### ขั้นที่ 4 — Implement `MAXIMIZE_REST` ด้วย boundary aggregates
 
 ใน `auto-create.handler.ts`:
 
-- ใช้ existing slots ใน request เป็น context เดิม
-- เพิ่มการอ่าน nearest boundary slot ก่อน/หลัง request เฉพาะเมื่อ `assignment_mode === 'MAXIMIZE_REST'`
-- boundary lookup ต้อง filter ด้วย `staffId` และต้องไม่ filter `positionId`
-- previous boundary = record ที่มี `actualEndTime <= request.start` และ `actualEndTime` มากที่สุด
-- next boundary = record ที่มี `actualStartTime >= request.end` และ `actualStartTime` น้อยที่สุด
-- อย่าอ่าน slot history ทั้งหมดของ staff; ใช้ nearest record ต่อด้านเท่านั้น
-- ให้ score candidate ตาม `min(previousGap, nextGap)` และ tie ด้วย Staff ID
-- context สำหรับ score ต้องรวม existing slot ภายในช่วง, boundary slot และ `planned`
+- เพิ่ม two aggregate reads เฉพาะ `MAXIMIZE_REST` ตามข้อ 4.3:
+  - previous: group by `staffId`, `_max.actualEndTime`, filter `actualEndTime <= request.start`
+  - next: group by `staffId`, `_min.actualStartTime`, filter `actualStartTime >= request.end`
+- ทั้งสอง query ใช้ selected staff IDs และห้าม filter `positionId`
+- สร้าง maps ของ boundary endpoints
+- score โดยรวม boundary maps + existing slots ใน request + `planned`
+- กรอง availability ก่อน scoring
+- tie-break ด้วย Staff ID และ compare `Infinity` แบบ explicit
+- ห้าม query ต่อ staff ทีละคน และห้ามโหลด full history
 
-เพิ่ม/แก้ test ใน `auto-create.handler.spec.ts` อย่างน้อย:
+แก้ mock ใน `auto-create.handler.spec.ts` ให้ `tx.workScheduleSlot` รองรับ `groupBy` และตั้ง default เป็น empty array
 
-1. previous slot ก่อน request มีผลต่อ first/early occurrence
-2. next slot หลัง request มีผลต่อ last/late occurrence
+เพิ่ม/แก้ test อย่างน้อย:
+
+1. previous aggregate ก่อน request มีผลต่อ first/early occurrence
+2. next aggregate หลัง request มีผลต่อ last/late occurrence
 3. เลือกคนที่ minimum rest gap มากกว่า
-4. slot ภายใน request มีผลต่อ previous/next neighbor
-5. `planned` ที่เพิ่งสร้างมีผลต่อ occurrence ถัดไป
+4. existing slot ภายใน request มีผลต่อ previous/next neighbor
+5. planned slot มีผลต่อ occurrence ถัดไป
 6. slot ของ staff ใน Position อื่นมีผลต่อ rest score
-7. touching slot ให้ gap 0 แต่ไม่ถือว่า overlap
+7. touching slot ให้ gap 0 แต่ไม่ overlap
 8. ไม่มี neighbor ทั้งสองด้านให้ score `Infinity`
-9. score เท่ากันเลือก Staff ID lexical ascending
-10. candidate ที่มี score สูงแต่ overlap/Holiday ต้องถูกตัดก่อน scoring
-11. `BALANCE_TOTAL` ต้องไม่ทำ boundary lookup ที่ไม่จำเป็น
-12. context query เพิ่มเติมต้องไม่ทำให้ target-position Min/Max coverage เปลี่ยน
+9. score เท่ากัน—including `Infinity` เท่ากัน—เลือก Staff ID lexical ascending
+10. candidate ที่มี score สูงแต่ overlap/Holiday ถูกตัดก่อน scoring
+11. `BALANCE_TOTAL` ต้องไม่เรียก boundary `groupBy`
+12. boundary `groupBy` ไม่มี `positionId` filter และใช้ selected staff IDs เท่านั้น
+13. boundary aggregates ไม่เปลี่ยน target-position Min/Max coverage
+14. เมื่อเกิด `P2034` ใน `MAXIMIZE_REST`, boundary aggregates ถูกอ่านใหม่ใน transaction รอบ retry
 
-**เกณฑ์ผ่าน:** candidate ที่ถูกเลือกมี restScore สูงสุดในกลุ่ม available ตามนิยาม และ boundary slot นอก request มีผลเฉพาะโหมดนี้โดยไม่ถูกแก้ไข
+**เกณฑ์ผ่าน:** candidate ที่ถูกเลือกมี `restScore` สูงสุดในกลุ่ม available ตามนิยาม, ใช้ข้อมูลนอก request เท่าที่จำเป็น และไม่มี N+1/full-history read
 
 ### ขั้นที่ 5 — เพิ่มตัวเลือก UI และส่ง contract ใหม่
 
 แก้ `auto-create-form.tsx`:
 
 - เพิ่ม `assignment_mode` ใน form schema เป็น `MAXIMIZE_REST | BALANCE_TOTAL`
-- ไม่ตั้งค่าเริ่มต้นให้ field นี้; ผู้ใช้ต้องเลือกก่อน submit
+- field ต้อง required และกรณีไม่เลือกต้องได้ข้อความ validation “กรุณาเลือกวิธีจัดพนักงาน”
+- ห้ามกำหนด default value ของ `assignment_mode`
 - เพิ่ม fieldset แยกจาก “เป้าหมายการจัดเวร” ชื่อเช่น “วิธีจัดพนักงาน” พร้อม radio 2 ค่า:
-  - `MAXIMIZE_REST` — “เพิ่มเวลาพักระหว่างเวรให้มากที่สุด” และ help text ว่าระบบพิจารณาเวรก่อน/หลังที่มีอยู่แล้วโดยไม่แก้เวรเดิม
-  - `BALANCE_TOTAL` — “กระจายจำนวนเวรรวมให้ใกล้เคียงกัน” และ help text ว่านับเวรที่ overlap ช่วงเวลาที่เลือก รวมเวรใหม่ที่กำลังจัด
-- หากยังไม่เลือก ให้แสดง validation message “กรุณาเลือกวิธีจัดพนักงาน” และห้ามเรียก mutation
-- fieldset ใหม่ต้อง disabled ระหว่าง `isPending` เช่นเดียวกับ input อื่น
-- `onSubmit` ส่ง `assignmentMode: values.assignment_mode` ไป hook
-- ห้ามเปลี่ยน timezone conversion และ validation DST เดิม
+  - `MAXIMIZE_REST` — “เพิ่มเวลาพักระหว่างเวรให้มากที่สุด” พร้อม help text ว่าพิจารณาเวรก่อน/หลังที่มีอยู่แล้วโดยไม่แก้เวรเดิม
+  - `BALANCE_TOTAL` — “กระจายจำนวนเวรรวมให้ใกล้เคียงกัน” พร้อม help text ว่านับเวรที่ overlap ช่วงเวลาที่เลือกและเวรใหม่ที่กำลังจัด
+- fieldset ใหม่ต้อง disabled ระหว่าง `isPending`
+- `onSubmit` ส่ง `assignmentMode: values.assignment_mode`
+- ห้ามเปลี่ยน timezone conversion/DST validation เดิม
 
 แก้ `use-auto-create.ts`:
 
@@ -262,39 +306,55 @@ slot ที่อยู่นอก request และไม่ overlap request �
 - map เป็น `assignment_mode: assignmentMode` ใน body
 - คง auth token และ query invalidation เดิม
 
-แก้ `auto-create-form.test.tsx` ให้ทดสอบ:
+แก้ `auto-create-form.test.tsx`:
 
-- แสดง radio strategy ทั้ง 2 ค่าแยกจาก Min/Max
-- ไม่เลือก strategy แล้ว submit ไม่ได้และมีข้อความ validation
-- เลือกแต่ละ strategy แล้ว mutation ได้ค่าที่ถูกต้อง
-- `targetMode` และ `assignmentMode` เลือกได้อิสระจากกัน และ payload มีทั้งสองค่า
+- test ที่ไม่ได้โฟกัส missing strategy ต้องเลือก strategy explicit ก่อน submit
+- แสดง radio strategy 2 ค่าแยกจาก Min/Max
+- ไม่เลือก strategyแล้ว submitไม่ได้ และแสดง “กรุณาเลือกวิธีจัดพนักงาน”
+- เลือกแต่ละ strategy แล้ว mutation ได้ค่าถูกต้อง
+- `targetMode` และ `assignmentMode` เลือกอิสระจากกัน และ payload มีทั้งสองค่า
 - strategy fieldset disabled ขณะ pending
 - timezone/DST, selections, toast/navigation เดิมยังผ่าน
 
-แก้ `auto-create-api.test.tsx` ให้ทดสอบ:
+แก้ `auto-create-api.test.tsx`:
 
-- body ที่มี strategy แต่ละค่าถูก validate และ POST ตามเดิม
-- strategy invalid/หายไปถูก block ก่อน HTTP
-- hook ส่ง `assignment_mode` ตรงกับ input
+- base `body` ต้องมี `assignment_mode`
+- POST contract สำหรับ strategy ทั้งสองค่าผ่าน validation
+- invalid/missing `assignment_mode` ถูก block ก่อน HTTP
+- hook variable มี `assignmentMode` และ network payload มี `assignment_mode` ตรงกัน
+- target mode tests ยังทดสอบได้โดยเปลี่ยน `target_mode` แยกจาก assignment mode
 - cache invalidation success/failure behavior เดิมไม่เปลี่ยน
 
-**เกณฑ์ผ่าน:** ผู้ใช้เลือก strategy ได้จริง, request ทุกครั้งที่ออกจาก UI มี `assignment_mode`, Min/Max ยังเป็นคนละตัวเลือก และ frontend ไม่สร้าง logic จัดเวรเอง
+**เกณฑ์ผ่าน:** ผู้ใช้ต้องเลือก strategy ก่อน submit, request ทุกครั้งมี `assignment_mode`, Min/Max ยังเป็นคนละมิติ และ frontend ไม่มี scheduling optimization logic
+
+### ขั้นที่ 6 — ปรับ client-page regression test ที่ submit form
+
+แก้ `ecosystem-frontend-next-js/tests/work-schedule/auto-create-client-page.test.tsx`:
+
+- ใน test ที่ submit form เพื่อยืนยัน Place timezone/navigation ให้เลือก strategy radio หนึ่งค่าอย่าง explicit ก่อนกด submit
+- assertion หลักเรื่อง Position-derived Place, timezone offset และ navigation ต้องคงเดิม
+- ไม่ต้องแก้ `client-page.tsx` เพื่อส่ง strategy prop เพราะ form จัดการ field นี้เอง
+
+**เกณฑ์ผ่าน:** regression test ยังยืนยัน Place timezone/navigation ได้จริงหลัง form เพิ่ม required strategy และ mutation ถูกเรียกจากการ submit ที่ valid
 
 ## 7. สิ่งที่ Implementor ต้องระวัง
 
-- ห้ามเปลี่ยนความหมาย `MINIMUM`/`MAXIMUM` เพื่อรองรับ strategy ใหม่
-- ห้ามแก้ endpoint path หรือสร้าง endpoint แยกต่อ strategy
-- ห้ามย้าย optimization ไป frontend; backend ต้องเป็น source of truth เพราะต้องใช้ transaction และข้อมูล slot ล่าสุด
-- ห้ามแก้ slot เดิมเพื่อทำให้ผลดูสมดุลหรือเพิ่มเวลาพัก
-- ต้องพิจารณา selected staff ข้ามทุก Position ทั้ง availability, balance count และ rest context; ห้ามจำกัด slot ของ staff เฉพาะ Position เป้าหมาย
-- target-position coverage สำหรับ Min/Max ต้องยังนับ slot ของ Position เป้าหมายตาม logic เดิม ไม่เกี่ยวกับ assignment strategy
-- ต้องรักษา half-open overlap semantics เดิม (`start < other.end && end > other.start`) เพื่อให้ slot ที่แตะขอบไม่ถูกมองว่า overlap
-- อย่าเปลี่ยน timezone/DST generation; occurrence ยังต้องใช้ Place timezone และต้องอยู่เต็มช่วง request ตาม behavior เดิม
-- อย่าลด isolation level, ถอด row lock หรือถอด transaction retry เพราะ strategy ใหม่ต้องตัดสินใจจาก snapshot เดียวกับ slot ที่จะ insert
-- อย่าใช้ floating point/หน่วยเวลาอื่นโดยไม่จำเป็น; handler ปัจจุบันใช้ epoch milliseconds ให้คำนวณ gap ด้วยหน่วยเดียวกัน
-- อย่าใช้ random tie-break เพราะจะทำให้ test และผลจัดเวรไม่ deterministic
-- อย่าโหลดประวัติ slot ทั้งหมดเพื่อ `MAXIMIZE_REST`; ใช้ range query เดิม + nearest boundary record เท่านั้น
-- ถ้าพบว่า schema/constraint จริงทำให้ cannot implement ตาม contract นี้โดยไม่ต้อง migration, เปลี่ยน endpoint semantics หรือแก้ Business Logic อื่น ให้หยุดและส่งกลับ Planner ก่อน ไม่ให้ตัดสินใจขยาย scope เอง
+- ห้ามเปลี่ยนความหมาย `MINIMUM`/`MAXIMUM`
+- ห้ามสร้าง default ของ `assignment_mode` ทั้ง backend และ UI
+- ห้ามแก้ endpoint path หรือสร้าง endpoint แยกตาม strategy
+- backend ต้องเป็น source of truth ของการจัด staff; frontend มีหน้าที่เลือก strategy และส่ง contract เท่านั้น
+- ห้ามแก้ existing `WorkScheduleSlot`
+- availability, balance count และ rest context ของ selected staff ต้องพิจารณาข้ามทุก Position
+- target-position coverage สำหรับ Min/Max ต้องยังนับตาม Position เป้าหมายเท่านั้น
+- รักษา half-open overlap semantics (`start < other.end && end > other.start`)
+- อย่าเปลี่ยน timezone/DST occurrence generation
+- อย่าลด transaction isolation, ถอด row lock หรือถอด retry
+- gap ให้ใช้ epoch milliseconds เช่นเดียวกับ handler ปัจจุบัน
+- ห้าม random tie-break
+- ระวัง `Infinity` ทั้งใน `requiredAdditional` และ `restScore`: loop ต้อง break เมื่อ candidate หมด และ comparator ห้ามใช้ `Infinity - Infinity`
+- `MAXIMIZE_REST` ห้าม N+1 query ต่อ staff และห้ามโหลด slot history ทั้งหมด; ใช้ 2 boundary aggregates + range query เดิม
+- boundary aggregates ต้องอยู่ใน transaction เดียวกับ planning reads และต้องถูกอ่านใหม่เมื่อ transaction retry
+- ถ้าพบข้อจำกัดจริงที่ทำให้ต้อง migration, เปลี่ยน endpoint semantics หรือขยาย architecture ให้หยุดและส่งกลับ Planner
 
 ## 8. Tests และคำสั่งตรวจสอบ
 
@@ -312,8 +372,6 @@ Frontend:
 pnpm --dir ecosystem-frontend-next-js run test -- tests/work-schedule/auto-create-api.test.tsx tests/work-schedule/auto-create-form.test.tsx tests/work-schedule/auto-create-client-page.test.tsx
 ```
 
-`auto-create-client-page.test.tsx` เป็น regression test แม้ไม่คาดว่าต้องแก้ไฟล์ เพราะต้องยืนยันว่า page ยัง resolve Place timezone/navigation และ render form ได้หลัง form contract เปลี่ยน
-
 ### Final verification
 
 จาก root repository ให้รัน:
@@ -322,18 +380,23 @@ pnpm --dir ecosystem-frontend-next-js run test -- tests/work-schedule/auto-creat
 pnpm run verify
 ```
 
-คำสั่งนี้เป็นคำสั่งเดียวกับ CI ปัจจุบันและครอบคลุม frontend tests, Prisma validation/generation, backend/frontend typecheck, lint, build, backend tests และ migration tests
+`pnpm run verify` เป็นคำสั่งเดียวกับ GitHub Actions CI และครอบคลุม frontend tests, Prisma validation/generation, backend/frontend typecheck, lint, build, backend tests และ migration tests
 
 ## 9. Acceptance Criteria รวม
 
 งาน Implement ถือว่าผ่านเมื่อครบทุกข้อ:
 
 1. API รับ `assignment_mode` เฉพาะ `MAXIMIZE_REST` หรือ `BALANCE_TOTAL` และ request ที่ไม่ระบุ/ระบุผิดถูก reject
-2. `target_mode` ยังควบคุมจำนวน slot ที่ต้องเพิ่มตาม Min/Max แบบเดิม และ assignment strategy ควบคุมเฉพาะการเลือก staff
-3. `BALANCE_TOTAL` นับ existing slots เฉพาะที่ overlap request ข้ามทุก Position รวม planned slots และเลือก lowest-count available staff แบบ deterministic
-4. `MAXIMIZE_REST` เลือก available staff ที่มี minimum gap ถึง nearest previous/next slot มากที่สุด รวม context ก่อน/หลัง request ตามที่กำหนด และใช้ planned slots ในการตัดสินใจครั้งถัดไป
-5. availability, Holiday, template validation, timezone/DST, Min/Max, Serializable transaction, row lock, retry และ maximum validation เดิมยังทำงาน
-6. ไม่มี update/delete existing `WorkScheduleSlot`; persist เฉพาะ slot ใหม่ผ่าน create flow เดิม
-7. UI แสดง strategy 2 ตัวเลือกแยกจาก Min/Max, บังคับให้เลือก strategy และส่งค่าถึง backend
-8. ไม่มี Prisma migration/schema change และไม่มี endpoint ใหม่สำหรับงานนี้
-9. targeted tests ที่ระบุผ่าน และ `pnpm run verify` ผ่านทั้งหมด
+2. `target_mode` ยัง default เป็น `MINIMUM` เมื่อ omitted แต่ `assignment_mode` ไม่มี default
+3. `target_mode` ควบคุมจำนวน slot ที่ต้องเพิ่มตาม logic เดิม และ assignment strategy ควบคุมเฉพาะการเลือก staff
+4. `BALANCE_TOTAL` นับ existing slots เฉพาะที่ overlap request ข้ามทุก Position รวม planned slots และเลือก lowest-count available staff แบบ deterministic
+5. `MAXIMIZE_REST` เลือก available staff ที่มี minimum gap ถึง nearest previous/next slot มากที่สุด โดยใช้ range query เดิม + previous/next aggregate endpoints ข้ามทุก Position
+6. `MAXIMIZE_REST` ไม่เกิด N+1/full-history read และ `BALANCE_TOTAL` ไม่เรียก boundary aggregates
+7. availability, Holiday, template validation, timezone/DST, Min/Max, Serializable transaction, row lock, retry และ maximum validation เดิมยังทำงาน
+8. infinite capacity/score cases จบแบบ deterministic และไม่เกิด infinite loop/`NaN` comparator behavior
+9. ไม่มี update/delete existing `WorkScheduleSlot`; persist เฉพาะ slot ใหม่ผ่าน `createMany`
+10. UI แสดง strategy 2 ตัวเลือกแยกจาก Min/Max, บังคับให้เลือก strategy และส่งค่าถึง backend
+11. frontend API layer ยังคงใช้ backend schema เป็น contract source เดียว
+12. client-page regression test submit form ได้หลังเลือก strategy และยังยืนยัน Place timezone/navigation เดิม
+13. ไม่มี Prisma migration/schema change และไม่มี endpoint ใหม่
+14. targeted tests ที่ระบุผ่าน และ `pnpm run verify` ผ่านทั้งหมด
