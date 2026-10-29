@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 
+import { workScheduleSlotKeys } from "@/features/work-schedule/slot/work-schedule-slot-keys";
 import { workScheduleMinMaxKeys } from "../work-schedule-min-max-keys";
 import { update, type UpdateDtoBody } from "../api/mutations/update.api";
 
@@ -39,6 +40,12 @@ export const useUpdate = () => {
             userId,
             variables.positionId,
             variables.minMaxId,
+          ),
+        });
+        queryClient.invalidateQueries({
+          queryKey: workScheduleSlotKeys.listsByPositionId(
+            userId,
+            variables.positionId,
           ),
         });
       }

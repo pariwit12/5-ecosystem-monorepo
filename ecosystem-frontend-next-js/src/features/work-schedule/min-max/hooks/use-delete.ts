@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 
+import { workScheduleSlotKeys } from "@/features/work-schedule/slot/work-schedule-slot-keys";
 import { workScheduleMinMaxKeys } from "../work-schedule-min-max-keys";
 import { deleteMinMax } from "../api/mutations/delete.api";
 
@@ -30,6 +31,9 @@ export const useDelete = (positionId: string) => {
         });
         queryClient.invalidateQueries({
           queryKey: workScheduleMinMaxKeys.detail(userId, positionId, minMaxId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: workScheduleSlotKeys.listsByPositionId(userId, positionId),
         });
       }
     },
