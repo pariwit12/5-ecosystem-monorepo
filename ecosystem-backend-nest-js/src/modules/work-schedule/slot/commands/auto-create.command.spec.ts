@@ -7,6 +7,7 @@ describe('AutoCreate DTO schemas', () => {
   const id = '018f6c5e-8557-7888-8123-456789000001';
   const nonV7 = '018f6c5e-8557-4888-8123-456789000001';
   const body = {
+    assignment_mode: 'BALANCE_TOTAL',
     start_time: '2026-10-28T08:00:00+07:00',
     end_time: '2026-10-28T12:00:00+07:00',
     slot_template_ids: [id],
@@ -15,6 +16,33 @@ describe('AutoCreate DTO schemas', () => {
 
   it('defaults an omitted target mode to MINIMUM', () => {
     expect(AutoCreateDtoBodySchema.parse(body).target_mode).toBe('MINIMUM');
+  });
+
+  it.each(['MAXIMIZE_REST', 'BALANCE_TOTAL'] as const)(
+    'accepts explicit assignment mode %s',
+    (assignment_mode) => {
+      expect(
+        AutoCreateDtoBodySchema.parse({ ...body, assignment_mode })
+          .assignment_mode,
+      ).toBe(assignment_mode);
+    },
+  );
+
+  it.each(['invalid', ''])(
+    'rejects invalid assignment mode %s',
+    (assignment_mode) => {
+      expect(
+        AutoCreateDtoBodySchema.safeParse({ ...body, assignment_mode }).success,
+      ).toBe(false);
+    },
+  );
+
+  it('requires assignment mode without a default', () => {
+    const withoutAssignmentMode: Partial<typeof body> = { ...body };
+    delete withoutAssignmentMode.assignment_mode;
+    expect(
+      AutoCreateDtoBodySchema.safeParse(withoutAssignmentMode).success,
+    ).toBe(false);
   });
 
   it.each(['MINIMUM', 'MAXIMUM'] as const)(

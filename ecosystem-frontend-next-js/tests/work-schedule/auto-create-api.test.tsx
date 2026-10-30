@@ -24,6 +24,7 @@ const templateId = "019a01b0-0000-7000-8000-000000000002";
 const staffId = "019a01b0-0000-7000-8000-000000000003";
 const body: AutoCreateDtoBody = {
   target_mode: "MINIMUM",
+  assignment_mode: "BALANCE_TOTAL",
   start_time: "2026-10-28T08:00:00+07:00",
   end_time: "2026-10-28T18:00:00+07:00",
   slot_template_ids: [templateId],
@@ -37,10 +38,19 @@ beforeEach(() => {
   useErrorStore.getState().clearError();
 });
 
-it.each(["MINIMUM", "MAXIMUM"] as const)(
-  "posts the validated %s contract with token and returns createdCount",
-  async (targetMode) => {
-    const requestBody = { ...body, target_mode: targetMode };
+it.each([
+  ["MINIMUM", "MAXIMIZE_REST"],
+  ["MINIMUM", "BALANCE_TOTAL"],
+  ["MAXIMUM", "MAXIMIZE_REST"],
+  ["MAXIMUM", "BALANCE_TOTAL"],
+] as const)(
+  "posts validated target %s and assignment %s with token and returns createdCount",
+  async (targetMode, assignmentMode) => {
+    const requestBody = {
+      ...body,
+      target_mode: targetMode,
+      assignment_mode: assignmentMode,
+    };
     await expect(
       autoCreate(positionId, requestBody, "test-token", ["skip-code"]),
     ).resolves.toEqual({ createdCount: 2 });
@@ -81,8 +91,12 @@ it.each(["INVALID", ""])(
   "blocks invalid target mode %j before HTTP",
   async (targetMode) => {
     await expect(
-      // @ts-expect-error Deliberately validate an invalid external payload.
-      autoCreate(positionId, { ...body, target_mode: targetMode }, "test-token"),
+      autoCreate(
+        positionId,
+        // @ts-expect-error Deliberately validate an invalid external payload.
+        { ...body, target_mode: targetMode },
+        "test-token",
+      ),
     ).rejects.toThrow();
     expect(mockedPost).not.toHaveBeenCalled();
     expect(useErrorStore.getState()).toMatchObject({
@@ -92,7 +106,43 @@ it.each(["INVALID", ""])(
   },
 );
 
-function setupHook(targetMode: AutoCreateDtoBody["target_mode"] = "MINIMUM") {
+it.each(["INVALID", ""])(
+  "blocks invalid assignment mode %j before HTTP",
+  async (assignmentMode) => {
+    await expect(
+      autoCreate(
+        positionId,
+        // @ts-expect-error Deliberately validate an invalid external payload.
+        { ...body, assignment_mode: assignmentMode },
+        "test-token",
+      ),
+    ).rejects.toThrow();
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(useErrorStore.getState()).toMatchObject({
+      isOpen: true,
+      statusCode: 400,
+    });
+  },
+);
+
+it("blocks a missing assignment mode before HTTP", async () => {
+  const missing: Partial<AutoCreateDtoBody> = { ...body };
+  delete missing.assignment_mode;
+  await expect(
+    // @ts-expect-error Deliberately validate an incomplete external payload.
+    autoCreate(positionId, missing, "test-token"),
+  ).rejects.toThrow();
+  expect(mockedPost).not.toHaveBeenCalled();
+  expect(useErrorStore.getState()).toMatchObject({
+    isOpen: true,
+    statusCode: 400,
+  });
+});
+
+function setupHook(
+  targetMode: AutoCreateDtoBody["target_mode"] = "MINIMUM",
+  assignmentMode: AutoCreateDtoBody["assignment_mode"] = "BALANCE_TOTAL",
+) {
   const client = new QueryClient({
     defaultOptions: {
       queries: { gcTime: Infinity },
@@ -126,6 +176,7 @@ function setupHook(targetMode: AutoCreateDtoBody["target_mode"] = "MINIMUM") {
     result.current.mutateAsync({
       positionId,
       targetMode,
+      assignmentMode,
       startTime: body.start_time,
       endTime: body.end_time,
       slotTemplateIds: body.slot_template_ids,
@@ -135,16 +186,21 @@ function setupHook(targetMode: AutoCreateDtoBody["target_mode"] = "MINIMUM") {
   return { client, affected, untouched, mutate };
 }
 
-it.each(["MINIMUM", "MAXIMUM"] as const)(
-  "sends the hook's %s mode in the network payload",
-  async (targetMode) => {
-    const { mutate } = setupHook(targetMode);
+it.each([
+  ["MINIMUM", "MAXIMIZE_REST"],
+  ["MINIMUM", "BALANCE_TOTAL"],
+  ["MAXIMUM", "MAXIMIZE_REST"],
+  ["MAXIMUM", "BALANCE_TOTAL"],
+] as const)(
+  "sends the hook's target %s and assignment %s in the network payload",
+  async (targetMode, assignmentMode) => {
+    const { mutate } = setupHook(targetMode, assignmentMode);
     await act(async () => {
       await mutate();
     });
     expect(mockedPost).toHaveBeenCalledWith(
       `/api/work-schedule/slot/positions/${positionId}/auto`,
-      { ...body, target_mode: targetMode },
+      { ...body, target_mode: targetMode, assignment_mode: assignmentMode },
       {
         headers: { Authorization: "Bearer test-token" },
         skipErrorCodes: ["skip-code"],

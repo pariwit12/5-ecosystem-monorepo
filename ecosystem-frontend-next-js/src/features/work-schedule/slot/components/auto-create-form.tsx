@@ -51,6 +51,9 @@ const createFormSchema = (timezone: string) =>
   z
     .object({
       target_mode: z.enum(["MINIMUM", "MAXIMUM"]),
+      assignment_mode: z.enum(["MAXIMIZE_REST", "BALANCE_TOTAL"], {
+        error: "กรุณาเลือกวิธีจัดพนักงาน",
+      }),
       start_time: z.string().min(1, "กรุณาระบุเวลาเริ่มต้น"),
       end_time: z.string().min(1, "กรุณาระบุเวลาสิ้นสุด"),
       slot_template_ids: z
@@ -133,6 +136,7 @@ export const AutoCreateForm = ({
       {
         positionId,
         targetMode: values.target_mode,
+        assignmentMode: values.assignment_mode,
         startTime: start.toISO()!,
         endTime: end.toISO()!,
         slotTemplateIds: values.slot_template_ids,
@@ -207,6 +211,48 @@ export const AutoCreateForm = ({
         {errors.target_mode && (
           <p role="alert" className="text-sm text-destructive">
             {errors.target_mode.message}
+          </p>
+        )}
+      </fieldset>
+      <fieldset disabled={isPending} className="flex flex-col gap-3">
+        <legend className="text-sm font-bold mb-3">วิธีจัดพนักงาน</legend>
+        <label
+          htmlFor="auto_assignment_rest"
+          className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"
+        >
+          <input
+            id="auto_assignment_rest"
+            type="radio"
+            value="MAXIMIZE_REST"
+            {...register("assignment_mode")}
+            aria-describedby="auto_assignment_rest_help"
+            className="h-5 w-5"
+          />
+          เพิ่มเวลาพักระหว่างเวรให้มากที่สุด
+        </label>
+        <p id="auto_assignment_rest_help" className="text-sm text-muted-foreground">
+          พิจารณาเวรก่อนและหลังที่มีอยู่แล้ว โดยไม่แก้ไขเวรเดิม
+        </p>
+        <label
+          htmlFor="auto_assignment_balance"
+          className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"
+        >
+          <input
+            id="auto_assignment_balance"
+            type="radio"
+            value="BALANCE_TOTAL"
+            {...register("assignment_mode")}
+            aria-describedby="auto_assignment_balance_help"
+            className="h-5 w-5"
+          />
+          กระจายจำนวนเวรรวมให้ใกล้เคียงกัน
+        </label>
+        <p id="auto_assignment_balance_help" className="text-sm text-muted-foreground">
+          นับเวรเดิมที่ทับซ้อนช่วงเวลาที่เลือก รวมกับเวรใหม่ที่กำลังจัด
+        </p>
+        {errors.assignment_mode && (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.assignment_mode.message}
           </p>
         )}
       </fieldset>

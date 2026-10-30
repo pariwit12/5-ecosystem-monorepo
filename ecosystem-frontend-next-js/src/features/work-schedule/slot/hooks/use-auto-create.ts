@@ -14,6 +14,7 @@ export const useAutoCreate = () => {
     mutationFn: async ({
       positionId,
       targetMode,
+      assignmentMode,
       startTime,
       endTime,
       slotTemplateIds,
@@ -22,6 +23,7 @@ export const useAutoCreate = () => {
     }: {
       positionId: string;
       targetMode: AutoCreateDtoBody["target_mode"];
+      assignmentMode: AutoCreateDtoBody["assignment_mode"];
       startTime: string;
       endTime: string;
       slotTemplateIds: string[];
@@ -34,6 +36,7 @@ export const useAutoCreate = () => {
         positionId,
         {
           target_mode: targetMode,
+          assignment_mode: assignmentMode,
           start_time: startTime,
           end_time: endTime,
           slot_template_ids: slotTemplateIds,

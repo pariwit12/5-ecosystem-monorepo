@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { toast } from "sonner";
 import { AutoCreateForm } from "@/features/work-schedule/slot/components/auto-create-form";
 
@@ -66,6 +72,9 @@ function selectAll() {
     fireEvent.click(screen.getByRole("checkbox", { name: label }));
   }
 }
+function selectStrategy(name = "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน") {
+  fireEvent.click(screen.getByRole("radio", { name }));
+}
 function submit() {
   fireEvent.click(screen.getByRole("button", { name: "จัดเวรอัตโนมัติ" }));
 }
@@ -91,16 +100,82 @@ describe("AutoCreateForm", () => {
     expect(maximum.checked).toBe(true);
   });
 
+  it("shows two assignment strategies in a separate group with no default", () => {
+    renderForm();
+    expect(
+      screen.getByRole("group", { name: "เป้าหมายการจัดเวร" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("group", { name: "วิธีจัดพนักงาน" })).toBeTruthy();
+    for (const name of [
+      "เพิ่มเวลาพักระหว่างเวรให้มากที่สุด",
+      "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน",
+    ]) {
+      expect(
+        screen.getByRole<HTMLInputElement>("radio", { name }).checked,
+      ).toBe(false);
+    }
+  });
+
+  it("requires an explicit assignment strategy before mutation", async () => {
+    renderForm();
+    fillDates();
+    selectAll();
+    submit();
+    expect(await screen.findByText("กรุณาเลือกวิธีจัดพนักงาน")).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "MINIMUM",
+      "ให้ถึงจำนวนขั้นต่ำ (Min)",
+      "MAXIMIZE_REST",
+      "เพิ่มเวลาพักระหว่างเวรให้มากที่สุด",
+    ],
+    [
+      "MINIMUM",
+      "ให้ถึงจำนวนขั้นต่ำ (Min)",
+      "BALANCE_TOTAL",
+      "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน",
+    ],
+    [
+      "MAXIMUM",
+      "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
+      "MAXIMIZE_REST",
+      "เพิ่มเวลาพักระหว่างเวรให้มากที่สุด",
+    ],
+    [
+      "MAXIMUM",
+      "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
+      "BALANCE_TOTAL",
+      "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน",
+    ],
+  ] as const)(
+    "submits target %s (%s) independently of assignment %s",
+    async (targetMode, targetLabel, assignmentMode, assignmentLabel) => {
+      renderForm();
+      fillDates();
+      selectAll();
+      fireEvent.click(screen.getByRole("radio", { name: targetLabel }));
+      selectStrategy(assignmentLabel);
+      submit();
+      await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+      expect(mockMutate.mock.calls[0][0]).toMatchObject({
+        targetMode,
+        assignmentMode,
+      });
+    },
+  );
+
   it("requires selections when there is one template and one staff member", async () => {
     renderSingleOptionForm();
     fillDates();
+    selectStrategy();
     submit();
     expect(
       await screen.findByText("กรุณาเลือกแบบร่างอย่างน้อย 1 รายการ"),
     ).toBeTruthy();
-    expect(
-      screen.getByText("กรุณาเลือกพนักงานอย่างน้อย 1 คน"),
-    ).toBeTruthy();
+    expect(screen.getByText("กรุณาเลือกพนักงานอย่างน้อย 1 คน")).toBeTruthy();
     expect(mockMutate).not.toHaveBeenCalled();
   });
 
@@ -109,11 +184,13 @@ describe("AutoCreateForm", () => {
     fillDates();
     fireEvent.click(screen.getByRole("checkbox", { name: "Morning" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Staff One" }));
+    selectStrategy();
     submit();
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(mockMutate.mock.calls[0][0]).toEqual({
       positionId: POSITION,
       targetMode: "MINIMUM",
+      assignmentMode: "BALANCE_TOTAL",
       startTime: "2026-10-28T08:00:00.000+07:00",
       endTime: "2026-10-28T18:00:00.000+07:00",
       slotTemplateIds: [TEMPLATE_ONE],
@@ -125,6 +202,7 @@ describe("AutoCreateForm", () => {
   it("requires start and end wall times", async () => {
     renderForm();
     selectAll();
+    selectStrategy();
     submit();
     expect(await screen.findByText("กรุณาระบุเวลาเริ่มต้น")).toBeTruthy();
     expect(screen.getByText("กรุณาระบุเวลาสิ้นสุด")).toBeTruthy();
@@ -135,6 +213,7 @@ describe("AutoCreateForm", () => {
     renderForm();
     fillDates();
     fireEvent.click(screen.getByRole("checkbox", { name: "Staff One" }));
+    selectStrategy();
     submit();
     expect(
       await screen.findByText("กรุณาเลือกแบบร่างอย่างน้อย 1 รายการ"),
@@ -146,6 +225,7 @@ describe("AutoCreateForm", () => {
     renderForm();
     fillDates();
     fireEvent.click(screen.getByRole("checkbox", { name: "Morning" }));
+    selectStrategy();
     submit();
     expect(
       await screen.findByText("กรุณาเลือกพนักงานอย่างน้อย 1 คน"),
@@ -159,6 +239,7 @@ describe("AutoCreateForm", () => {
       renderForm();
       fillDates("2026-10-28T08:00", end);
       selectAll();
+      selectStrategy();
       submit();
       expect(
         await screen.findByText("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น"),
@@ -171,11 +252,13 @@ describe("AutoCreateForm", () => {
     renderForm();
     fillDates();
     selectAll();
+    selectStrategy();
     submit();
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(mockMutate.mock.calls[0][0]).toEqual({
       positionId: POSITION,
       targetMode: "MINIMUM",
+      assignmentMode: "BALANCE_TOTAL",
       startTime: "2026-10-28T08:00:00.000+07:00",
       endTime: "2026-10-28T18:00:00.000+07:00",
       slotTemplateIds: [TEMPLATE_ONE, TEMPLATE_TWO],
@@ -193,11 +276,13 @@ describe("AutoCreateForm", () => {
         name: "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
       }),
     );
+    selectStrategy();
     submit();
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     expect(mockMutate.mock.calls[0][0]).toEqual({
       positionId: POSITION,
       targetMode: "MAXIMUM",
+      assignmentMode: "BALANCE_TOTAL",
       startTime: "2026-10-28T08:00:00.000+07:00",
       endTime: "2026-10-28T18:00:00.000+07:00",
       slotTemplateIds: [TEMPLATE_ONE, TEMPLATE_TWO],
@@ -210,6 +295,7 @@ describe("AutoCreateForm", () => {
     const { container, rerender } = renderForm();
     fillDates();
     selectAll();
+    selectStrategy();
     mockIsPending = true;
     rerender(
       <AutoCreateForm
@@ -232,6 +318,11 @@ describe("AutoCreateForm", () => {
     });
     expect(fieldset.disabled).toBe(true);
     expect(
+      screen.getByRole<HTMLFieldSetElement>("group", {
+        name: "วิธีจัดพนักงาน",
+      }).disabled,
+    ).toBe(true);
+    expect(
       screen.getByRole<HTMLButtonElement>("button", {
         name: "กำลังจัดเวร...",
       }).disabled,
@@ -253,6 +344,7 @@ describe("AutoCreateForm", () => {
         field === "end" ? "2026-03-08T02:30" : "2026-03-08T05:00",
       );
       selectAll();
+      selectStrategy();
       submit();
       expect(
         await screen.findByText(
@@ -272,6 +364,7 @@ describe("AutoCreateForm", () => {
         field === "end" ? "2026-11-01T01:30" : "2026-11-01T05:00",
       );
       selectAll();
+      selectStrategy();
       submit();
       expect(
         await screen.findByText(
@@ -286,6 +379,7 @@ describe("AutoCreateForm", () => {
     renderForm("Invalid/Timezone");
     fillDates();
     selectAll();
+    selectStrategy();
     submit();
     expect(
       await screen.findAllByText(
@@ -304,6 +398,7 @@ describe("AutoCreateForm", () => {
       renderForm();
       fillDates();
       selectAll();
+      selectStrategy();
       submit();
       await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
       mockMutate.mock.calls[0][1].onSuccess({ createdCount });
@@ -316,6 +411,7 @@ describe("AutoCreateForm", () => {
     renderForm();
     fillDates();
     selectAll();
+    selectStrategy();
     submit();
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
     mockMutate.mock.calls[0][1].onError(new Error("Request failed"));

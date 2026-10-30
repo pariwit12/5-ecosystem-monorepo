@@ -41,7 +41,15 @@ describe('AutoCreateHandler', () => {
     workSchedulePosition: { findUnique: jest.fn() },
     workScheduleSlotTemplate: { findMany: jest.fn() },
     workScheduleStaffPosition: { findMany: jest.fn() },
-    workScheduleSlot: { findMany: jest.fn(), createMany: jest.fn() },
+    workScheduleSlot: {
+      findMany: jest.fn(),
+      groupBy: jest.fn(),
+      createMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      updateMany: jest.fn(),
+      deleteMany: jest.fn(),
+    },
     workScheduleHoliday: { findMany: jest.fn() },
     workScheduleMinMax: { findMany: jest.fn() },
   };
@@ -57,6 +65,7 @@ describe('AutoCreateHandler', () => {
       { position_id: positionId },
       {
         target_mode: 'MINIMUM',
+        assignment_mode: 'BALANCE_TOTAL',
         start_time: start,
         end_time: end,
         slot_template_ids: [templateId],
@@ -145,6 +154,7 @@ describe('AutoCreateHandler', () => {
       { workScheduleStaffId: staffId },
     ]);
     tx.workScheduleSlot.findMany.mockResolvedValue([]);
+    tx.workScheduleSlot.groupBy.mockResolvedValue([]);
     tx.workScheduleHoliday.findMany.mockResolvedValue([]);
     tx.workScheduleMinMax.findMany.mockResolvedValue([rule()]);
     tx.workScheduleSlot.createMany.mockImplementation(
@@ -458,7 +468,7 @@ describe('AutoCreateHandler', () => {
     );
   });
 
-  it('allows touching occurrence boundaries and reuses the lowest eligible staff', async () => {
+  it('allows touching occurrences and updates planned counts before the next assignment', async () => {
     tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
       template({ durationMinute: 120 }),
       template({
@@ -472,7 +482,10 @@ describe('AutoCreateHandler', () => {
         command({ slot_template_ids: [secondTemplateId, templateId] }),
       ),
     ).resolves.toEqual({ createdCount: 2 });
-    expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId, staffId]);
+    expect(insertedSlots().map((s) => s.staffId)).toEqual([
+      staffId,
+      secondStaffId,
+    ]);
     expect(insertedSlots()[0].actualEndTime).toEqual(
       insertedSlots()[1].actualStartTime,
     );
@@ -567,6 +580,7 @@ describe('AutoCreateHandler', () => {
 
   it('uses the same minimum plan for parsed omitted mode and explicit MINIMUM', async () => {
     const legacyBody = {
+      assignment_mode: 'BALANCE_TOTAL',
       start_time: start,
       end_time: end,
       slot_template_ids: [templateId],
@@ -687,7 +701,7 @@ describe('AutoCreateHandler', () => {
     },
   );
 
-  it.each([
+  it.each<[string, ReturnType<typeof slot>[], ReturnType<typeof holiday>[]]>([
     [
       'slot ending at occurrence start',
       [slot(staffId, '2026-10-24T00:00:00.000Z', start)],
@@ -711,7 +725,14 @@ describe('AutoCreateHandler', () => {
   ])(
     'allows the lowest staff ID with a touching %s',
     async (_, slots, holidays) => {
-      tx.workScheduleSlot.findMany.mockResolvedValue(slots);
+      // The real range query excludes slots merely touching the request.
+      tx.workScheduleSlot.findMany.mockResolvedValue(
+        slots.filter(
+          (s) =>
+            s.actualStartTime < new Date(end) &&
+            s.actualEndTime > new Date(start),
+        ),
+      );
       tx.workScheduleHoliday.findMany.mockResolvedValue(holidays);
       await handler.execute(command());
       expect(insertedSlots()[0].staffId).toBe(staffId);
@@ -876,6 +897,475 @@ describe('AutoCreateHandler', () => {
     expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
     expect(insertedSlots()).toHaveLength(2);
   });
+
+  describe('BALANCE_TOTAL', () => {
+    const rangeStart = '2026-10-24T00:00:00.000Z';
+    const rangeEnd = '2026-10-24T06:00:00.000Z';
+
+    beforeEach(() => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([
+        rule(1, null, rangeStart, rangeEnd),
+      ]);
+    });
+
+    function balanceCommand(body: Partial<AutoCreateDtoBody> = {}) {
+      return command({ start_time: rangeStart, end_time: rangeEnd, ...body });
+    }
+
+    it.each([positionId, otherPositionId])(
+      'selects the lowest total count across position %s before lexical order',
+      async (slotPosition) => {
+        tx.workScheduleSlot.findMany.mockResolvedValue([
+          slot(staffId, rangeStart, '2026-10-24T00:30:00.000Z', slotPosition),
+        ]);
+
+        await handler.execute(balanceCommand());
+
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([secondStaffId]);
+        expect(tx.workScheduleSlot.findMany).toHaveBeenCalledTimes(1);
+        expect(tx.workScheduleSlot.groupBy).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      [
+        'entirely before',
+        '2026-10-23T22:00:00Z',
+        '2026-10-23T23:00:00Z',
+        staffId,
+      ],
+      ['touching start', '2026-10-23T23:00:00Z', rangeStart, staffId],
+      ['touching end', rangeEnd, '2026-10-24T07:00:00Z', staffId],
+      [
+        'entirely after',
+        '2026-10-24T07:00:00Z',
+        '2026-10-24T08:00:00Z',
+        staffId,
+      ],
+      [
+        'crossing start',
+        '2026-10-23T23:00:00Z',
+        '2026-10-24T00:30:00Z',
+        secondStaffId,
+      ],
+      [
+        'crossing end',
+        '2026-10-24T05:30:00Z',
+        '2026-10-24T07:00:00Z',
+        secondStaffId,
+      ],
+    ])(
+      'counts history %s only when it overlaps the request',
+      async (_, from, to, selected) => {
+        const history = [slot(staffId, from, to, otherPositionId)];
+        // Emulate PostgreSQL's range filtering using the actual query bounds.
+        tx.workScheduleSlot.findMany.mockImplementation(
+          ({
+            where,
+          }: {
+            where: {
+              actualStartTime: { lt: Date };
+              actualEndTime: { gt: Date };
+            };
+          }) =>
+            Promise.resolve(
+              history.filter(
+                (s) =>
+                  s.actualStartTime < where.actualStartTime.lt &&
+                  s.actualEndTime > where.actualEndTime.gt,
+              ),
+            ),
+        );
+
+        await handler.execute(balanceCommand());
+
+        expect(insertedSlots()[0].staffId).toBe(selected);
+        expect(tx.workScheduleSlot.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: {
+              actualStartTime: { lt: new Date(rangeEnd) },
+              actualEndTime: { gt: new Date(rangeStart) },
+              OR: [
+                { positionId },
+                { staffId: { in: [secondStaffId, staffId] } },
+              ],
+            },
+          }),
+        );
+        expect(tx.workScheduleSlot.findMany).toHaveBeenCalledTimes(1);
+        expect(tx.workScheduleSlot.groupBy).not.toHaveBeenCalled();
+      },
+    );
+
+    it('uses canonical counts with uppercase request UUIDs', async () => {
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(staffId, rangeStart, start, otherPositionId),
+      ]);
+
+      await handler.execute(
+        balanceCommand({
+          staff_ids: [staffId.toUpperCase(), secondStaffId.toUpperCase()],
+        }),
+      );
+
+      expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+    });
+
+    it.each(['holiday', 'overlap'])(
+      'excludes the lowest count candidate with a %s',
+      async (blockedBy) => {
+        const history = [
+          slot(
+            secondStaffId,
+            rangeStart,
+            '2026-10-24T00:15:00Z',
+            otherPositionId,
+          ),
+          slot(secondStaffId, '2026-10-24T00:15:00Z', start, otherPositionId),
+        ];
+        if (blockedBy === 'holiday') {
+          tx.workScheduleHoliday.findMany.mockResolvedValue([holiday(staffId)]);
+        } else {
+          history.push(slot(staffId, start, end, otherPositionId));
+        }
+        tx.workScheduleSlot.findMany.mockResolvedValue(history);
+
+        await handler.execute(balanceCommand());
+
+        expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+      },
+    );
+
+    it.each(['MINIMUM', 'MAXIMUM'] as const)(
+      'uses counts only for staff selection with target %s',
+      async (target_mode) => {
+        tx.workScheduleSlot.findMany.mockResolvedValue([
+          slot(staffId, rangeStart, start, otherPositionId),
+        ]);
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(1, 2)]);
+
+        await expect(
+          handler.execute(balanceCommand({ target_mode })),
+        ).resolves.toEqual({
+          createdCount: target_mode === 'MINIMUM' ? 1 : 2,
+        });
+        expect(insertedSlots().map((s) => s.staffId)).toEqual(
+          target_mode === 'MINIMUM'
+            ? [secondStaffId]
+            : [secondStaffId, staffId],
+        );
+      },
+    );
+  });
+
+  describe('MAXIMIZE_REST', () => {
+    function restCommand(body: Partial<AutoCreateDtoBody> = {}) {
+      return command({ assignment_mode: 'MAXIMIZE_REST', ...body });
+    }
+
+    function previous(staff: string, endpoint: string) {
+      return { staffId: staff, _max: { actualEndTime: new Date(endpoint) } };
+    }
+
+    function next(staff: string, endpoint: string) {
+      return { staffId: staff, _min: { actualStartTime: new Date(endpoint) } };
+    }
+
+    it.each(['previous', 'next'])(
+      'uses the %s aggregate across positions and ignores request UUID casing',
+      async (side) => {
+        tx.workScheduleSlot.groupBy
+          .mockResolvedValueOnce(
+            side === 'previous'
+              ? [
+                  previous(staffId, '2026-10-24T00:45:00Z'),
+                  previous(secondStaffId, '2026-10-23T22:00:00Z'),
+                ]
+              : [],
+          )
+          .mockResolvedValueOnce(
+            side === 'next'
+              ? [
+                  next(staffId, '2026-10-24T05:15:00Z'),
+                  next(secondStaffId, '2026-10-24T08:00:00Z'),
+                ]
+              : [],
+          );
+
+        await handler.execute(
+          restCommand({
+            staff_ids: [staffId.toUpperCase(), secondStaffId.toUpperCase()],
+          }),
+        );
+
+        expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+        expect(tx.workScheduleSlot.findMany).toHaveBeenCalledTimes(1);
+        expect(tx.workScheduleSlot.groupBy).toHaveBeenCalledTimes(2);
+        const [previousQuery] = tx.workScheduleSlot.groupBy.mock.calls[0] as [
+          { where: { staffId: { in: string[] } } },
+        ];
+        const selectedStaffIds = previousQuery.where.staffId.in;
+        expect(selectedStaffIds.map((id) => id.toLowerCase()).sort()).toEqual([
+          staffId,
+          secondStaffId,
+        ]);
+        expect(tx.workScheduleSlot.groupBy).toHaveBeenNthCalledWith(1, {
+          by: ['staffId'],
+          where: {
+            staffId: { in: selectedStaffIds },
+            actualEndTime: { lte: new Date(start) },
+          },
+          _max: { actualEndTime: true },
+        });
+        expect(tx.workScheduleSlot.groupBy).toHaveBeenNthCalledWith(2, {
+          by: ['staffId'],
+          where: {
+            staffId: { in: selectedStaffIds },
+            actualStartTime: { gte: new Date(end) },
+          },
+          _min: { actualStartTime: true },
+        });
+      },
+    );
+
+    it('maximizes the smaller gap rather than the largest or total gap', async () => {
+      tx.workScheduleSlot.groupBy
+        .mockResolvedValueOnce([
+          previous(staffId, '2026-10-23T01:00:00Z'),
+          previous(secondStaffId, '2026-10-24T00:00:00Z'),
+        ])
+        .mockResolvedValueOnce([
+          next(staffId, '2026-10-24T05:10:00Z'),
+          next(secondStaffId, '2026-10-24T07:00:00Z'),
+        ]);
+
+      await handler.execute(restCommand());
+
+      expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+    });
+
+    it.each(['previous', 'next'])(
+      'uses nearest %s neighbors from range slots across positions',
+      async (side) => {
+        tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+          template({ startTime: '09:00', durationMinute: 120 }),
+        ]);
+        tx.workScheduleSlot.findMany.mockResolvedValue(
+          side === 'previous'
+            ? [
+                slot(staffId, start, '2026-10-24T01:45:00Z', otherPositionId),
+                slot(staffId, start, '2026-10-24T01:15:00Z', otherPositionId),
+                slot(
+                  secondStaffId,
+                  start,
+                  '2026-10-24T01:30:00Z',
+                  otherPositionId,
+                ),
+              ]
+            : [
+                slot(staffId, '2026-10-24T04:15:00Z', end, otherPositionId),
+                slot(staffId, '2026-10-24T04:45:00Z', end, otherPositionId),
+                slot(
+                  secondStaffId,
+                  '2026-10-24T04:30:00Z',
+                  end,
+                  otherPositionId,
+                ),
+              ],
+        );
+
+        await handler.execute(restCommand());
+
+        expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+      },
+    );
+
+    it.each(['previous', 'next'])(
+      'allows a touching %s slot with zero rest after a candidate with infinite rest',
+      async (side) => {
+        tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+          template({ startTime: '09:00', durationMinute: 120 }),
+        ]);
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(2)]);
+        tx.workScheduleSlot.findMany.mockResolvedValue([
+          side === 'previous'
+            ? slot(staffId, start, '2026-10-24T02:00:00Z', otherPositionId)
+            : slot(staffId, '2026-10-24T04:00:00Z', end, otherPositionId),
+        ]);
+
+        await expect(handler.execute(restCommand())).resolves.toEqual({
+          createdCount: 2,
+        });
+
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([
+          secondStaffId,
+          staffId,
+        ]);
+      },
+    );
+
+    it.each(['infinite', 'finite'])(
+      'breaks equal %s scores by canonical staff ID',
+      async (score) => {
+        if (score === 'finite') {
+          tx.workScheduleSlot.groupBy
+            .mockResolvedValueOnce([
+              previous(secondStaffId, '2026-10-24T00:00:00Z'),
+              previous(staffId, '2026-10-24T00:00:00Z'),
+            ])
+            .mockResolvedValueOnce([]);
+        }
+
+        await handler.execute(restCommand());
+
+        expect(insertedSlots()[0].staffId).toBe(staffId);
+      },
+    );
+
+    it('updates rest neighbors immediately from planned slots', async () => {
+      tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+        template({ durationMinute: 120 }),
+        template({
+          id: secondTemplateId,
+          startTime: '10:00',
+          durationMinute: 120,
+        }),
+      ]);
+
+      await handler.execute(
+        restCommand({ slot_template_ids: [secondTemplateId, templateId] }),
+      );
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+      ]);
+    });
+
+    it.each(['holiday', 'overlap'])(
+      'excludes a candidate with infinite rest when blocked by %s',
+      async (blockedBy) => {
+        tx.workScheduleSlot.groupBy
+          .mockResolvedValueOnce([
+            previous(secondStaffId, '2026-10-24T00:00:00Z'),
+          ])
+          .mockResolvedValueOnce([]);
+        if (blockedBy === 'holiday') {
+          tx.workScheduleHoliday.findMany.mockResolvedValue([holiday(staffId)]);
+        } else {
+          tx.workScheduleSlot.findMany.mockResolvedValue([
+            slot(staffId, start, end, otherPositionId),
+          ]);
+        }
+
+        await handler.execute(restCommand());
+
+        expect(insertedSlots()[0].staffId).toBe(secondStaffId);
+      },
+    );
+
+    it.each(['MINIMUM', 'MAXIMUM'] as const)(
+      'keeps boundary context separate from target-position coverage with %s',
+      async (target_mode) => {
+        tx.workScheduleSlot.findMany.mockResolvedValue([slot()]);
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(2, 2)]);
+        tx.workScheduleSlot.groupBy
+          .mockResolvedValueOnce([previous(staffId, start)])
+          .mockResolvedValueOnce([next(secondStaffId, end)]);
+
+        await expect(
+          handler.execute(restCommand({ target_mode })),
+        ).resolves.toEqual({ createdCount: 1 });
+
+        expect(insertedSlots()).toHaveLength(1);
+      },
+    );
+
+    it('terminates with infinite capacity and scores after all candidates are assigned', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([]);
+
+      await expect(
+        handler.execute(restCommand({ target_mode: 'MAXIMUM' })),
+      ).resolves.toEqual({ createdCount: 2 });
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+      ]);
+    });
+
+    it('terminates with infinite capacity when every candidate is unavailable', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([]);
+      tx.workScheduleHoliday.findMany.mockResolvedValue([
+        holiday(staffId),
+        holiday(secondStaffId),
+      ]);
+
+      await expect(
+        handler.execute(restCommand({ target_mode: 'MAXIMUM' })),
+      ).resolves.toEqual({ createdCount: 0 });
+
+      expect(tx.workScheduleSlot.createMany).not.toHaveBeenCalled();
+    });
+
+    it('rereads boundary aggregates and rebuilds scores after P2034', async () => {
+      const serializationError = Object.assign(
+        new Error('Serialization failure'),
+        { code: 'P2034' },
+      );
+      let attempt = 0;
+      prisma.$transaction.mockImplementation(
+        async (operation: (client: unknown) => Promise<unknown>) => {
+          const result = await operation(tx);
+          if (attempt++ === 0) throw serializationError;
+          return result;
+        },
+      );
+      tx.workScheduleSlot.groupBy
+        .mockResolvedValueOnce([previous(staffId, start)])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([previous(secondStaffId, start)])
+        .mockResolvedValueOnce([]);
+
+      await expect(handler.execute(restCommand())).resolves.toEqual({
+        createdCount: 1,
+      });
+
+      expect(insertedSlots(0)[0].staffId).toBe(secondStaffId);
+      expect(insertedSlots(1)[0].staffId).toBe(staffId);
+      expect(tx.workScheduleSlot.groupBy).toHaveBeenCalledTimes(4);
+      expect(tx.workScheduleSlot.findMany).toHaveBeenCalledTimes(2);
+      expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
+      for (const [, options] of prisma.$transaction.mock.calls) {
+        expect(options).toEqual({
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      }
+    });
+  });
+
+  it.each(['BALANCE_TOTAL', 'MAXIMIZE_REST'] as const)(
+    'only creates new slots and preserves existing rows with %s',
+    async (assignment_mode) => {
+      const existing = [slot()];
+      const original = structuredClone(existing);
+      tx.workScheduleSlot.findMany.mockResolvedValue(existing);
+      tx.workScheduleMinMax.findMany.mockResolvedValue([rule(2)]);
+
+      await handler.execute(command({ assignment_mode }));
+
+      expect(existing).toEqual(original);
+      expect(tx.workScheduleSlot.createMany).toHaveBeenCalledTimes(1);
+      for (const write of [
+        tx.workScheduleSlot.update,
+        tx.workScheduleSlot.updateMany,
+        tx.workScheduleSlot.delete,
+        tx.workScheduleSlot.deleteMany,
+      ]) {
+        expect(write).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   describe('MAXIMUM', () => {
     const selectedStaffIds = [thirdStaffId, secondStaffId, staffId];
@@ -1057,10 +1547,8 @@ describe('AutoCreateHandler', () => {
         rule(null, 2),
         rule(null, 0, end, '2026-10-24T06:00:00.000Z'),
       ]);
-      tx.workScheduleSlot.findMany.mockResolvedValue([
-        slot(staffId, '2026-10-24T00:00:00.000Z', start),
-        slot(secondStaffId, end, '2026-10-24T06:00:00.000Z'),
-      ]);
+      // Slots touching the request are excluded by the real range query.
+      tx.workScheduleSlot.findMany.mockResolvedValue([]);
       tx.workScheduleHoliday.findMany.mockResolvedValue([
         holiday(staffId, end, '2026-10-24T06:00:00.000Z'),
         holiday(secondStaffId, '2026-10-24T00:00:00.000Z', start),

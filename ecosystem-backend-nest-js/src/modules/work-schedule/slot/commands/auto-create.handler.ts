@@ -140,6 +140,36 @@ export class AutoCreateHandler implements ICommandHandler<
           actualEndTime: true,
         },
       });
+      const previousEnds = new Map<string, number>();
+      const nextStarts = new Map<string, number>();
+      if (body.assignment_mode === 'MAXIMIZE_REST') {
+        const previousBoundaries = await tx.workScheduleSlot.groupBy({
+          by: ['staffId'],
+          where: {
+            staffId: { in: staffCandidates },
+            actualEndTime: { lte: new Date(request.start) },
+          },
+          _max: { actualEndTime: true },
+        });
+        const nextBoundaries = await tx.workScheduleSlot.groupBy({
+          by: ['staffId'],
+          where: {
+            staffId: { in: staffCandidates },
+            actualStartTime: { gte: new Date(request.end) },
+          },
+          _min: { actualStartTime: true },
+        });
+        for (const row of previousBoundaries) {
+          if (row._max.actualEndTime !== null) {
+            previousEnds.set(row.staffId, row._max.actualEndTime.getTime());
+          }
+        }
+        for (const row of nextBoundaries) {
+          if (row._min.actualStartTime !== null) {
+            nextStarts.set(row.staffId, row._min.actualStartTime.getTime());
+          }
+        }
+      }
       const holidays = await tx.workScheduleHoliday.findMany({
         where: {
           workScheduleStaffId: { in: body.staff_ids },
@@ -197,23 +227,56 @@ export class AutoCreateHandler implements ICommandHandler<
               ]),
             );
       const planned: PlannedSlot[] = [];
+      // Use canonical database IDs for both existing and planned counts.
+      const totalCounts = new Map(
+        staffCandidates.map((staffId) => [staffId, 0]),
+      );
+      for (const slot of slots) {
+        if (totalCounts.has(slot.staffId)) {
+          totalCounts.set(slot.staffId, totalCounts.get(slot.staffId)! + 1);
+        }
+      }
       for (const occurrence of occurrences) {
         const requiredAdditional = requirements.get(occurrence) ?? 0;
         let assigned = 0;
-        for (const staffId of staffCandidates) {
-          if (assigned === requiredAdditional) break;
-          if (
-            !this.isStaffAvailable(
+        while (assigned < requiredAdditional) {
+          const availableCandidates = staffCandidates.filter((staffId) =>
+            this.isStaffAvailable(
               staffId,
               occurrence,
               slots,
               staffHolidays,
               planned,
-            )
-          ) {
-            continue;
-          }
+            ),
+          );
+          // This also terminates unbounded MAXIMUM capacity when staff run out.
+          if (availableCandidates.length === 0) break;
+          const rankedCandidates = availableCandidates.map((staffId) => ({
+            staffId,
+            score:
+              body.assignment_mode === 'BALANCE_TOTAL'
+                ? totalCounts.get(staffId)!
+                : this.calculateRestScore(
+                    staffId,
+                    occurrence,
+                    slots,
+                    planned,
+                    previousEnds,
+                    nextStarts,
+                  ),
+          }));
+          rankedCandidates.sort((a, b) => {
+            if (a.score !== b.score) {
+              const ascending = a.score < b.score ? -1 : 1;
+              return body.assignment_mode === 'BALANCE_TOTAL'
+                ? ascending
+                : -ascending;
+            }
+            return a.staffId < b.staffId ? -1 : a.staffId > b.staffId ? 1 : 0;
+          });
+          const staffId = rankedCandidates[0].staffId;
           planned.push({ ...occurrence, staffId });
+          totalCounts.set(staffId, totalCounts.get(staffId)! + 1);
           assigned++;
         }
       }
@@ -429,6 +492,30 @@ export class AutoCreateHandler implements ICommandHandler<
             interval.staffId === staffId && this.overlaps(interval, occurrence),
         ),
     );
+  }
+
+  private calculateRestScore(
+    staffId: string,
+    occurrence: Interval,
+    existingSlots: StaffInterval[],
+    plannedSlots: StaffInterval[],
+    previousEnds: Map<string, number>,
+    nextStarts: Map<string, number>,
+  ): number {
+    let previousEnd = previousEnds.get(staffId) ?? Number.NEGATIVE_INFINITY;
+    let nextStart = nextStarts.get(staffId) ?? Number.POSITIVE_INFINITY;
+    for (const intervals of [existingSlots, plannedSlots]) {
+      for (const slot of intervals) {
+        if (slot.staffId !== staffId) continue;
+        if (slot.end <= occurrence.start) {
+          previousEnd = Math.max(previousEnd, slot.end);
+        }
+        if (slot.start >= occurrence.end) {
+          nextStart = Math.min(nextStart, slot.start);
+        }
+      }
+    }
+    return Math.min(occurrence.start - previousEnd, nextStart - occurrence.end);
   }
 
   private validateMaximum(
