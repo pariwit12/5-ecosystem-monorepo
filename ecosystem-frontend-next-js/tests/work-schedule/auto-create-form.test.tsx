@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { toast } from "sonner";
 import { AutoCreateForm } from "@/features/work-schedule/slot/components/auto-create-form";
@@ -100,12 +101,26 @@ describe("AutoCreateForm", () => {
     expect(maximum.checked).toBe(true);
   });
 
-  it("shows two assignment strategies in a separate group with no default", () => {
+  it("shows three assignment strategies with TRADITIONAL selected by default", () => {
     renderForm();
     expect(
       screen.getByRole("group", { name: "เป้าหมายการจัดเวร" }),
     ).toBeTruthy();
-    expect(screen.getByRole("group", { name: "วิธีจัดพนักงาน" })).toBeTruthy();
+    const group = screen.getByRole("group", { name: "วิธีจัดพนักงาน" });
+    const radios = within(group).getAllByRole<HTMLInputElement>("radio");
+    expect(radios).toHaveLength(3);
+    expect(radios[0]).toBe(
+      within(group).getByRole("radio", { name: "แบบดั้งเดิม" }),
+    );
+    expect(radios[0].checked).toBe(true);
+    expect(radios[0].getAttribute("aria-describedby")).toBe(
+      "auto_assignment_traditional_help",
+    );
+    expect(
+      within(group).getByText(
+        "ใช้วิธีจัดพนักงานเดิม โดยเลือกพนักงานที่ว่างตามลำดับเดิม",
+      ),
+    ).toBeTruthy();
     for (const name of [
       "เพิ่มเวลาพักระหว่างเวรให้มากที่สุด",
       "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน",
@@ -116,16 +131,20 @@ describe("AutoCreateForm", () => {
     }
   });
 
-  it("requires an explicit assignment strategy before mutation", async () => {
+  it("submits TRADITIONAL without changing the assignment strategy", async () => {
     renderForm();
     fillDates();
     selectAll();
     submit();
-    expect(await screen.findByText("กรุณาเลือกวิธีจัดพนักงาน")).toBeTruthy();
-    expect(mockMutate).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({
+      targetMode: "MINIMUM",
+      assignmentMode: "TRADITIONAL",
+    });
   });
 
   it.each([
+    ["MINIMUM", "ให้ถึงจำนวนขั้นต่ำ (Min)", "TRADITIONAL", "แบบดั้งเดิม"],
     [
       "MINIMUM",
       "ให้ถึงจำนวนขั้นต่ำ (Min)",
@@ -137,6 +156,12 @@ describe("AutoCreateForm", () => {
       "ให้ถึงจำนวนขั้นต่ำ (Min)",
       "BALANCE_TOTAL",
       "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน",
+    ],
+    [
+      "MAXIMUM",
+      "จัดให้มากที่สุดภายใต้จำนวนสูงสุด (Max)",
+      "TRADITIONAL",
+      "แบบดั้งเดิม",
     ],
     [
       "MAXIMUM",

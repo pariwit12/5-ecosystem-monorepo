@@ -898,6 +898,167 @@ describe('AutoCreateHandler', () => {
     expect(insertedSlots()).toHaveLength(2);
   });
 
+  describe('TRADITIONAL', () => {
+    function traditionalCommand(body: Partial<AutoCreateDtoBody> = {}) {
+      return command({ assignment_mode: 'TRADITIONAL', ...body });
+    }
+
+    it('selects the lexical-smallest canonical ID regardless of request order, database order, duplicates or history scores', async () => {
+      tx.workScheduleStaffPosition.findMany.mockResolvedValue([
+        { workScheduleStaffId: secondStaffId },
+        { workScheduleStaffId: thirdStaffId },
+        { workScheduleStaffId: staffId },
+        { workScheduleStaffId: secondStaffId },
+      ]);
+      const rangeStart = '2026-10-24T00:00:00.000Z';
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(staffId, rangeStart, start, otherPositionId),
+      ]);
+
+      await expect(
+        handler.execute(
+          traditionalCommand({
+            start_time: rangeStart,
+            staff_ids: [
+              thirdStaffId.toUpperCase(),
+              staffId.toUpperCase(),
+              secondStaffId.toUpperCase(),
+            ],
+          }),
+        ),
+      ).resolves.toEqual({ createdCount: 1 });
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId]);
+      expect(tx.workScheduleSlot.findMany).toHaveBeenCalledTimes(1);
+      expect(tx.workScheduleSlot.groupBy).not.toHaveBeenCalled();
+    });
+
+    it('uses traditional selection when the schema defaults an omitted assignment mode', async () => {
+      const rangeStart = '2026-10-24T00:00:00.000Z';
+      tx.workScheduleSlot.findMany.mockResolvedValue([
+        slot(staffId, rangeStart, start, otherPositionId),
+      ]);
+      const body = AutoCreateDtoBodySchema.parse({
+        start_time: rangeStart,
+        end_time: end,
+        slot_template_ids: [templateId],
+        staff_ids: [secondStaffId, staffId],
+      });
+
+      await handler.execute(
+        new AutoCreateCommand('clerk-1', { position_id: positionId }, body),
+      );
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId]);
+      expect(tx.workScheduleSlot.groupBy).not.toHaveBeenCalled();
+    });
+
+    it.each<[string, ReturnType<typeof slot>[], ReturnType<typeof holiday>[]]>([
+      ['target-position slot', [slot(staffId)], []],
+      [
+        'another-position slot',
+        [slot(staffId, start, end, otherPositionId)],
+        [],
+      ],
+      ['holiday', [], [holiday()]],
+    ])(
+      'skips the first candidate blocked by a %s',
+      async (_, slots, holidays) => {
+        tx.workScheduleSlot.findMany.mockResolvedValue(slots);
+        tx.workScheduleHoliday.findMany.mockResolvedValue(holidays);
+        tx.workScheduleMinMax.findMany.mockResolvedValue([
+          rule(slots.some((s) => s.positionId === positionId) ? 2 : 1),
+        ]);
+
+        await expect(handler.execute(traditionalCommand())).resolves.toEqual({
+          createdCount: 1,
+        });
+
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([secondStaffId]);
+      },
+    );
+
+    it('reuses the first available staff across touching occurrences without balancing planned counts or rest', async () => {
+      tx.workScheduleSlotTemplate.findMany.mockResolvedValue([
+        template({
+          id: secondTemplateId,
+          startTime: '10:00',
+          durationMinute: 120,
+        }),
+        template({ durationMinute: 120 }),
+      ]);
+
+      await handler.execute(
+        traditionalCommand({
+          slot_template_ids: [secondTemplateId, templateId],
+        }),
+      );
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId, staffId]);
+      expect(insertedSlots()[0].actualEndTime).toEqual(
+        insertedSlots()[1].actualStartTime,
+      );
+    });
+
+    it.each(['MINIMUM', 'MAXIMUM'] as const)(
+      'creates only feasible slots with %s when staff are insufficient and never reuses overlapping planned staff',
+      async (target_mode) => {
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(3, 3)]);
+        tx.workScheduleSlot.findMany.mockResolvedValue([
+          slot(staffId, start, end, otherPositionId),
+        ]);
+
+        await expect(
+          handler.execute(traditionalCommand({ target_mode })),
+        ).resolves.toEqual({ createdCount: 1 });
+
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([secondStaffId]);
+      },
+    );
+
+    it.each(['MINIMUM', 'MAXIMUM'] as const)(
+      'preserves %s coverage and finite maximum constraints',
+      async (target_mode) => {
+        tx.workScheduleSlot.findMany.mockResolvedValue([slot()]);
+        tx.workScheduleMinMax.findMany.mockResolvedValue([rule(2, 2)]);
+
+        await expect(
+          handler.execute(traditionalCommand({ target_mode })),
+        ).resolves.toEqual({ createdCount: 1 });
+
+        expect(insertedSlots().map((s) => s.staffId)).toEqual([staffId]);
+      },
+    );
+
+    it('terminates unbounded MAXIMUM capacity after assigning each available staff once', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([]);
+
+      await expect(
+        handler.execute(traditionalCommand({ target_mode: 'MAXIMUM' })),
+      ).resolves.toEqual({ createdCount: 2 });
+
+      expect(insertedSlots().map((s) => s.staffId)).toEqual([
+        staffId,
+        secondStaffId,
+      ]);
+      expect(tx.workScheduleSlot.groupBy).not.toHaveBeenCalled();
+    });
+
+    it('returns zero for unbounded MAXIMUM when all staff are on holiday', async () => {
+      tx.workScheduleMinMax.findMany.mockResolvedValue([]);
+      tx.workScheduleHoliday.findMany.mockResolvedValue([
+        holiday(staffId),
+        holiday(secondStaffId),
+      ]);
+
+      await expect(
+        handler.execute(traditionalCommand({ target_mode: 'MAXIMUM' })),
+      ).resolves.toEqual({ createdCount: 0 });
+
+      expect(tx.workScheduleSlot.createMany).not.toHaveBeenCalled();
+    });
+  });
+
   describe('BALANCE_TOTAL', () => {
     const rangeStart = '2026-10-24T00:00:00.000Z';
     const rangeEnd = '2026-10-24T06:00:00.000Z';
@@ -1344,7 +1505,7 @@ describe('AutoCreateHandler', () => {
     });
   });
 
-  it.each(['BALANCE_TOTAL', 'MAXIMIZE_REST'] as const)(
+  it.each(['TRADITIONAL', 'BALANCE_TOTAL', 'MAXIMIZE_REST'] as const)(
     'only creates new slots and preserves existing rows with %s',
     async (assignment_mode) => {
       const existing = [slot()];

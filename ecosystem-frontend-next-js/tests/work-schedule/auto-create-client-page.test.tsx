@@ -89,11 +89,10 @@ it("uses the Position's Place for timezone and navigation when the URL names ano
   fireEvent.change(screen.getByLabelText("เวลาสิ้นสุด"), { target: { value: "2026-10-28T18:00" } });
   fireEvent.click(screen.getByRole("checkbox", { name: "Morning" }));
   fireEvent.click(screen.getByRole("checkbox", { name: "Staff" }));
-  fireEvent.click(screen.getByRole("radio", { name: "กระจายจำนวนเวรรวมให้ใกล้เคียงกัน" }));
   fireEvent.click(screen.getByRole("button", { name: "จัดเวรอัตโนมัติ" }));
   await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
   expect(mockMutate.mock.calls[0][0]).toMatchObject({
-    assignmentMode: "BALANCE_TOTAL",
+    assignmentMode: "TRADITIONAL",
     startTime: "2026-10-28T08:00:00.000-04:00",
     endTime: "2026-10-28T18:00:00.000-04:00",
   });

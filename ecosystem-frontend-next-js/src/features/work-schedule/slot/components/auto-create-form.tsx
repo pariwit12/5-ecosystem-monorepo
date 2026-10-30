@@ -51,7 +51,7 @@ const createFormSchema = (timezone: string) =>
   z
     .object({
       target_mode: z.enum(["MINIMUM", "MAXIMUM"]),
-      assignment_mode: z.enum(["MAXIMIZE_REST", "BALANCE_TOTAL"], {
+      assignment_mode: z.enum(["TRADITIONAL", "MAXIMIZE_REST", "BALANCE_TOTAL"], {
         error: "กรุณาเลือกวิธีจัดพนักงาน",
       }),
       start_time: z.string().min(1, "กรุณาระบุเวลาเริ่มต้น"),
@@ -121,6 +121,7 @@ export const AutoCreateForm = ({
     resolver: zodResolver(createFormSchema(placeTimezone)),
     defaultValues: {
       target_mode: "MINIMUM",
+      assignment_mode: "TRADITIONAL",
       start_time: "",
       end_time: "",
       slot_template_ids: [],
@@ -216,6 +217,26 @@ export const AutoCreateForm = ({
       </fieldset>
       <fieldset disabled={isPending} className="flex flex-col gap-3">
         <legend className="text-sm font-bold mb-3">วิธีจัดพนักงาน</legend>
+        <label
+          htmlFor="auto_assignment_traditional"
+          className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"
+        >
+          <input
+            id="auto_assignment_traditional"
+            type="radio"
+            value="TRADITIONAL"
+            {...register("assignment_mode")}
+            aria-describedby="auto_assignment_traditional_help"
+            className="h-5 w-5"
+          />
+          แบบดั้งเดิม
+        </label>
+        <p
+          id="auto_assignment_traditional_help"
+          className="text-sm text-muted-foreground"
+        >
+          ใช้วิธีจัดพนักงานเดิม โดยเลือกพนักงานที่ว่างตามลำดับเดิม
+        </p>
         <label
           htmlFor="auto_assignment_rest"
           className="flex items-center gap-3 p-3 border border-border rounded-xl cursor-pointer"

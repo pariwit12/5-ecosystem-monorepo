@@ -25,7 +25,9 @@ const selectedIds = (label: string) =>
 export const AutoCreateDtoBodySchema = z
   .object({
     target_mode: z.enum(['MINIMUM', 'MAXIMUM']).default('MINIMUM'),
-    assignment_mode: z.enum(['MAXIMIZE_REST', 'BALANCE_TOTAL']),
+    assignment_mode: z
+      .enum(['TRADITIONAL', 'MAXIMIZE_REST', 'BALANCE_TOTAL'])
+      .default('TRADITIONAL'),
     start_time: z.string().datetime({ offset: true }),
     end_time: z.string().datetime({ offset: true }),
     slot_template_ids: selectedIds('Slot Template'),

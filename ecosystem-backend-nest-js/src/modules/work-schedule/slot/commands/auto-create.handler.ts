@@ -251,30 +251,36 @@ export class AutoCreateHandler implements ICommandHandler<
           );
           // This also terminates unbounded MAXIMUM capacity when staff run out.
           if (availableCandidates.length === 0) break;
-          const rankedCandidates = availableCandidates.map((staffId) => ({
-            staffId,
-            score:
-              body.assignment_mode === 'BALANCE_TOTAL'
-                ? totalCounts.get(staffId)!
-                : this.calculateRestScore(
-                    staffId,
-                    occurrence,
-                    slots,
-                    planned,
-                    previousEnds,
-                    nextStarts,
-                  ),
-          }));
-          rankedCandidates.sort((a, b) => {
-            if (a.score !== b.score) {
-              const ascending = a.score < b.score ? -1 : 1;
-              return body.assignment_mode === 'BALANCE_TOTAL'
-                ? ascending
-                : -ascending;
-            }
-            return a.staffId < b.staffId ? -1 : a.staffId > b.staffId ? 1 : 0;
-          });
-          const staffId = rankedCandidates[0].staffId;
+          let staffId: string;
+          if (body.assignment_mode === 'TRADITIONAL') {
+            // Filtering preserves the lexical order of canonical database IDs.
+            staffId = availableCandidates[0];
+          } else {
+            const rankedCandidates = availableCandidates.map((staffId) => ({
+              staffId,
+              score:
+                body.assignment_mode === 'BALANCE_TOTAL'
+                  ? totalCounts.get(staffId)!
+                  : this.calculateRestScore(
+                      staffId,
+                      occurrence,
+                      slots,
+                      planned,
+                      previousEnds,
+                      nextStarts,
+                    ),
+            }));
+            rankedCandidates.sort((a, b) => {
+              if (a.score !== b.score) {
+                const ascending = a.score < b.score ? -1 : 1;
+                return body.assignment_mode === 'BALANCE_TOTAL'
+                  ? ascending
+                  : -ascending;
+              }
+              return a.staffId < b.staffId ? -1 : a.staffId > b.staffId ? 1 : 0;
+            });
+            staffId = rankedCandidates[0].staffId;
+          }
           planned.push({ ...occurrence, staffId });
           totalCounts.set(staffId, totalCounts.get(staffId)! + 1);
           assigned++;

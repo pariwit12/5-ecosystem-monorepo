@@ -39,8 +39,10 @@ beforeEach(() => {
 });
 
 it.each([
+  ["MINIMUM", "TRADITIONAL"],
   ["MINIMUM", "MAXIMIZE_REST"],
   ["MINIMUM", "BALANCE_TOTAL"],
+  ["MAXIMUM", "TRADITIONAL"],
   ["MAXIMUM", "MAXIMIZE_REST"],
   ["MAXIMUM", "BALANCE_TOTAL"],
 ] as const)(
@@ -125,18 +127,22 @@ it.each(["INVALID", ""])(
   },
 );
 
-it("blocks a missing assignment mode before HTTP", async () => {
+it("normalizes a missing assignment mode to TRADITIONAL before HTTP", async () => {
   const missing: Partial<AutoCreateDtoBody> = { ...body };
   delete missing.assignment_mode;
   await expect(
     // @ts-expect-error Deliberately validate an incomplete external payload.
     autoCreate(positionId, missing, "test-token"),
-  ).rejects.toThrow();
-  expect(mockedPost).not.toHaveBeenCalled();
-  expect(useErrorStore.getState()).toMatchObject({
-    isOpen: true,
-    statusCode: 400,
-  });
+  ).resolves.toEqual({ createdCount: 2 });
+  expect(mockedPost).toHaveBeenCalledWith(
+    `/api/work-schedule/slot/positions/${positionId}/auto`,
+    { ...body, assignment_mode: "TRADITIONAL" },
+    {
+      headers: { Authorization: "Bearer test-token" },
+      skipErrorCodes: undefined,
+    },
+  );
+  expect(useErrorStore.getState().isOpen).toBe(false);
 });
 
 function setupHook(
@@ -187,8 +193,10 @@ function setupHook(
 }
 
 it.each([
+  ["MINIMUM", "TRADITIONAL"],
   ["MINIMUM", "MAXIMIZE_REST"],
   ["MINIMUM", "BALANCE_TOTAL"],
+  ["MAXIMUM", "TRADITIONAL"],
   ["MAXIMUM", "MAXIMIZE_REST"],
   ["MAXIMUM", "BALANCE_TOTAL"],
 ] as const)(
