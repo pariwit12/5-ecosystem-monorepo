@@ -51,6 +51,7 @@ model WorkScheduleStaffPosition {
 4. ตรวจ Min staffing ด้วย `verifyMinimumStaff(...)`
 5. ตรวจและ insert Holiday อยู่ใน `Serializable` transaction ผ่าน `executeWithRetry`
 6. retry เฉพาะ Prisma transaction conflict `P2034`; ถ้าเป็น `AppException` ต้อง rethrow ทันทีและห้าม retry
+7. spec ปัจจุบันมี regression case ที่จำลอง `P2034` หลัง concurrent Holiday เกิดขึ้น แล้วรอบ retry ต้องอ่าน Holiday ใหม่และคำนวณ Min ใหม่จน reject ได้ จึงยืนยันว่า validation ที่ขึ้นกับสถานะ Holiday ต้องอยู่ใน transaction callback และต้องคำนวณใหม่ทุก retry
 
 `verifyMinimumStaff(...)` ปัจจุบันทำสิ่งสำคัญดังนี้:
 
@@ -165,6 +166,10 @@ await tx.$queryRaw`SELECT id FROM "work_schedule_position" WHERE id = ${param.po
 10. ถ้า `absentStaff.size <= rule.max` ให้ผ่าน
 
 ต้องตรวจทุก subinterval เพราะจำนวนคนหยุดอาจเปลี่ยนกลาง candidate interval
+
+**Concurrency / retry invariant:** ข้อมูลที่ใช้ตัดสิน Holiday Max ได้แก่ active Position, applicable Holiday Max rules, active Staff links และ Holiday เดิม ต้องถูก query/สร้างชุดข้อมูลภายใน callback ที่ส่งเข้า `executeWithRetry` และคำนวณใหม่ทุกครั้งที่ transaction ถูก retry ห้าม cache/reuse array, `Map` หรือ `Set` จาก transaction attempt ที่เกิด `P2034` เพราะ concurrent Holiday อาจถูก commit ระหว่าง attempts และทำให้ผล Max เปลี่ยนไป
+
+ตัวอย่าง acceptance ที่ต้องรองรับ: attempt แรกอ่านว่าจำนวนคนหยุดยังไม่เกิน Max แต่ transaction จบด้วย `P2034`; ก่อน attempt ถัดไปมี Holiday ของ Staff คนอื่นถูก commit แล้ว เมื่อ retry ต้องอ่านข้อมูลใหม่ คำนวณ `absentStaff` ใหม่ และถ้าจำนวนหลังรวม candidate เกิน Max ต้อง throw `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` โดยไม่ insert candidate สำเร็จ
 
 ### 3.4 Boundary semantics
 
@@ -297,6 +302,7 @@ Controller endpoints ให้ mirror Min/Max แต่ใช้ namespace ใ�
 - dedupe Position IDs, Staff IDs และ absent Staff IDs
 - candidate ต้องถูกตรวจทุก Position และทุก applicable rule
 - business conflict ต้อง throw `AppException`, ห้ามถูก retry
+- ทุก query/ข้อมูล intermediate ที่มีผลต่อ Holiday Max decision ต้องอยู่ใน transaction callback; เมื่อเกิด `P2034` รอบ retry ต้อง query rule/link/Holiday ใหม่และคำนวณ Max ใหม่ ห้าม reuse state จาก attempt ก่อนหน้า
 
 ### 4.4 Frontend feature และ route
 
@@ -438,6 +444,7 @@ ecosystem-frontend-next-js/tests/work-schedule/holiday-max-edit-delete.test.tsx
 - soft-deleted/non-member/other Place Staff ไม่ถูกนับ
 - multi-position: ต้องผ่านทุก Position; เกิน Position เดียวก็ reject ทั้ง candidate
 - overage ที่อยู่นอก candidate-rule intersection ไม่ทำให้ fail
+- ถ้า attempt แรกเกิด `P2034` แล้วก่อน retry มี concurrent Holiday ใหม่ รอบ retry ต้องอ่าน Holiday/กฎ/สมาชิก Position ใหม่ คำนวณ Max ใหม่ และ reject ด้วย `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` หากเกิน; ต้องไม่ใช้ผลคำนวณจาก attempt เดิม
 - FULL_DAY timezone, slot overlap, Min staffing และ Serializable/P2034 retry behavior เดิมยังเหมือนเดิม
 
 ### Step 4 — Frontend Admin CRUD
@@ -462,7 +469,7 @@ ecosystem-frontend-next-js/tests/work-schedule/holiday-max-edit-delete.test.tsx
 
 เกณฑ์ผ่าน:
 
-- backend specs ใหม่ครอบคลุม DTO, CRUD, authorization, overlap/adjacent, Position ownership, lock ordering, timeline boundaries, distinct Staff, multi-position และ exceeded Max
+- backend specs ใหม่ครอบคลุม DTO, CRUD, authorization, overlap/adjacent, Position ownership, lock ordering, timeline boundaries, distinct Staff, multi-position, exceeded Max และ fresh re-evaluation หลัง `P2034`
 - Holiday tests เดิม รวม Min/slot-overlap/retry ยังผ่าน
 - frontend tests ใหม่และ Min/Max regression ที่เกี่ยวข้องผ่าน
 - typecheck/lint/build ผ่านใน environment ที่มี dependency/config ครบ
@@ -476,6 +483,7 @@ ecosystem-frontend-next-js/tests/work-schedule/holiday-max-edit-delete.test.tsx
 - ห้ามทำ Create/Update Holiday Max overlap check นอก Position lock เพราะ concurrent request อาจสร้างช่วงทับกันได้
 - ห้ามถือว่า application-level overlap query เพียงอย่างเดียวป้องกัน race ได้
 - ห้ามทำให้ business `AppException` เข้า P2034 retry loop
+- ห้ามคำนวณ/เก็บ Holiday Max rule, active Staff หรือ existing Holiday ที่ใช้ตัดสินผลไว้นอก `executeWithRetry` callback หรือ reuse ข้าม retry attempt; `P2034` ต้องทำให้ข้อมูลเหล่านี้ถูกอ่านใหม่ทั้งหมด
 - ห้าม query Staff/Holiday จำนวนมากเมื่อไม่มี applicable Holiday Max rule
 - ห้ามแก้/ลบ Holiday เก่าเมื่อ rule ถูก create/update/delete
 - ห้ามเปลี่ยน `useCreateHoliday` ถ้า flow axios/global error store เดิมรองรับ ErrorCode ใหม่ได้; ให้เพิ่ม ErrorCode/message ก่อน
@@ -513,6 +521,8 @@ ecosystem-frontend-next-js/tests/work-schedule/holiday-max-edit-delete.test.tsx
   - inactive/other Position/other Place
   - multi-position
   - rule intersection
+  - business `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` เป็น `AppException` แล้วไม่ retry
+  - จำลอง attempt แรกเกิด `P2034` หลังมี concurrent Holiday; retry ต้อง query Holiday Max state ใหม่และ reject หากจำนวนใหม่เกิน Max
   - regression Min, Slot overlap, FULL_DAY timezone, AppException/P2034 retry
 
 คำสั่งจาก `ecosystem-backend-nest-js` (ยืนยันว่ามี scripts เหล่านี้ใน `package.json`):
@@ -566,6 +576,7 @@ pnpm run build
 - Staff สร้าง Holiday ได้เมื่อจำนวน distinct Staff ที่หยุดพร้อมกันในทุก active Position ไม่เกิน Max
 - เกิน Max -> atomic reject ก่อน insert ด้วย 409 `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`
 - exact Max ผ่าน, max=0 ทำงาน, half-open boundary, duplicate Holiday และ multi-position ถูกต้อง
+- เมื่อ Serializable transaction retry เพราะ `P2034` ต้อง re-read และ re-evaluate Holiday Max ด้วย state ใหม่ก่อนตัดสิน insert
 - Min staffing, Slot Max, Slot/Holiday overlap, timezone และ retry semantics เดิมไม่เปลี่ยน
 - Frontend มี list/create/edit/delete และเมนูจาก Position พร้อม cache invalidation ที่ถูกต้อง
 - ErrorCode/backend/frontend message ครบ
