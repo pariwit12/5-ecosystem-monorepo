@@ -10,122 +10,215 @@
 
 หมายถึงจำนวนวันหยุดที่พนักงานลงตรงกันพร้อมกันใน Position นั้นครับ โดยให้สร้าง schema ใหม่เลยครับ มีตรงไหนที่ยังไม่เคลียร์สามารถสอบถามได้เลยนะครับ
 
-## 2. Business Logic ปัจจุบันก่อนเริ่ม Implement
+## 2. Business Logic และโค้ดที่เกี่ยวข้องก่อนเริ่ม Implement
 
-### 2.1 วันหยุดของพนักงาน
+### 2.1 โครงสร้างข้อมูลปัจจุบัน
 
-- Prisma model `WorkScheduleHoliday` ปัจจุบันผูกกับ `WorkScheduleStaff` โดยตรงผ่าน `workScheduleStaffId` และเก็บ `startTime`, `endTime`, `createdAt`; ไม่มี `positionId` ใน holiday record
-- พนักงานหนึ่งคนสามารถมีหลาย Position ผ่าน `WorkScheduleStaffPosition`
-- การสร้างวันหยุดทำผ่าน `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
-  - ตรวจสิทธิ์ Staff ของ Place ด้วย `verifyWorkScheduleStaffAccess`
-  - FULL_DAY ใช้ timezone ของ Place เพื่อแปลง local midnight เป็น UTC interval
-  - PARTIAL ใช้ ISO datetime ที่มี offset
-  - ตรวจว่าช่วงวันหยุดไม่ทับ Slot ของ Staff
-  - ตรวจ `WorkScheduleMinMax.min` ของทุก active Position ที่ Staff สังกัดอยู่
-  - การตรวจ Min นับ Staff ที่หยุดเป็นรายคน ไม่ใช่นับจำนวน holiday records; holiday ซ้อนหลาย record ของ Staff คนเดียวกันต้องนับว่าขาดเพียง 1 คนในช่วงเวลานั้น
-  - ใช้ half-open interval semantics: `[startTime, endTime)` ดังนั้นรายการที่จบตรงเวลาเริ่ม หรือเริ่มตรงเวลาจบ ไม่ถือว่าทับกัน
-  - การตรวจและ insert holiday อยู่ใน Serializable transaction พร้อม retry เมื่อ Prisma แจ้ง transaction conflict (`P2034`)
-- ปัจจุบันยังไม่มี Business Rule สำหรับจำกัด “จำนวน Staff ที่หยุดพร้อมกันสูงสุดต่อ Position”
+จาก `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`:
 
-### 2.2 Min/Max ของ Slot เดิม
+- `WorkScheduleHoliday` เป็นวันหยุดของ Staff โดยผูกผ่าน `workScheduleStaffId`; record วันหยุดไม่มี `positionId`
+- `WorkScheduleStaffPosition` เป็นตารางเชื่อม Staff กับ Position และมี `deletedAt`
+- `WorkScheduleStaff` และ `WorkSchedulePosition` มี `deletedAt` และผูกกับ `organizationWorkSchedulePlaceId`
+- Staff หนึ่งคนสามารถอยู่ได้หลาย Position ดังนั้นวันหยุดหนึ่งรายการของ Staff เดียวต้องมีผลกับทุก active Position ที่ Staff สังกัดอยู่
+- `WorkScheduleMinMax` ผูกกับ Position และมี `min`, `max`, `startTime`, `endTime`; `min`/`max` เดิมเป็น config จำนวนคนที่ปฏิบัติงาน ไม่ใช่จำนวนคนหยุด
 
-- Prisma model `WorkScheduleMinMax` ผูกกับ `WorkSchedulePosition` และมี `min`, `max`, `startTime`, `endTime`
-- `max` ของ `WorkScheduleMinMax` มีความหมายเฉพาะว่า “จำนวน Slot/Staff ที่ปฏิบัติงานพร้อมกันสูงสุดใน Position ตามช่วงเวลา” และถูก enforce ตอนสร้าง Slot
-- `min` ของ `WorkScheduleMinMax` ถูกนำมาใช้ตอนสร้าง Holiday เพื่อป้องกันวันหยุดทำให้จำนวน Staff ที่พร้อมทำงานต่ำกว่า Min
-- Create/Update/Delete ของ Min/Max ใช้สิทธิ์ Admin ผ่าน `verifyWorkSchedulePositionByWorkScheduleAdmin`
-- Min/Max config ของ Position เดียวกันไม่อนุญาตให้ช่วงเวลาทับกัน โดยใช้เงื่อนไข overlap `existing.startTime < newEnd && existing.endTime > newStart`; ช่วงติดกันพอดีอนุญาต
-- Frontend มีหน้า Admin ระดับ Position สำหรับจัดการ Min/Max แยกเป็น list/create/edit-delete และแชร์ Zod DTO จาก backend
+โครงสร้างสำคัญที่ยืนยันจาก schema ปัจจุบัน:
 
-### 2.3 ข้อจำกัดที่ต้องรักษา
+```prisma
+model WorkScheduleStaffPosition {
+  workScheduleStaffId    String               @map("work_schedule_staff_id") @db.Uuid
+  workScheduleStaff      WorkScheduleStaff    @relation(fields: [workScheduleStaffId], references: [id], onDelete: Restrict)
+  workSchedulePositionId String               @map("work_schedule_position_id") @db.Uuid
+  workSchedulePosition   WorkSchedulePosition @relation(fields: [workSchedulePositionId], references: [id], onDelete: Restrict)
+  deletedAt              DateTime?            @map("deleted_at")
 
-- ห้ามนำ `WorkScheduleMinMax.max` เดิมมา reuse เป็น Max วันหยุด เพราะจะเปลี่ยนความหมายและ Business Logic ของจำนวน Slot สูงสุด
-- ห้ามเพิ่ม `positionId` เข้า `WorkScheduleHoliday` เพื่อแก้โจทย์นี้ เพราะ Holiday เดิมเป็นวันหยุดของ Staff และ Staff หนึ่งคนอาจอยู่หลาย Position; วันหยุดของ Staff ต้องมีผลกับทุก active Position ที่ Staff สังกัดอยู่
-- ห้ามเปลี่ยน behavior ของ Slot Max, Slot/Holiday overlap, Min staffing, FULL_DAY timezone conversion, PARTIAL interval หรือการลบวันหยุดเดิมโดยไม่จำเป็น
+  @@id([workScheduleStaffId, workSchedulePositionId])
+}
+```
+
+### 2.2 การสร้าง Holiday ปัจจุบัน
+
+ไฟล์หลัก:
+
+- `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.spec.ts`
+
+พฤติกรรมที่ยืนยันจากโค้ดจริง:
+
+1. ตรวจ Staff access ของ Place ด้วย `verifyWorkScheduleStaffAccess`
+2. FULL_DAY ใช้ timezone ของ Place แปลง local day เป็น UTC interval; PARTIAL ใช้ datetime จาก request
+3. ตรวจ Slot overlap ด้วย half-open overlap (`slot.start < holidayEnd && slot.end > holidayStart`)
+4. ตรวจ Min staffing ด้วย `verifyMinimumStaff(...)`
+5. ตรวจและ insert Holiday อยู่ใน `Serializable` transaction ผ่าน `executeWithRetry`
+6. retry เฉพาะ Prisma transaction conflict `P2034`; ถ้าเป็น `AppException` ต้อง rethrow ทันทีและห้าม retry
+
+`verifyMinimumStaff(...)` ปัจจุบันทำสิ่งสำคัญดังนี้:
+
+- หา active Position ของ requester โดยกรอง `WorkScheduleStaffPosition.deletedAt = null`
+- กรอง Staff และ Position ให้ `deletedAt = null` และอยู่ใน Place เดียวกัน
+- ดึงเฉพาะ `WorkScheduleMinMax` ที่มี `min != null` และ overlap candidate Holiday
+- ดึง active Staff ของ Position ที่เกี่ยวข้อง
+- ดึง Holiday เดิมของ Staff กลุ่มนั้น
+- รวม candidate Holiday เข้าไปก่อนตรวจ
+- แบ่ง timeline ตาม boundary ของ Holiday/rule
+- ในแต่ละช่วงย่อยใช้ `Set<workScheduleStaffId>` จึงนับ Staff คนเดิมเพียงครั้งเดียวแม้มี Holiday records ซ้อนกัน
+- ใช้ half-open interval `[startTime, endTime)`
+- reject เมื่อ `positionStaff.size - absentStaff.size < rule.min`
+
+ดังนั้น Holiday Max ใหม่ต้องเดินบน semantics เดียวกันเพื่อไม่ให้ Min และ Max ให้ผลขัดกัน
+
+### 2.3 Min/Max ของ Slot ปัจจุบัน
+
+ไฟล์อ้างอิงหลัก:
+
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/min-max.controller.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.command.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/create.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/update.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/commands/delete.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/min-max/queries/get-min-maxs-by-position-id-start-time-end-time.handler.ts`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/slot/commands/create-many.handler.ts`
+
+Business Logic ที่ยืนยัน:
+
+- Create/Update/Delete/Read ของ Min/Max ตรวจ Admin ผ่าน `verifyWorkSchedulePositionByWorkScheduleAdmin`
+- DTO ใช้ UUID v7, ISO datetime ที่มี offset และ validate integer/non-negative สำหรับ `min`/`max`
+- Config ของ Position เดียวกันไม่ให้ช่วงทับกันด้วยเงื่อนไข `startTime < otherEnd && endTime > otherStart`; ช่วงติดกันพอดีอนุญาต
+- **Create และ Update ของ Min/Max ทำ overlap check ภายใน transaction และล็อกแถว Position ก่อนด้วย**:
+
+```ts
+await tx.$queryRaw`SELECT id FROM "work_schedule_position" WHERE id = ${param.position_id} FOR UPDATE`;
+```
+
+  จุดนี้สำคัญสำหรับ serialize concurrent config writes ของ Position เดียวกัน; Holiday Max ต้องรักษา pattern นี้ ไม่ใช่ตรวจ overlap แบบ read-then-write นอก lock
+- Update ตรวจ record ด้วยทั้ง `id` และ `workSchedulePositionId` และ exclude ตัวเองจาก overlap query
+- Delete ใช้ `deleteMany({ where: { id, workSchedulePositionId } })` แล้วคืน NOT_FOUND เมื่อ `count === 0`
+- List query ใช้ half-open overlap และ `orderBy: [{ startTime: 'asc' }, { endTime: 'asc' }, { id: 'asc' }]`
+- `WorkScheduleMinMax.max` ถูก enforce ตอนสร้าง Slot ใน `slot/commands/create-many.handler.ts`; handler ใช้ Serializable transaction + retry และ Position row lock จึงต้องไม่เปลี่ยนความหมายของ `max` เดิม
+
+### 2.4 Frontend pattern ปัจจุบัน
+
+ส่วนที่ยืนยันจากโค้ดจริง:
+
+- feature Min/Max อยู่ที่ `ecosystem-frontend-next-js/src/features/work-schedule/min-max/`
+- มี `api/mutations`, `api/queries`, `components`, `hooks`, query-key factory และ query options
+- query-key factory มี prefix ระดับ list-by-position เพื่อ invalidate ทุก date range ของ Position
+- หน้า Position Admin ที่ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/client-page.tsx` มี MenuCard ไป `/min-max`
+- Frontend import `ErrorCode` จาก backend และ `API_ERROR_MESSAGES` อยู่ที่ `ecosystem-frontend-next-js/src/constants/error-messages.ts`
+- tests ที่มีอยู่จริงและใช้เป็น pattern ได้แก่:
+  - `ecosystem-frontend-next-js/tests/work-schedule/min-max-api.test.tsx`
+  - `ecosystem-frontend-next-js/tests/work-schedule/min-max-cache-invalidation.test.tsx`
+  - `ecosystem-frontend-next-js/tests/work-schedule/min-max-edit-delete.test.tsx`
+
+### 2.5 ข้อจำกัดที่ต้องรักษา
+
+- ห้าม reuse `WorkScheduleMinMax.max` เป็น Max วันหยุด เพราะจะเปลี่ยนความหมายของ Slot Max
+- ห้ามเพิ่ม `positionId` ลง `WorkScheduleHoliday`; Holiday เป็นของ Staff และ Staff อาจอยู่หลาย Position
+- ห้ามเปลี่ยน Min staffing, Slot Max, Slot/Holiday overlap, FULL_DAY timezone conversion, PARTIAL interval, retry semantics หรือการลบ Holiday เดิมโดยไม่จำเป็น
+- ห้ามเปลี่ยน overlap semantics จาก half-open เป็น closed interval
 
 ## 3. Business Logic ที่คาดหวังหลัง Implement
 
-### 3.1 นิยามกฎใหม่
+### 3.1 Domain ใหม่: `WorkScheduleHolidayMax`
 
-สร้างกฎใหม่ชื่อเชิงโดเมน `WorkScheduleHolidayMax` แยกจาก `WorkScheduleMinMax` โดยกฎหนึ่งรายการประกอบด้วย:
+สร้าง schema/model ใหม่แยกจาก `WorkScheduleMinMax` ตามคำยืนยันของผู้ใช้
 
-- Position ที่กฎนี้ใช้
-- `max`: จำนวน **Staff ที่หยุดพร้อมกันสูงสุด** ใน Position นั้น
-- `startTime`, `endTime`: ช่วงเวลาที่กฎมีผล
+แต่ละ rule ประกอบด้วย:
 
-เหตุผลที่นับเป็น Staff แบบ distinct ไม่ใช่จำนวน holiday records:
+- Position ที่ rule ใช้
+- `max`: จำนวน **distinct Staff ที่มี Holiday พร้อมกันสูงสุด** ใน Position นั้น
+- `startTime`, `endTime`: ช่วงที่ rule มีผล
 
-- เป้าหมายคือจำกัดจำนวน “พนักงานที่หยุดพร้อมกัน” ใน Position
-- ระบบปัจจุบันสามารถมี holiday records ที่ทับกันของ Staff คนเดียวกันได้ และ logic Min ปัจจุบันก็นับ Staff คนเดิมเพียงครั้งเดียว
-- การนับ record จะทำให้ duplicate/overlapping holiday ของคนเดียวกันกิน quota ซ้ำและทำให้ผลลัพธ์ไม่ตรงจำนวนคนที่หยุดจริง
+`max` ต้องเป็น integer `>= 0`; `max = 0` ถูกต้องและหมายถึงห้ามมี Staff ใน Position นั้นหยุดในช่วง rule
 
-### 3.2 Scope ของกฎต่อ Staff และ Position
+เหตุผลที่นับ distinct Staff ไม่ใช่ Holiday record:
 
-เมื่อ Staff สร้าง Holiday ใหม่:
+- requirement คือจำนวน “พนักงาน” ที่หยุดตรงกันพร้อมกัน
+- Holiday ของ Staff คนเดียวอาจมีหลาย record ซ้อนกัน
+- Min logic ปัจจุบันก็นับ Staff ผ่าน `Set<workScheduleStaffId>` อยู่แล้ว
 
-1. หา active Position ทั้งหมดของ Staff ใน Place เดียวกับคำขอ โดยต้องกรอง `WorkScheduleStaffPosition.deletedAt`, `WorkScheduleStaff.deletedAt`, `WorkSchedulePosition.deletedAt` เป็น `null` และทั้ง Staff/Position ต้องอยู่ใน `placeId` เดียวกัน
-2. Holiday ใหม่ต้องถูกตรวจกับ `WorkScheduleHolidayMax` ของ **ทุก Position ที่ Staff สังกัดอยู่**
-3. ถ้า Staff ไม่มี active Position ให้ข้าม Holiday Max check และคง behavior ปัจจุบัน
-4. Staff ที่อยู่หลาย Position ให้ holiday เดียวกันนับเป็น “1 คนที่หยุด” แยกในแต่ละ Position ที่เกี่ยวข้อง
-5. Staff จาก Position อื่นหรือ Place อื่นห้ามถูกนำมานับ
+### 3.2 Scope ต่อ Position
 
-### 3.3 วิธีนับ Max ที่ต้องใช้
+เมื่อสร้าง Holiday ใหม่:
 
-สำหรับแต่ละ Holiday Max rule ที่ทับช่วง Holiday ใหม่:
+1. หา active Position ทั้งหมดของ requester ใน Place เดียวกัน โดยใช้ filter แบบเดียวกับ Min ปัจจุบัน (`WorkScheduleStaffPosition.deletedAt`, `WorkScheduleStaff.deletedAt`, `WorkSchedulePosition.deletedAt` เป็น `null` และอยู่ Place เดียวกัน)
+2. ถ้าไม่มี active Position ให้ข้าม Holiday Max check และคง behavior ปัจจุบัน
+3. ดึง Holiday Max rules เฉพาะ Position เหล่านั้นและเฉพาะ rule ที่ overlap candidate Holiday
+4. Staff ที่อยู่หลาย Position ต้องถูกตรวจแยกทุก Position; candidate เดียวกันนับ 1 คนในแต่ละ Position ที่ requester สังกัดอยู่
+5. Staff ที่ไม่ active ใน Position, soft-delete, หรืออยู่อีก Place ห้ามถูกนับ
 
-1. หาช่วง intersection ระหว่าง Holiday ใหม่กับ rule: `[max(holidayStart, ruleStart), min(holidayEnd, ruleEnd))`
-2. หา active Staff ทั้งหมดของ Position นั้นจาก `WorkScheduleStaffPosition`
-3. ดึง Holiday เดิมของ Staff กลุ่มนั้นที่ทับช่วงคำขอ
-4. รวม candidate Holiday ใหม่เข้าไปในชุดข้อมูลก่อนตรวจ
-5. สร้าง boundary จาก intersection start/end และจุดเริ่ม/จบของ Holiday ที่ทับกัน (clip ให้อยู่ใน intersection)
-6. ตรวจทุกช่วงย่อยระหว่าง boundary ที่เรียงแล้ว
-7. ในแต่ละช่วงย่อย สร้าง `Set<workScheduleStaffId>` ของ Staff ที่มี Holiday ทับช่วงนั้น เพื่อ deduplicate คนเดิม
-8. ถ้า `absentStaff.size > rule.max` ให้ reject การสร้าง Holiday ทั้งรายการด้วย HTTP 409 และ ErrorCode ใหม่ `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`
-9. ถ้าเท่ากับ `rule.max` ต้องอนุญาต
-10. `max = 0` เป็นค่าที่ถูกต้องและหมายถึงห้าม Staff ใน Position นั้นมี Holiday ในช่วงกฎ
+### 3.3 Algorithm ตรวจ Max
 
-เหตุผลที่ต้องแบ่ง timeline เป็นช่วงย่อย: จำนวน Staff ที่หยุดพร้อมกันอาจเปลี่ยนกลางช่วง Holiday จาก holiday records ที่เริ่ม/จบไม่พร้อมกัน; เช็คเฉพาะเวลาเริ่มคำขอหรือรวมจำนวนทั้งช่วงจะให้ผลผิด
+สำหรับแต่ละ applicable rule:
+
+1. คำนวณ intersection:
+   - `checkStart = max(candidate.start, rule.startTime)`
+   - `checkEnd = min(candidate.end, rule.endTime)`
+2. หา active Staff links ของ Position นั้น
+3. ดึง Holiday เดิมของ Staff กลุ่มนั้นที่ overlap candidate/intersection
+4. รวม candidate Holiday `{ workScheduleStaffId: requesterStaffId, startTime, endTime }`
+5. filter เฉพาะ Holiday ของ Staff ใน Position และ overlap `[checkStart, checkEnd)`
+6. สร้าง boundary set จาก `checkStart`, `checkEnd` และ start/end ของ Holiday ที่ clip เข้า intersection
+7. sort boundary และตรวจทุกช่วง `[times[i], times[i + 1])` ที่มี duration > 0
+8. สร้าง `Set<workScheduleStaffId>` ของ Holiday ที่ overlap ช่วงย่อยนั้น
+9. ถ้า `absentStaff.size > rule.max` ให้ throw `AppException` ด้วย `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`, HTTP 409 ก่อน insert
+10. ถ้า `absentStaff.size <= rule.max` ให้ผ่าน
+
+ต้องตรวจทุก subinterval เพราะจำนวนคนหยุดอาจเปลี่ยนกลาง candidate interval
 
 ### 3.4 Boundary semantics
 
-ใช้ half-open interval `[startTime, endTime)` ให้เหมือน logic ที่มีอยู่:
+ใช้ half-open `[startTime, endTime)` ทั้งหมด:
 
 - overlap เมื่อ `a.start < b.end && a.end > b.start`
-- Holiday ที่จบตรง `rule.startTime` ไม่ถูกนับ
-- Holiday ที่เริ่มตรง `rule.endTime` ไม่ถูกนับ
-- Holiday สองรายการที่ต่อกันพอดีไม่ถือว่าหยุดพร้อมกัน
+- Holiday ที่จบตรง candidate/rule start ไม่ถูกนับ
+- Holiday ที่เริ่มตรง candidate/rule end ไม่ถูกนับ
+- adjacent rules (`old.end == new.start`) อนุญาต
 
 ### 3.5 CRUD ของ Holiday Max
 
-- Create/Update/Delete/Read ทั้งหมดต้องเป็น Admin ของ Position ผ่าน `verifyWorkSchedulePositionByWorkScheduleAdmin`
-- `max` ต้องเป็น integer และ `>= 0`
-- `start_time` / `end_time` ต้องเป็น ISO 8601 datetime ที่มี offset และ `end_time > start_time`
-- `position_id` และ `holiday_max_id` ใช้ UUID v7 validation ตาม convention ปัจจุบัน
-- Holiday Max rules ภายใน Position เดียวกัน **ห้ามมีช่วงเวลาทับกัน** เพื่อให้ ณ เวลาใดเวลาหนึ่งมี Max ที่ใช้กับ Position นั้นได้เพียงค่าเดียว
-- Create ตรวจ overlap กับทุก rule เดิมของ Position
-- Update ต้องตรวจว่า record เป้าหมายอยู่ใน Position ที่ระบุ และตรวจ overlap โดย exclude record ตัวเอง
-- Delete ต้องผูกทั้ง `holiday_max_id` และ `position_id`; ถ้าไม่พบให้คืน ErrorCode `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND`
-- Query list ให้รับ `start_time` / `end_time` และคืนเฉพาะ rules ที่ overlap ช่วงที่ถาม เรียง `startTime`, `endTime`, `id` แบบเดียวกับ Min/Max
-- Query detail ต้องตรวจว่า Holiday Max อยู่ใน Position ที่ระบุ
-- การสร้างหรือแก้ rule **ไม่แก้/ลบ Holiday เก่าที่มีอยู่แล้วย้อนหลัง** และไม่เปลี่ยน record Holiday; rule ใหม่มีหน้าที่เป็น constraint ตอนมีการสร้าง Holiday ใหม่ เหมือนลักษณะ config ของ Min/Max เดิม
-- การลบ rule เพียงยกเลิก constraint สำหรับการสร้าง Holiday หลังจากนั้น ไม่ลบ Holiday ใด ๆ
+- Create/Update/Delete/Read ต้องผ่าน `verifyWorkSchedulePositionByWorkScheduleAdmin`
+- DTO:
+  - `position_id`: UUID v7
+  - `holiday_max_id`: UUID v7 เมื่อ endpoint ต้องใช้
+  - `max`: required integer `>= 0`
+  - `start_time`, `end_time`: ISO 8601 string ที่มี offset
+  - `end_time > start_time`
+- Position เดียวกันห้ามมี Holiday Max rules ทับกัน
+- **Create/Update ต้องทำใน transaction และล็อก `work_schedule_position` ด้วย `FOR UPDATE` ก่อน query overlap** โดยใช้ pattern เดียวกับ Min/Max เพื่อ serialize concurrent writes
+- Create overlap query: same Position + `startTime < body.end_time` + `endTime > body.start_time`
+- Update:
+  - lock Position ก่อน
+  - ตรวจ target ด้วยทั้ง `id` และ `workSchedulePositionId`
+  - ถ้าไม่พบ -> `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND`
+  - overlap query ต้อง `id: { not: holiday_max_id }`
+- Delete: ผูกทั้ง `holiday_max_id` และ `position_id`; ใช้ delete semantics ที่ไม่สามารถลบ record ของ Position อื่นได้; count 0 -> NOT_FOUND
+- List: รับ `start_time`/`end_time`, คืนเฉพาะ overlap rules, เรียง `startTime`, `endTime`, `id`
+- Detail: ต้องตรวจ Position ownership
+- การ create/update/delete rule ไม่แก้หรือลบ Holiday เก่า และไม่ทำ retroactive rewrite; rule เป็น constraint สำหรับการสร้าง Holiday หลังจาก config มีผล เช่นเดียวกับแนว config ปัจจุบัน
 
-### 3.6 Error handling ที่คาดหวัง
+### 3.6 Error handling
 
-เพิ่ม ErrorCode อย่างน้อย:
+เพิ่มอย่างน้อย:
 
-- `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND` — ใช้กับ CRUD/detail ของ rule
-- `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` — ใช้เมื่อ candidate Holiday จะทำให้จำนวน distinct Staff ที่หยุดพร้อมกันใน Position เกิน Max
+- `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND`
+- `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`
 
-Frontend `API_ERROR_MESSAGES` ต้องมีข้อความสำหรับทั้งสอง code เพื่อให้ flow error เดิมของ axios/global error store แสดงข้อความที่เข้าใจได้ โดยไม่จำเป็นต้องเปลี่ยน `useCreateHoliday` ถ้า behavior เดิมสามารถ propagate backend error ได้ตามปกติ
+`WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` ต้องเป็น `AppException(..., HttpStatus.CONFLICT)` เพื่อให้ `CreateHolidayHandler.executeWithRetry` rethrow ทันที ไม่ retry เป็น transaction conflict
 
-## 4. โครงสร้างข้อมูลและไฟล์ที่คาดหวังหลัง Implement
+Overlap ของ Holiday Max config ให้เดินตาม Min/Max pattern ปัจจุบัน (`BadRequestException`) เพื่อไม่เพิ่ม ErrorCode นอก scope โดยไม่จำเป็น
 
-### 4.1 Prisma / Database
+Frontend `API_ERROR_MESSAGES` ต้องเพิ่มข้อความสำหรับ ErrorCode ใหม่ทั้งสองรายการ
 
-แก้ `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`
+## 4. โครงสร้างไฟล์ที่คาดหวังหลัง Implement
 
-- เพิ่ม relation ใน `WorkSchedulePosition` เช่น `workScheduleHolidayMaxs WorkScheduleHolidayMax[]`
-- เพิ่ม model ใหม่:
+### 4.1 Prisma / Migration
+
+แก้:
+
+- `ecosystem-backend-nest-js/prisma/schema/5-work-schedule.prisma`
+
+เพิ่ม relation ใน `WorkSchedulePosition` และ model ใหม่ เช่น:
 
 ```prisma
 model WorkScheduleHolidayMax {
@@ -141,15 +234,15 @@ model WorkScheduleHolidayMax {
 }
 ```
 
-เพิ่ม migration ใหม่ภายใต้ `ecosystem-backend-nest-js/prisma/migrations/<timestamp>_add_work_schedule_holiday_max/migration.sql` ผ่าน Prisma migration command; ห้ามแก้ migration เก่าที่ถูก commit แล้ว
+เพิ่ม migration ใหม่:
 
-Migration ต้องสร้าง table, primary key, foreign key ไป `work_schedule_position(id)` แบบ Restrict/NoAction ตาม Prisma generated SQL และ index สำหรับ `(work_schedule_position_id, start_time, end_time)`
+- `ecosystem-backend-nest-js/prisma/migrations/<timestamp>_add_work_schedule_holiday_max/migration.sql`
 
-### 4.2 Backend: feature ใหม่ `holiday-max`
+ห้ามแก้ migration เก่าที่ commit แล้ว
 
-สร้าง directory `ecosystem-backend-nest-js/src/modules/work-schedule/holiday-max/` โดยยึดโครงสร้าง `min-max` เดิมเป็น pattern แต่ห้าม import/reuse DTO ที่ทำให้ domain สองเรื่องปะปนกัน
+### 4.2 Backend feature ใหม่
 
-ไฟล์หลักที่คาดหวัง:
+สร้าง:
 
 ```text
 ecosystem-backend-nest-js/src/modules/work-schedule/holiday-max/
@@ -175,9 +268,7 @@ ecosystem-backend-nest-js/src/modules/work-schedule/holiday-max/
     └── get-holiday-max-by-id.handler.spec.ts
 ```
 
-ชื่อ class/interface สามารถเดินตาม convention ของ Min/Max แต่ต้องใช้คำว่า HolidayMax ให้ชัดเจน
-
-Controller endpoint ให้ใช้ namespace ใหม่ ไม่ชนกับ Holiday ของ Staff หรือ Min/Max ของ Slot:
+Controller endpoints ให้ mirror Min/Max แต่ใช้ namespace ใหม่:
 
 - `POST /api/work-schedule/holiday-max/:position_id`
 - `PATCH /api/work-schedule/holiday-max/positions/:position_id/holiday-maxs/:holiday_max_id`
@@ -185,35 +276,31 @@ Controller endpoint ให้ใช้ namespace ใหม่ ไม่ชนก
 - `GET /api/work-schedule/holiday-max/by-position-id-start-time-end-time/:position_id?start_time=...&end_time=...`
 - `GET /api/work-schedule/holiday-max/positions/:position_id/holiday-maxs/:holiday_max_id`
 
-แก้ `ecosystem-backend-nest-js/src/modules/work-schedule/work-schedule.module.ts`
+แก้:
 
-- import/register `HolidayMaxModule`
+- `ecosystem-backend-nest-js/src/modules/work-schedule/work-schedule.module.ts` — import/register `HolidayMaxModule`
+- `ecosystem-backend-nest-js/src/common/exceptions/error-codes.enum.ts` — เพิ่ม ErrorCode ใหม่
 
-แก้ `ecosystem-backend-nest-js/src/common/exceptions/error-codes.enum.ts`
-
-- เพิ่ม ErrorCode ใหม่ตามข้อ 3.6
-
-### 4.3 Backend: enforce ตอนสร้าง Holiday
+### 4.3 Enforce ใน Holiday create
 
 แก้:
 
 - `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.ts`
 - `ecosystem-backend-nest-js/src/modules/work-schedule/holiday/commands/create-holiday.handler.spec.ts`
 
-แนวทาง Implement ที่ต้องรักษา:
+ข้อกำหนด implementation:
 
-- คงการ resolve interval, slot overlap, Min staffing และ Serializable transaction/retry เดิม
-- เพิ่ม Holiday Max validation **ภายใน transaction เดียวกันก่อน `workScheduleHoliday.create`**
-- สามารถ refactor การหา active requester positions / active staff-position links เพื่อแชร์ระหว่าง Min check กับ Holiday Max check ได้ แต่ผลลัพธ์ของ Min เดิมต้องไม่เปลี่ยน
-- Query `workScheduleHolidayMax` เฉพาะ rules ของ active requester positions ที่ overlap candidate Holiday
-- อย่าดึง Staff/Holiday เพิ่มถ้าไม่มี applicable Holiday Max rules
-- ต้อง deduplicate Position IDs, Staff IDs และ absent Staff IDs
-- ถ้ามีหลาย Position ต้องตรวจแยกกันและ reject ถ้ามี Position ใด Position หนึ่งเกิน Max
-- Business conflict จาก Max ต้องไม่เข้า retry loopแบบ transaction conflict; `AppException` ต้องถูก rethrow ตาม pattern เดิม
+- Holiday Max validation ต้องอยู่ **ภายใน Serializable transaction เดิมและก่อน `workScheduleHoliday.create`**
+- คง slot-overlap และ `verifyMinimumStaff` semantics เดิม
+- สามารถ extract helper/แชร์ active-position data ระหว่าง Min และ Max ได้ แต่ output/behavior ของ Min ห้ามเปลี่ยน
+- query Holiday Max rules ก่อน; ถ้าไม่มี applicable rule ให้ return โดยไม่ query active position staff/holidays เพิ่มสำหรับ Max
+- dedupe Position IDs, Staff IDs และ absent Staff IDs
+- candidate ต้องถูกตรวจทุก Position และทุก applicable rule
+- business conflict ต้อง throw `AppException`, ห้ามถูก retry
 
-### 4.4 Frontend: Admin CRUD UI
+### 4.4 Frontend feature และ route
 
-สร้าง feature ใหม่แยกจาก `min-max`:
+สร้าง feature แยก:
 
 ```text
 ecosystem-frontend-next-js/src/features/work-schedule/holiday-max/
@@ -236,11 +323,17 @@ ecosystem-frontend-next-js/src/features/work-schedule/holiday-max/
 └── work-schedule-holiday-max.queries.ts
 ```
 
-Frontend API ต้อง import Zod schema จาก backend holiday-max DTO เหมือน pattern ปัจจุบันของ Min/Max เพื่อไม่ duplicate contract
+Query key ต้องมีอย่างน้อย:
 
-Query keys ต้องแยก namespace เช่น `[userId, "work-schedule", "holiday-max", ...]` และต้องมี key ระดับ list-by-position เพื่อ invalidate list ทุก date range ของ Position หลัง create/update/delete
+- `all(userId)`
+- `lists(userId)`
+- `listsByPositionId(userId, positionId)`
+- date-range list key ที่ต่อจาก list-by-position
+- `details(userId)` / `detail(userId, positionId, holidayMaxId)`
 
-สร้าง route Admin ระดับ Position แยกจาก `min-max`:
+หลัง create/update/delete ต้อง invalidate prefix `listsByPositionId(...)` เพื่อให้ทุก cached date range ของ Position refresh; update/delete ต้องจัดการ detail cache ไม่ให้ค้างตาม pattern Min/Max
+
+สร้าง route:
 
 ```text
 ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/holiday-max/
@@ -263,36 +356,24 @@ ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[posit
     └── error-code-redirect-list.ts
 ```
 
-List page:
+แก้:
 
-- query Place เพื่อได้ timezone
-- ใช้ date/time range input ตาม pattern Min/Max
-- ส่งช่วงเป็น ISO ที่มี offset/UTC ตาม contract
-- แสดง `startTime`, `endTime`, `max` และ action ไปหน้า detail
-- มีปุ่มสร้าง rule ใหม่
+- `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/client-page.tsx` — เพิ่ม MenuCard ไป `/holiday-max` พร้อมข้อความที่ระบุชัดว่า “จำนวนพนักงานที่หยุดพร้อมกันสูงสุด”
+- `ecosystem-frontend-next-js/src/constants/error-messages.ts` — เพิ่มข้อความ ErrorCode ใหม่
 
-Create/Edit form:
+Frontend API ต้อง import Zod schema/contract จาก backend holiday-max DTO ตาม pattern Min/Max ปัจจุบัน
 
-- `max` เป็น required number, integer, min 0
-- `start_time`, `end_time` ใช้ `datetime-local` แต่แปลงด้วย Place timezone ก่อนส่ง API เหมือน Min/Max form
-- Edit page โหลด detail, fill ค่าเดิมใน timezone ของ Place, update และ delete ได้
-- Delete success กลับ list page
+Form behavior:
 
-แก้ `ecosystem-frontend-next-js/src/app/work-schedule/admin/[placeId]/position/[positionId]/client-page.tsx`
+- `max`: required number, integer, min 0
+- `start_time`/`end_time`: `datetime-local` ใน UI แต่แปลงด้วย timezone ของ Place ก่อนส่ง API ตาม pattern Min/Max
+- list แสดง `startTime`, `endTime`, `max`
+- edit โหลด detail แล้ว fill ค่าเดิมใน Place timezone
+- delete success กลับ list
 
-- เพิ่ม MenuCard/เมนูใหม่ไป `/holiday-max`
-- ชื่อ/คำอธิบายต้องสื่อว่าเป็น “จำนวนพนักงานที่หยุดพร้อมกันสูงสุด” เพื่อไม่สับสนกับ Min/Max จำนวนคนเข้าเวร
+### 4.5 Frontend tests
 
-แก้ `ecosystem-frontend-next-js/src/constants/error-messages.ts`
-
-- เพิ่มข้อความสำหรับ `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND`
-- เพิ่มข้อความสำหรับ `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`
-
-### 4.5 Frontend tests ที่คาดหวัง
-
-เพิ่ม test ใน `ecosystem-frontend-next-js/tests/work-schedule/` โดยยึด pattern ที่มีอยู่ของ `min-max-api.test.tsx`, `min-max-cache-invalidation.test.tsx`, `min-max-edit-delete.test.tsx`
-
-ไฟล์ที่แนะนำ:
+เพิ่มโดยยึดไฟล์ Min/Max ที่มีอยู่จริง:
 
 ```text
 ecosystem-frontend-next-js/tests/work-schedule/holiday-max-api.test.tsx
@@ -300,129 +381,141 @@ ecosystem-frontend-next-js/tests/work-schedule/holiday-max-cache-invalidation.te
 ecosystem-frontend-next-js/tests/work-schedule/holiday-max-edit-delete.test.tsx
 ```
 
-ไม่ต้องสร้าง browser/E2E test framework ใหม่
+ไม่เพิ่ม browser/E2E framework ใหม่
 
-## 5. ขั้นตอน Implement และเกณฑ์ผ่านแต่ละขั้น
+## 5. ขั้นตอน Implement และเกณฑ์ผ่าน
 
-### Step 1 — เพิ่ม Prisma model และ migration
+### Step 1 — Prisma model + migration
 
-ดำเนินการ:
+ทำ:
 
-- เพิ่ม `WorkScheduleHolidayMax` + relation ใน schema
+- เพิ่ม relation `WorkSchedulePosition -> WorkScheduleHolidayMax[]`
+- เพิ่ม model ใหม่
 - generate migration ใหม่
-- run Prisma generate/validate
+- Prisma generate/validate
 
 เกณฑ์ผ่าน:
 
-- Prisma schema valid
-- Prisma Client มี `workScheduleHolidayMax`
-- migration สร้างเฉพาะ table/index/FK ที่เกี่ยวข้องกับ feature นี้
-- ไม่มีการแก้ schema ความหมายของ `WorkScheduleMinMax` หรือ `WorkScheduleHoliday`
+- schema valid และ Prisma Client มี `workScheduleHolidayMax`
+- migration มีเฉพาะ table/index/FK ที่เกี่ยวข้อง
+- `WorkScheduleMinMax` และ `WorkScheduleHoliday` ไม่ถูกเปลี่ยนความหมาย
 
 ### Step 2 — Backend Holiday Max CRUD/query
 
-ดำเนินการ:
+ทำ:
 
-- สร้าง module/controller/DTO/handlers/query handlers
-- register module ใน `WorkScheduleModule`
+- สร้าง module/controller/DTO/command/query handlers และ specs
+- register `HolidayMaxModule`
 - เพิ่ม ErrorCode
+- Create/Update lock Position row ก่อน overlap query
 
 เกณฑ์ผ่าน:
 
-- non-admin ไม่สามารถ create/update/delete/read rule ของ Position ได้
-- create max=0 ได้
-- reject max ติดลบ, decimal, invalid datetime, `end <= start`, invalid UUID
-- reject create เมื่อช่วงทับ rule เดิมใน Position เดียวกัน
-- adjacent rule (`old.end == new.start`) ผ่าน
-- rule ของคนละ Position สามารถมีช่วงเดียวกันได้
-- update exclude record ตัวเองจาก overlap check
-- update/delete/detail ด้วย ID ที่อยู่ Position อื่นต้องได้ NOT_FOUND ของ Holiday Max
-- list คืนเฉพาะ overlap rules และเรียง deterministic
+- non-admin อ่าน/สร้าง/แก้/ลบไม่ได้
+- `max = 0` ผ่าน
+- negative/decimal/invalid datetime/`end <= start`/invalid UUID ถูก reject
+- create overlap ใน Position เดียวกันถูก reject; adjacent ผ่าน; คนละ Position ใช้ช่วงเดียวกันได้
+- update target ต้องอยู่ Position เดียวกันและ exclude ตัวเองจาก overlap
+- update/delete/detail ที่ ID อยู่ Position อื่น -> `WORK_SCHEDULE_HOLIDAY_MAX_NOT_FOUND`
+- list overlap filter และ ordering deterministic
+- handler specs ยืนยันว่า Create/Update เรียก Position `FOR UPDATE` ภายใน transaction ก่อน overlap query เพื่อรักษา concurrency invariant
 
-### Step 3 — Enforce Holiday Max ใน CreateHoliday
+### Step 3 — Holiday Max enforcement
 
-ดำเนินการ:
+ทำ:
 
-- เพิ่ม query/config + timeline calculation ก่อน insert holiday
-- คง transaction เดิม
+- เพิ่ม Max validation ก่อน insert Holiday ภายใน transaction เดิม
 
 เกณฑ์ผ่าน:
 
-- ไม่มี rule -> behavior เดิม ไม่เสีย extra staffing/holiday query โดยไม่จำเป็น
-- จำนวนคนหยุดหลัง candidate < max -> ผ่าน
-- จำนวนคนหยุดหลัง candidate == max -> ผ่าน
-- จำนวนคนหยุดหลัง candidate > max -> 409 `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` และไม่ insert
-- max=0 -> candidate ที่ทับ rule ถูก reject
-- existing holiday ที่จบตรง candidate/rule start ไม่ถูกนับ
-- existing holiday ที่เริ่มตรง candidate/rule end ไม่ถูกนับ
-- duplicate/overlapping holiday ของ Staff คนเดียวกันนับ Staff คนนั้นครั้งเดียว
-- Staff ที่ไม่ active ใน Position, Staff/Position ที่ soft-delete, หรือคนละ Place ไม่ถูกนับ
-- candidate ของ Staff ที่มีหลาย Position ต้องผ่านทุก applicable Position; เกินเพียง Position เดียวต้อง reject
-- rule ที่ shortage/overage เกิดนอก intersection กับ candidate ต้องไม่ทำให้ candidate fail
-- FULL_DAY ยังคงใช้ Place timezone และ DST interval เดิม
-- Slot overlap และ Min staffing tests เดิมยังผ่าน
-- Serializable transaction retry behavior เดิมยังผ่าน
+- ไม่มี applicable rule -> behavior เดิม และไม่ query Staff/Holiday เพิ่มสำหรับ Max
+- count หลัง candidate `< max` -> ผ่าน
+- count `== max` -> ผ่าน
+- count `> max` -> 409 `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED` และไม่ insert
+- `max = 0` -> candidate ที่ overlap ถูก reject
+- boundary ที่แตะกันพอดีไม่ถูกนับ overlap
+- Holiday ซ้อนหลาย record ของ Staff เดียวกันนับ 1 คน
+- soft-deleted/non-member/other Place Staff ไม่ถูกนับ
+- multi-position: ต้องผ่านทุก Position; เกิน Position เดียวก็ reject ทั้ง candidate
+- overage ที่อยู่นอก candidate-rule intersection ไม่ทำให้ fail
+- FULL_DAY timezone, slot overlap, Min staffing และ Serializable/P2034 retry behavior เดิมยังเหมือนเดิม
 
 ### Step 4 — Frontend Admin CRUD
 
-ดำเนินการ:
+ทำ:
 
-- เพิ่ม feature API/query keys/hooks/forms
-- เพิ่ม list/new/detail routes
-- เพิ่มเมนู Position
-- เพิ่ม error messages
-
-เกณฑ์ผ่าน:
-
-- Admin เข้าเมนู Holiday Max จาก Position ได้
-- list filter ด้วยช่วงวันที่/เวลาและแสดง Max ถูกต้อง
-- create/edit/delete เรียก endpoint ใหม่และส่ง timezone-correct ISO datetime
-- หลัง mutation list ทุก cached date range ของ Position ถูก invalidate และ detail cache ไม่ค้าง
-- route error redirect ทำงานตาม access-control pattern เดิม
-- UI ไม่ใช้คำที่ทำให้เข้าใจว่าเป็น `WorkScheduleMinMax.max` ของจำนวน Slot
-
-### Step 5 — Tests และ regression checks
-
-ดำเนินการ:
-
-- เพิ่ม/แก้ backend unit tests และ frontend Jest tests ตามข้างต้น
-- run commands ในข้อ 7
+- API/query keys/hooks/forms
+- list/new/detail routes
+- Position menu
+- error messages
 
 เกณฑ์ผ่าน:
 
-- tests ใหม่ครอบคลุม CRUD validation, rule overlap, authorization, timeline boundaries, distinct Staff counting, multi-position และ exceeded Max
-- tests เดิมของ Holiday/MinMax/Slot ที่เกี่ยวข้องยังผ่าน
-- backend/frontend typecheck และ lint ผ่าน
-- build ผ่านเมื่อ environment มี dependency/config ที่จำเป็น
+- Admin เข้า Holiday Max จาก Position ได้
+- list filter date/time และแสดง max ถูกต้อง
+- create/edit/delete ส่ง endpoint ใหม่และ timezone-correct ISO datetime
+- mutation invalidate ทุก list date range ของ Position และไม่ทิ้ง stale detail cache
+- access/error redirect ตาม pattern ปัจจุบัน
+- UI ไม่ทำให้ Holiday Max สับสนกับ Slot Min/Max
+
+### Step 5 — Regression / verification
+
+เกณฑ์ผ่าน:
+
+- backend specs ใหม่ครอบคลุม DTO, CRUD, authorization, overlap/adjacent, Position ownership, lock ordering, timeline boundaries, distinct Staff, multi-position และ exceeded Max
+- Holiday tests เดิม รวม Min/slot-overlap/retry ยังผ่าน
+- frontend tests ใหม่และ Min/Max regression ที่เกี่ยวข้องผ่าน
+- typecheck/lint/build ผ่านใน environment ที่มี dependency/config ครบ
 
 ## 6. สิ่งที่ Implementor ต้องระวัง
 
-- อย่าเปลี่ยน `WorkScheduleMinMax.max` ให้หมายถึง Holiday Max และอย่ารวม model ใหม่เข้ากับ Min/Max เดิม
-- อย่าเพิ่ม Position ลง `WorkScheduleHoliday`; Position membership ต้อง resolve จาก active `WorkScheduleStaffPosition` ตอนตรวจ
-- อย่านับ holiday records ตรง ๆ; ต้องนับ distinct Staff ในแต่ละช่วงย่อยของ timeline
-- อย่านับ Staff ที่ link ถูก soft-delete, Staff ถูก soft-delete, Position ถูก soft-delete หรืออยู่นอก Place
-- อย่าตรวจเพียงจำนวน Holiday ณ candidate start; ต้องตรวจทุก subinterval ที่จำนวนคนหยุดเปลี่ยน
-- อย่าใช้ closed interval เพราะจะทำให้รายการที่ต่อกันพอดีถูกนับทับกัน
-- อย่าทำให้ business `AppException` ถูก retry เหมือน `P2034`
-- อย่าทำ query หนักเมื่อ requester ไม่มี Position หรือไม่มี applicable Holiday Max rule
-- อย่าลบ/แก้ Holiday เดิมเมื่อ Admin เปลี่ยน rule
-- อย่าแก้ error handling ของ `useCreateHoliday` ถ้าไม่จำเป็น; เพิ่ม ErrorCode/message ให้ flow เดิมแสดง backend conflict ได้ก่อน
-- Frontend ต้องใช้ backend Zod contract เพื่อป้องกัน schema drift
-- การเพิ่ม migration ให้สร้าง migration ใหม่เท่านั้น ห้าม rewrite migration เดิม
-- ห้ามแก้ Business Logic ของ Min staffing, Slot Max, auto-create Slot หรือ Slot/Holiday overlap นอกเหนือจาก regression ที่จำเป็น
+- ห้าม reuse `WorkScheduleMinMax.max` หรือแก้ความหมาย Slot Max
+- ห้ามเพิ่ม Position ลง Holiday record
+- ห้ามนับจำนวน Holiday records; ต้องนับ distinct Staff ต่อ subinterval
+- ห้ามใช้ closed interval
+- ห้ามทำ Create/Update Holiday Max overlap check นอก Position lock เพราะ concurrent request อาจสร้างช่วงทับกันได้
+- ห้ามถือว่า application-level overlap query เพียงอย่างเดียวป้องกัน race ได้
+- ห้ามทำให้ business `AppException` เข้า P2034 retry loop
+- ห้าม query Staff/Holiday จำนวนมากเมื่อไม่มี applicable Holiday Max rule
+- ห้ามแก้/ลบ Holiday เก่าเมื่อ rule ถูก create/update/delete
+- ห้ามเปลี่ยน `useCreateHoliday` ถ้า flow axios/global error store เดิมรองรับ ErrorCode ใหม่ได้; ให้เพิ่ม ErrorCode/message ก่อน
+- ห้าม duplicate frontend contract ถ้า import backend Zod schema ได้ตาม pattern ปัจจุบัน
+- migration ต้องเป็นไฟล์ใหม่ ห้าม rewrite migration เก่า
+- ห้ามขยาย scope ไปเปลี่ยน auto-create Slot, Min staffing, Slot Max หรือ access-control อื่น
 
 ## 7. Test ที่ต้องเพิ่ม/แก้ และคำสั่งตรวจสอบ
 
-### Backend tests
+### Backend
 
-อย่างน้อยต้องเพิ่ม/แก้:
+อย่างน้อย:
 
-- `holiday-max.dto.spec.ts`: max validation, UUID, datetime/ordering
-- create/update/delete handler specs: admin access, overlap/adjacent, wrong Position, not found
-- query handler specs: authorization, overlap filtering, deterministic ordering, detail ownership
-- `holiday/commands/create-holiday.handler.spec.ts`: Holiday Max scenarios ใน Step 3
+- `holiday-max.dto.spec.ts`
+  - max integer/non-negative/required
+  - UUID v7
+  - offset datetime
+  - end > start
+- create/update/delete handler specs
+  - admin access
+  - overlap/adjacent
+  - wrong Position/not found
+  - `FOR UPDATE` ก่อน overlap check ใน Create/Update transaction
+- list/detail query specs
+  - admin access
+  - overlap filtering
+  - deterministic ordering
+  - Position ownership
+- `holiday/commands/create-holiday.handler.spec.ts`
+  - no rule
+  - below/equal/exceeded max
+  - max=0
+  - boundaries
+  - duplicate holidays same Staff
+  - inactive/other Position/other Place
+  - multi-position
+  - rule intersection
+  - regression Min, Slot overlap, FULL_DAY timezone, AppException/P2034 retry
 
-คำสั่งจาก `ecosystem-backend-nest-js`:
+คำสั่งจาก `ecosystem-backend-nest-js` (ยืนยันว่ามี scripts เหล่านี้ใน `package.json`):
 
 ```bash
 pnpm run prisma:generate
@@ -435,7 +528,7 @@ pnpm test
 pnpm run build
 ```
 
-ถ้ามี database URL สำหรับ migration environment ให้ตรวจเพิ่ม:
+ถ้ามี DB URL/migration environment:
 
 ```bash
 pnpm run prisma:migrate:status
@@ -447,11 +540,11 @@ pnpm run prisma:migrate:status
 pnpm exec prisma migrate dev --name add_work_schedule_holiday_max
 ```
 
-### Frontend tests
+### Frontend
 
-เพิ่ม tests ตามข้อ 4.5 และ regression ของ menu/error handling ที่จำเป็น
+เพิ่ม tests ตามข้อ 4.5 และ regression ของ menu/error handling เท่าที่จำเป็น
 
-คำสั่งจาก `ecosystem-frontend-next-js`:
+คำสั่งจาก `ecosystem-frontend-next-js` (ยืนยัน scripts จาก `package.json`):
 
 ```bash
 pnpm run typecheck
@@ -461,18 +554,19 @@ pnpm test
 pnpm run build
 ```
 
-หาก command ใดรันไม่ได้เพราะ environment ไม่มี database, secret หรือ runtime dependency ที่จำเป็น ให้รายงาน command ที่รันไม่ได้และเหตุผลจริง ห้ามอ้างว่าผ่าน
+หาก command ใดต้อง database/secret/runtime dependency ที่ environment ไม่มี ให้รายงาน command และเหตุผลจริง ห้ามอ้างว่าผ่าน
 
 ## 8. Definition of Done
 
 งานถือว่าผ่านเมื่อครบทั้งหมด:
 
-- มี schema/table ใหม่สำหรับ Holiday Max แยกจาก Slot Min/Max
-- Admin เท่านั้นที่จัดการและอ่าน config ผ่าน admin flow ได้
-- Staff สร้าง Holiday ได้เมื่อจำนวน distinct Staff ที่หยุดพร้อมกันในทุก Position ที่เกี่ยวข้องไม่เกิน Max
-- เกิน Max แล้ว backend reject แบบ atomic ก่อน insert
-- exact Max ผ่าน, max=0 ทำงาน, boundary/duplicate/multi-position ถูกต้อง
-- Min staffing, Slot Max, Slot/Holiday overlap และ timezone behavior เดิมไม่เปลี่ยน
-- Frontend Admin มี list/create/edit/delete สำหรับ Holiday Max และมีเมนูเข้าถึงจาก Position
-- ErrorCode/frontend message ครบ
-- Prisma validation, unit tests, frontend tests, typecheck, lint และ build ที่ environment รองรับผ่าน
+- มี schema/table ใหม่ `WorkScheduleHolidayMax` แยกจาก `WorkScheduleMinMax`
+- Admin เท่านั้นจัดการ/อ่าน Holiday Max config ผ่าน admin flow
+- Create/Update config serialize ด้วย Position row lock และไม่เกิด overlapping rules จาก concurrent writes ตาม application pattern ปัจจุบัน
+- Staff สร้าง Holiday ได้เมื่อจำนวน distinct Staff ที่หยุดพร้อมกันในทุก active Position ไม่เกิน Max
+- เกิน Max -> atomic reject ก่อน insert ด้วย 409 `WORK_SCHEDULE_HOLIDAY_MAX_EXCEEDED`
+- exact Max ผ่าน, max=0 ทำงาน, half-open boundary, duplicate Holiday และ multi-position ถูกต้อง
+- Min staffing, Slot Max, Slot/Holiday overlap, timezone และ retry semantics เดิมไม่เปลี่ยน
+- Frontend มี list/create/edit/delete และเมนูจาก Position พร้อม cache invalidation ที่ถูกต้อง
+- ErrorCode/backend/frontend message ครบ
+- tests, Prisma validation, typecheck, lint และ build ที่ environment รองรับผ่าน
